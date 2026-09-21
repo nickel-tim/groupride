@@ -141,6 +141,7 @@
         var m = await Crypt.open(key, str);
         // null = fremde Gruppe oder beschaedigt. Verwerfen, nicht melden.
         if (!m || !m.i || m.i === me.id) return;
+        if (m.q) { Msg.receive(m); return; }                      // Kurznachricht statt Position
         if (typeof m.la !== 'number' || typeof m.lo !== 'number') return;
 
         Recorder.add(m.i, typeof m.n === 'string' ? m.n.slice(0, 14) : null, UI.COLORS[(m.c | 0) % UI.COLORS.length],
@@ -155,6 +156,18 @@
             name: typeof m.n === 'string' ? m.n.slice(0, 14) : null,
             color: UI.COLORS[(m.c | 0) % UI.COLORS.length]
         });
+    }
+
+    /* Kurznachricht senden: 'sent' | 'sim' | 'offline'. Der Kanal ist "einmal senden, keine
+       Bestaetigung" -- ein verlorenes "Halt!" waere schlimm, deshalb nach 1,5 s noch einmal;
+       die Nachrichten-ID sorgt dafuer, dass sie beim Empfaenger nur einmal zaehlt. */
+    function sendMsgWire(code, mid) {
+        if (sim) return 'sim';                                     // in der Simulation geht nichts raus
+        if (!key || !running || !Net.online()) return 'offline';
+        var payload = { i: me.id, n: me.name, c: me.colorIdx, t: Date.now(), q: code, mid: mid };
+        Crypt.seal(key, payload).then(Net.publish);
+        setTimeout(function () { Crypt.seal(key, payload).then(Net.publish); }, 1500);
+        return 'sent';
     }
 
     function sendMine() {
@@ -404,6 +417,7 @@
             });
             ghostStep(sim.now(), sim.t * 1000);
             an.tick(sim.now());
+            sim.dueMessages().forEach(function (m) { Msg.receive(m); });
         }
         if (sim.done && !simSaved) { simSaved = true; finishRecording('sim'); }
     }
@@ -873,6 +887,11 @@
         });
 
         ReplayUI.wire(); SegUI.init();
+        Msg.init({
+            send: sendMsgWire,
+            meId: function () { return me.id; }, meName: function () { return me.name; },
+            log: function (id, name, code, t) { an._event(t, 'msg', { id: id, q: code, name: name }); }
+        });
         $('sumClose').addEventListener('click', function () { $('sumOverlay').hidden = true; });
         $('sumOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
         $('sumShare').addEventListener('click', function () {

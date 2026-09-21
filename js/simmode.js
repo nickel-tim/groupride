@@ -116,6 +116,22 @@ var SimMode = (function () {
 
         sim.now = function () { return sim.t0 + sim.t * 1000; };
 
+        /* Ein paar Kurznachrichten der Mitfahrer, damit man die Anzeige ausprobieren kann. */
+        var script = [ { at: 40,  who: 'sim-ben',   n: 'Ben',   q: 'ok' },
+                       { at: 110, who: 'sim-dirk',  n: 'Dirk',  q: 'wait' },
+                       { at: 190, who: 'sim-anna',  n: 'Anna',  q: 'coffee' },
+                       { at: 270, who: 'sim-carla', n: 'Carla', q: 'danger' } ];
+        var sentIdx = 0;
+        /* Nachrichten, die seit dem letzten Aufruf faellig wurden (Zeitraffer springt ueber mehrere). */
+        sim.dueMessages = function () {
+            var out = [];
+            while (sentIdx < script.length && script[sentIdx].at <= sim.t) {
+                var m = script[sentIdx++];
+                out.push({ i: m.who, n: m.n, q: m.q, mid: 'sim' + m.at + '-' + sim.t0, t: Date.now() });
+            }
+            return out;
+        };
+
         sim.attack = function () { sim.boostUntil = sim.t + 15; };
         sim.boosting = function () { return sim.t < sim.boostUntil; };
 

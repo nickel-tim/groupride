@@ -160,7 +160,7 @@ var UI = (function () {
 
     /* ---------------- Ereignisse ---------------- */
     var ICONS = { pass: '⇄', attack: '⚡', drop: '✂',
-                  rejoin: '↻', lead: '⚑' };
+                  rejoin: '↻', lead: '⚑', msg: '✉' };
 
     function renderEvents(evs) {
         if (!evs.length) { $('eventList').innerHTML =
@@ -231,6 +231,7 @@ var UI = (function () {
                                   (e.gap ? ' – ' + fmtDist(e.gap) + ' zurück' : '');
             case 'rejoin': return nm(e.id) + ' ist wieder dran';
             case 'lead':   return nm(e.id) + ' übernimmt die Führung' + (e.from ? ' von ' + nm(e.from) : '');
+            case 'msg':    return escapeHtml(e.name || nm(e.id)) + ': ' + escapeHtml(Msg.text(e.q));
             default:       return e.type;
         }
     }

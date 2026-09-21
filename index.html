@@ -54,6 +54,7 @@
         </div>
 
         <div class="riders" id="riderList"></div>
+        <div class="quickrow" id="quickRow" aria-label="Schnellnachrichten an die Gruppe"></div>
     </section>
 
     <!-- ============ Karte ============ -->
@@ -185,6 +186,16 @@
     <button data-v="group">Gruppe</button>
 </nav>
 
+<!-- Nachrichten: eingehende Banner und Auswahl aller Kurznachrichten -->
+<div id="msgBanner" class="msgbanner" aria-live="assertive"></div>
+<div id="msgPanel" class="overlay" hidden>
+    <div class="qrcard msgcard" role="dialog" aria-modal="true" aria-label="Nachricht an die Gruppe">
+        <div class="qrttl">Nachricht an die Gruppe</div>
+        <div class="msggrid" id="msgGrid"></div>
+        <button class="btn" id="msgClose">Schließen</button>
+    </div>
+</div>
+
 <!-- Bilanz einer Ausfahrt -->
 <div id="sumOverlay" class="overlay" hidden>
     <div class="qrcard sumcard" role="dialog" aria-modal="true" aria-label="Bilanz der Ausfahrt">
@@ -275,6 +286,7 @@
 <script src="js/segments.js"></script>
 <script src="js/summary.js"></script>
 <script src="js/segui.js"></script>
+<script src="js/messages.js"></script>
 <script src="js/replayui.js"></script>
 <script src="js/ghost.js"></script>
 <script src="js/app.js"></script>

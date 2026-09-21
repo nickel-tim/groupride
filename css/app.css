@@ -488,3 +488,47 @@ select:disabled { opacity: .5; }
 .sumclimb .sm { font-size: 11px; color: var(--ink3); margin-left: 6px; }
 .sumrk { display: grid; grid-template-columns: 20px 12px 1fr auto; gap: 8px; align-items: center; padding: 2px 0; color: var(--ink2); }
 .sumrk.me { color: var(--ink); font-weight: 600; }
+
+/* ---------------- Kurznachrichten ---------------- */
+.quickrow { flex: none; display: flex; gap: 8px; padding: 8px 0 6px; }
+.quickrow button, .msggrid button {
+    flex: 1; border: 1px solid var(--line); background: var(--bg2); color: var(--ink);
+    border-radius: 12px; font-family: inherit;
+}
+.quickrow button { height: 54px; }
+.quickrow .mem, .msggrid .mem { font-size: 27px; line-height: 1; }
+.quickrow button:active, .msggrid button:active { filter: brightness(1.3); }
+.quickrow button.urg, .msggrid button.urg { border-color: color-mix(in srgb, var(--bad) 55%, var(--line)); }
+button[data-msg].armed { background: var(--bad); border-color: var(--bad); color: #fff; animation: armpulse .6s ease-in-out infinite alternate; }
+@keyframes armpulse { to { filter: brightness(1.25); } }
+.msgcard { width: min(94vw, 420px); }
+.msggrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 4px; }
+.msggrid button { height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.msggrid .mem { font-size: 36px; }
+.msggrid .mlb { font-size: 13px; color: var(--ink2); }
+.msggrid button.armed .mlb { color: #fff; }
+.msgbanner {
+    position: fixed; left: 10px; right: 10px; z-index: 70;
+    top: calc(env(safe-area-inset-top, 0px) + 40px);
+    display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+}
+.msgi {
+    pointer-events: auto; display: flex; align-items: center; gap: 12px;
+    background: var(--bg2); border: 1px solid var(--line); border-left: 6px solid var(--warn);
+    border-radius: 12px; padding: 10px 14px; box-shadow: var(--shadow);
+    animation: msgin .18s ease-out;
+}
+.msgi .me { font-size: 34px; line-height: 1; }
+.msgi .mt { display: flex; flex-direction: column; font-size: 15px; line-height: 1.25; }
+.msgi .mt b { font-weight: 600; }
+.msgi .mt span { color: var(--ink2); font-size: 14px; }
+.msgi.urgent { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad) 20%, var(--bg2)); }
+.msgi.mine { border-left-color: var(--ink3); opacity: .92; }
+.msgi.warn { border-left-color: var(--warn); }
+@keyframes msgin { from { transform: translateY(-10px); opacity: 0; } }
+.ev.msg    .ic { color: var(--warn); }
+
+/* Emoji: ausdrueckliche Schriftliste, damit sie ueberall farbig erscheinen, wo eine Emoji-Schrift da ist */
+.mem, .msgi .me, .msgi .mt, .ev .ic, #eventList .ev span:last-child {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Barlow", sans-serif;
+}

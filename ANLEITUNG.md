@@ -270,3 +270,24 @@ Strecke, Fahrzeit, Ø- und Spitzentempo, Höhenmeter; eine kleine Karte der gefa
 - Segmente, Rekorde und Bilanz gelten für **dieses Gerät** (localStorage, ~5 MB). Löscht der Browser die Seitendaten, sind sie weg; GPX sichert nur die Fahrten selbst.
 - Sehr kurze Anstiege (unter 300 m oder 20 Hm) werden nicht automatisch angelegt – die GPS-Höhe gibt das nicht her. Eigene Segmente gehen beliebig kurz (ab 150 m).
 - Simulierte Höhen und GPS-Rauschen sind eine Näherung; die Genauigkeit der Segmentzeiten auf echten Straßen ist nicht gemessen.
+
+---
+
+## Kurznachrichten per Knopf (ohne Tippen)
+
+Im Tacho, unter der Fahrerliste, steht eine Reihe großer Knöpfe: 🛑 **Halt!**, ⏳ **Bitte warten**, 🔧 **Panne**, ⚠️ **Vorsicht!** und 💬 für das Panel mit allen neun (dazu 🚨 **Hilfe!**, 🐢 **Langsamer**, 🚀 **Schneller**, ☕ **Pause?**, 👍 **Alles klar**). Ein Tipp sendet die Nachricht an die Gruppe. Tippen muss niemand.
+
+**Beim Empfänger** erscheint oben ein Banner mit Emoji und Name („🔧 Anja – Panne“), dringende Nachrichten (Halt, Panne, Vorsicht, Hilfe) rot und 20 Sekunden lang, die anderen 8 Sekunden. Ein Tipp aufs Banner schließt es. Dazu gibt es Vibration (nur Android; iPhone-Browser können das nicht) und einen Eintrag im **Verlauf**.
+
+**Schutz vor Fehlbedienung**
+- Nach dem Senden 2,5 Sekunden Pause, damit ein Wackeln am Lenker keine Serie auslöst.
+- **Hilfe!** braucht zwei Tipps kurz hintereinander: Der erste macht den Knopf nur rot („Nochmal tippen“), der zweite sendet.
+- Ohne Netz oder ohne gestartete Ausfahrt sagt die App **„Nicht gesendet“**, statt still zu scheitern.
+
+**Was über die Leitung geht:** nur ein kurzer Code („flat“), dein Name und die Zeit – kein Text, kein Emoji, keine Position. Sender und Empfänger ordnen den Code selbst zu. Das hält die Nachricht klein, und eine neuere App mit weiteren Nachrichten stört eine ältere nicht (unbekannte Codes werden verworfen). Sie läuft durch denselben verschlüsselten Kanal wie die Positionen: Broker oder Relay sehen nur Zufallsbytes.
+
+**Zuverlässigkeit:** Der Kanal sendet einmal und bekommt keine Bestätigung. Ein verlorenes „Halt!“ wäre schlimm, deshalb wird jede Nachricht nach 1,5 Sekunden noch einmal gesendet; eine Nachrichten-ID sorgt dafür, dass sie beim Empfänger nur einmal zählt. Nachrichten, die älter als 90 Sekunden sind, werden ignoriert.
+
+**Simulation:** Die virtuellen Mitfahrer schicken zum Ausprobieren ein paar Nachrichten (Ben 👍, Dirk ⏳, Anna ☕, Carla ⚠️). Eigene Nachrichten bleiben in der Simulation lokal („Simulation“).
+
+**Grenzen:** Nachrichten werden nicht gespeichert und erscheinen nicht im Replay. Wer die Seite gerade nicht geöffnet hat, verpasst sie. Wo das Gerät keine Emoji-Schrift hat (manche reinen Linux-Systeme, z. B. WSL ohne `fonts-noto-color-emoji`), erscheinen die Knöpfe leer – die Nachrichten funktionieren trotzdem, die Beschriftung steht im Panel.
