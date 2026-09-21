@@ -31,6 +31,12 @@
     var myTrack = [];         // fuer den GPX-Export
     var seenEvents = 0, seenClimbs = 0;
     var relayUrl = null;
+    // Kartenansicht: "Alle" passt den Ausschnitt an die Gruppe an, "Ich" haelt
+    // dich in der Mitte; "Kurs" dreht die Karte so, dass deine Fahrtrichtung oben liegt.
+    var mapOpt = { follow: false, trackUp: false, zoom: 1 };
+
+    // Simulation: eigener Zustand, sie ersetzt GPS und Netz komplett
+    var sim = null, simTimer = null, simWarp = 1, simHeading = null;
 
     function $(id) { return document.getElementById(id); }
     function store(k, v) { try { if (v === undefined) return localStorage.getItem(k);
@@ -75,6 +81,7 @@
     function shareLink() {
         var q = new URLSearchParams(location.search);
         if (relayUrl) q.set('relay', relayUrl); else q.delete('relay');
+        q.delete('sim');
         var qs = q.toString();
         return location.origin + location.pathname + (qs ? '?' + qs : '') + location.hash;
     }
@@ -177,9 +184,9 @@
 
     /* ---------------- Renderloop ---------------- */
     function render() {
-        var ord = an.tick();
+        var ord = an.tick(sim ? sim.now() : undefined);
         var mine = an.riders[me.id];
-        var h = Sensors.heading();
+        var h = sim ? { deg: simHeading, src: 'Sim' } : Sensors.heading();
 
         UI.renderHeadingSrc(h);
         UI.renderSpeed(mine && mine.lat !== null ? mine.speed : null,
@@ -206,6 +213,8 @@
             }
         }
         UI.renderCompass(mine, peers, h.deg);
+
+        if (isActive('map')) renderMap(ord, h.deg);
 
         // --- Liste: Luecke immer relativ zu MIR, das ist die Zahl,
         //     die man beim Fahren wissen will ---
@@ -255,6 +264,41 @@
         if (running && !Net.online()) UI.renderNet('wait', 'kein Netz – nur eigene Daten');
     }
 
+    function renderMap(ord, heading) {
+        var info = MapView.render($('mapSvg'), {
+            route: route, riders: ord, meId: me.id, climbs: an.climbs,
+            follow: mapOpt.follow, zoom: mapOpt.zoom, trackUp: mapOpt.trackUp,
+            heading: heading
+        });
+        if (!info) return;
+        var txt = info.riders + ' Fahrer';
+        if (info.length > 0) txt += ' · Streckenachse ' + UI.fmtDist(info.length);
+        if (mapOpt.trackUp && heading === null) txt += ' · noch kein Kurs, Norden oben';
+        $('mapInfo').textContent = info.riders ? txt : '';
+    }
+
+    function syncMapButtons() {
+        $('mapAll').classList.toggle('on', !mapOpt.follow);
+        $('mapMe').classList.toggle('on', mapOpt.follow);
+        $('mapNorth').classList.toggle('on', !mapOpt.trackUp);
+        $('mapCourse').classList.toggle('on', mapOpt.trackUp);
+        // Zoom wirkt nur im Modus "Ich"
+        $('mapIn').disabled = $('mapOut').disabled = !mapOpt.follow;
+        $('mapIn').style.opacity = $('mapOut').style.opacity = mapOpt.follow ? '' : '.4';
+    }
+
+    function showQr() {
+        var url = shareLink();
+        try {
+            $('qrBox').innerHTML = QR.svg(url);
+        } catch (e) {
+            // Link zu lang fuer die groesste QR-Version (Relay-URL mit Riesenpfad)
+            $('qrBox').innerHTML = '<div class="empty">Der Link ist zu lang für einen QR-Code. ' +
+                                   'Bitte „Link zum Mitfahren teilen“ nutzen.</div>';
+        }
+        $('qrOverlay').hidden = false;
+    }
+
     function nameOf(id) {
         var r = an.riders[id];
         return UI.escapeHtml((r && r.name) || id);
@@ -274,16 +318,87 @@
         }
     }
 
+    /* ---------------- Simulation ---------------- */
+    function simStart() {
+        if (running) { alert('Erst die laufende Ausfahrt beenden.'); return; }
+        route = new Route(); an = new Analytics(route);
+        seenEvents = 0; seenClimbs = 0;
+        var others = UI.COLORS.filter(function (c, i) { return i !== me.colorIdx; });
+        sim = SimMode.create({ meId: me.id, meName: me.name, meColor: myColor(),
+                               colors: others.slice(0, 4) });
+        simWarp = 1;
+        $('simbar').hidden = false;
+        $('btnSim').textContent = 'Simulation beenden';
+        $('btnSim').className = 'btn stop';
+        UI.renderNet('wait', 'Simulation – nichts wird gesendet');
+        /* Vorlauf: erst ab ~150 m Streckenachse sind Reihenfolge und Luecken
+           belastbar. Ohne ihn stuenden beim Start alle bei "0 m". */
+        simAdvance(25);
+        syncSimBar();
+        simTimer = setInterval(simTick, 1000);
+        render();
+        showView('tacho');
+    }
+
+    function simStop() {
+        clearInterval(simTimer); simTimer = null;
+        sim = null; simHeading = null;
+        // Zustand der Simulation nicht in eine echte Ausfahrt mitnehmen
+        route = new Route(); an = new Analytics(route);
+        seenEvents = 0; seenClimbs = 0;
+        $('simbar').hidden = true;
+        $('btnSim').textContent = 'Simulation starten';
+        $('btnSim').className = 'btn';
+        UI.renderNet('off', 'bereit – unter „Gruppe“ starten');
+        render();
+    }
+
+    /* Jede Wall-Sekunde: warp simulierte Sekunden. Eine Meldung pro
+       simulierter Sekunde (1 Hz wie echtes GPS), damit die Auswertung
+       im Zeitraffer nicht anders rechnet als in Echtzeit. */
+    function simAdvance(n) {
+        for (var i = 0; i < n && !sim.done; i++) {
+            sim.step().forEach(function (m) {
+                an.ingest(m.id, { lat: m.lat, lon: m.lon, ele: m.ele, speed: m.speed,
+                                  heading: m.heading, acc: m.acc, t: m.t,
+                                  name: m.name, color: m.color });
+                if (m.me) { an.riders[m.id].self = true; simHeading = m.heading; }
+            });
+            an.tick(sim.now());
+        }
+    }
+
+    function simTick() {
+        if (!sim) return;
+        simAdvance(simWarp);
+        syncSimBar();
+        render();
+    }
+
+    function syncSimBar() {
+        if (!sim) return;
+        $('simEffort').textContent = Math.round(sim.effort * 100) + ' %';
+        $('btnSimAttack').classList.toggle('on', sim.boosting());
+        document.querySelectorAll('#simbar [data-warp]').forEach(function (b) {
+            b.classList.toggle('on', +b.dataset.warp === simWarp);
+        });
+        var km = (sim.meS() / 1000).toFixed(1), tot = (sim.length / 1000).toFixed(1);
+        $('simMsg').textContent = sim.done
+            ? 'Ziel erreicht – Simulation zu Ende. Beenden und neu starten zum Wiederholen.'
+            : 'Du: km ' + km + ' von ' + tot + ' · Zeit ' + UI.fmtDur(sim.t * 1000);
+    }
+
     /* ---------------- Reiter ---------------- */
     function isActive(v) { return $('v-' + v).classList.contains('active'); }
 
     function showView(v) {
-        ['tacho', 'log', 'climbs', 'group'].forEach(function (x) {
+        ['tacho', 'map', 'log', 'climbs', 'group'].forEach(function (x) {
             $('v-' + x).classList.toggle('active', x === v);
         });
         document.querySelectorAll('nav button').forEach(function (b) {
             b.classList.toggle('on', b.dataset.v === v);
         });
+        if (v === 'map')    { render(); }
         if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
         if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
     }
@@ -356,6 +471,7 @@
                 UI.renderNet('off', 'gestoppt');
                 return;
             }
+            if (sim) simStop();
             running = true;
             this.textContent = 'Ausfahrt beenden';
             this.className = 'btn stop';
@@ -387,6 +503,34 @@
                 prompt('Diesen Link weitergeben:', url);
             }
         });
+
+        $('btnSim').addEventListener('click', function () { if (sim) simStop(); else simStart(); });
+        $('btnSimAttack').addEventListener('click', function () { if (sim) { sim.attack(); syncSimBar(); } });
+        $('simLess').addEventListener('click', function () {
+            if (sim) { sim.effort = Math.max(0.5, Math.round((sim.effort - 0.1) * 10) / 10); syncSimBar(); } });
+        $('simMore').addEventListener('click', function () {
+            if (sim) { sim.effort = Math.min(1.6, Math.round((sim.effort + 0.1) * 10) / 10); syncSimBar(); } });
+        document.querySelectorAll('#simbar [data-warp]').forEach(function (b) {
+            b.addEventListener('click', function () { simWarp = +b.dataset.warp; syncSimBar(); });
+        });
+
+        $('btnQr').addEventListener('click', showQr);
+        $('btnQrClose').addEventListener('click', function () { $('qrOverlay').hidden = true; });
+        $('qrOverlay').addEventListener('click', function (e) {
+            if (e.target === this) this.hidden = true;      // Klick neben die Karte schliesst
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') $('qrOverlay').hidden = true;
+        });
+
+        $('mapAll').addEventListener('click',    function () { mapOpt.follow = false; syncMapButtons(); render(); });
+        $('mapMe').addEventListener('click',     function () { mapOpt.follow = true;  syncMapButtons(); render(); });
+        $('mapNorth').addEventListener('click',  function () { mapOpt.trackUp = false; syncMapButtons(); render(); });
+        $('mapCourse').addEventListener('click', function () { mapOpt.trackUp = true;  syncMapButtons(); render(); });
+        $('mapIn').addEventListener('click',  function () { mapOpt.zoom = Math.max(0, mapOpt.zoom - 1); render(); });
+        $('mapOut').addEventListener('click', function () {
+            mapOpt.zoom = Math.min(MapView.ZOOMS.length - 1, mapOpt.zoom + 1); render(); });
+        syncMapButtons();
 
         $('btnNewRoom').addEventListener('click', function () {
             if (!confirm('Neue Gruppe öffnen? Der alte Link funktioniert dann nicht mehr ' +
@@ -445,5 +589,6 @@
         showView('group');
         setInterval(render, RENDER_MS);
         render();
+        if (new URLSearchParams(location.search).has('sim')) simStart();
     });
 })();

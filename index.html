@@ -54,6 +54,26 @@
         <div class="riders" id="riderList"></div>
     </section>
 
+    <!-- ============ Karte ============ -->
+    <section class="view" id="v-map">
+        <div class="maptools">
+            <div class="seg" role="group" aria-label="Ausschnitt">
+                <button id="mapAll" class="on">Alle</button>
+                <button id="mapMe">Ich</button>
+            </div>
+            <div class="seg" role="group" aria-label="Ausrichtung">
+                <button id="mapNorth" class="on">Nord</button>
+                <button id="mapCourse">Kurs</button>
+            </div>
+            <div class="seg" role="group" aria-label="Zoom">
+                <button id="mapOut" aria-label="Herauszoomen">−</button>
+                <button id="mapIn" aria-label="Hineinzoomen">+</button>
+            </div>
+        </div>
+        <svg id="mapSvg" aria-label="Karte der Gruppe"></svg>
+        <div class="mapinfo" id="mapInfo"></div>
+    </section>
+
     <!-- ============ Verlauf ============ -->
     <section class="view scroll" id="v-log">
         <h2>Führungsarbeit</h2>
@@ -79,8 +99,15 @@
         <h2>Gruppe</h2>
         <button class="btn go" id="btnStart">Ausfahrt starten</button>
         <button class="btn" id="btnShare">Link zum Mitfahren teilen</button>
+        <button class="btn" id="btnQr">QR-Code zum Einscannen zeigen</button>
         <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
         <div class="note" id="linkNote"></div>
+
+        <h2>Simulation</h2>
+        <button class="btn" id="btnSim">Simulation starten</button>
+        <div class="note">Zum Ausprobieren ohne Fahrrad: vier virtuelle Mitfahrer auf einer
+            Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet.
+            Leistung und Antritt regelst du in der Leiste unten.</div>
 
         <h2>Anzeige</h2>
         <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
@@ -101,12 +128,43 @@
 
 </main>
 
+<!-- Regler der Simulation: in jeder Ansicht sichtbar, solange sie laeuft -->
+<div id="simbar" hidden>
+    <span class="simtag">SIM</span>
+    <div class="seg" role="group" aria-label="Zeitraffer">
+        <button data-warp="1" class="on">×1</button>
+        <button data-warp="5">×5</button>
+        <button data-warp="20">×20</button>
+    </div>
+    <div class="seg" role="group" aria-label="Deine Leistung">
+        <button id="simLess" aria-label="Weniger Leistung">−</button>
+        <button id="simEffort" class="val" disabled>100 %</button>
+        <button id="simMore" aria-label="Mehr Leistung">+</button>
+    </div>
+    <button class="simatk" id="btnSimAttack">Antritt!</button>
+    <span class="simmsg" id="simMsg"></span>
+</div>
+
 <nav>
     <button class="on" data-v="tacho">Tacho</button>
+    <button data-v="map">Karte</button>
     <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
     <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
     <button data-v="group">Gruppe</button>
 </nav>
+
+<!-- Einladung per QR-Code: Vollbild, damit die Kamera des anderen Handys
+     den Code auch auf Armlaenge sicher liest -->
+<div id="qrOverlay" class="overlay" hidden>
+    <div class="qrcard" role="dialog" aria-modal="true" aria-label="QR-Code zum Beitreten">
+        <div class="qrttl">Zum Mitfahren scannen</div>
+        <div id="qrBox"></div>
+        <div class="qrnote">Kamera-App des anderen Handys draufhalten und den Link öffnen.
+            Der Code enthält den Gruppenschlüssel – nur zeigen, wenn die Person wirklich
+            mitfahren soll.</div>
+        <button class="btn" id="btnQrClose">Schließen</button>
+    </div>
+</div>
 
 <script src="js/geo.js"></script>
 <script src="js/route.js"></script>
@@ -114,7 +172,11 @@
 <script src="js/crypto.js"></script>
 <script src="js/net.js"></script>
 <script src="js/sensors.js"></script>
+<script src="js/qrcode.js"></script>
+<script src="js/qr.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/map.js"></script>
+<script src="js/simmode.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -240,3 +240,78 @@ nav button .bdg {
 }
 
 .empty { color: var(--ink3); font-size: 13px; padding: 18px 0; line-height: 1.6; }
+
+/* ---------------- Karte ---------------- */
+.maptools {
+    flex: none; display: flex; gap: 8px; justify-content: space-between;
+    padding: 8px 0;
+}
+.seg { display: flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.seg button {
+    border: none; background: var(--bg2); color: var(--ink2);
+    font-family: inherit; font-size: 13px; padding: 7px 11px;
+    border-right: 1px solid var(--line);
+}
+.seg button:last-child { border-right: none; }
+.seg button.on { background: var(--bg3); color: var(--ink); font-weight: 600; }
+.seg button:active { filter: brightness(1.25); }
+#mapSvg {
+    flex: 1; min-height: 0; width: 100%;
+    background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
+    touch-action: none; user-select: none;
+}
+.mapinfo { flex: none; font-size: 11px; color: var(--ink3); padding: 7px 0 8px; text-align: center; }
+.mempty  { fill: var(--ink3); font-size: 13px; }
+.mcase   { fill: none; stroke: var(--bg2); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.mroute  { fill: none; stroke: var(--ink3); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.mtail   { fill: none; stroke: var(--ink3); stroke-width: 3; stroke-dasharray: 2 6; stroke-linecap: round; }
+.mclimb  { fill: none; stroke: var(--warn); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.mstart  { fill: var(--bg2); stroke: var(--ink2); stroke-width: 2; }
+.mdot    { stroke: var(--bg2); stroke-width: 2; }
+.mdot.me { stroke: var(--self); stroke-width: 3; }
+.mdot.drop { stroke: var(--bad); stroke-dasharray: 3 2; }
+.mrank   { fill: rgba(0,0,0,.78); font-size: 10px; font-weight: 700; }
+.mname   { font-size: 10px; font-weight: 600; paint-order: stroke; stroke: var(--bg2); stroke-width: 3px; }
+.mgap    { fill: var(--ink2); font-size: 9.5px; paint-order: stroke; stroke: var(--bg2); stroke-width: 3px; }
+.mhead   { opacity: .9; }
+.mscale path { fill: none; stroke: var(--ink2); stroke-width: 1.5; }
+.mscale text { fill: var(--ink2); font-size: 10px; }
+.mnorth circle { fill: var(--bg2); stroke: var(--line); }
+.mnorth polygon { fill: var(--bad); }
+.mnorth text { fill: var(--ink2); font-size: 10px; font-weight: 600; }
+
+/* ---------------- QR-Einladung ---------------- */
+.overlay {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.86); padding: 16px;
+}
+.overlay[hidden] { display: none !important; }
+.qrcard {
+    width: min(92vw, 400px); max-height: 100%; overflow-y: auto;
+    background: var(--bg2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 16px 12px;
+}
+.qrttl { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 12px; }
+#qrBox svg { display: block; width: 100%; height: auto; border-radius: 6px; }
+.qrnote { font-size: 12px; color: var(--ink2); line-height: 1.5; margin-top: 12px; }
+
+/* ---------------- Simulation ---------------- */
+#simbar {
+    flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+    padding: 6px 10px; background: var(--bg3); border-top: 1px solid var(--line);
+}
+#simbar[hidden] { display: none !important; }
+#simbar .seg button { padding: 6px 9px; font-size: 12px; }
+#simbar .seg button.val { min-width: 54px; color: var(--ink); opacity: 1; }
+.simtag {
+    background: var(--warn); color: #241400; font-size: 10px; font-weight: 700;
+    letter-spacing: .6px; padding: 3px 6px; border-radius: 4px;
+}
+.simatk {
+    border: none; border-radius: 7px; padding: 7px 12px; font-family: inherit;
+    font-size: 12px; font-weight: 700; background: var(--warn); color: #241400;
+}
+.simatk:active { filter: brightness(1.2); }
+.simatk.on { background: var(--bad); color: #fff; }
+.simmsg { font-size: 11px; color: var(--ink2); flex: 1 1 100%; }

@@ -6,11 +6,13 @@ Eine Seite, ein Link. Wer ihn öffnet, ist dabei: keine Installation, kein Konto
 
 **Tacho** — eigenes Tempo groß, eigene Position in der Gruppe, Kompass mit Richtung und Entfernung zu jedem, darunter alle Fahrer mit Tempo und Lücke in Metern *und* Sekunden. ▲/▼ sagt, wer vor und wer hinter dir ist.
 
+**Karte** — die Streckenachse als glatte Kurve, darauf jeder Fahrer mit Rang, Richtungsmarke und Lücke in Metern zu dir. Anstiege liegen farbig auf der Achse, unten steht der Maßstab. „Alle“ zeigt die ganze Gruppe, „Ich“ hält dich in der Mitte (± zoomt). „Nord“ oder „Kurs“ legt fest, ob Norden oder deine Fahrtrichtung oben liegt. Fahrer außerhalb des Bildes erscheinen als Pfeil am Rand.
+
 **Verlauf** — Führungsarbeit pro Fahrer (wer wie lange vorne war), Ablösungen, sowie Überholvorgänge, Antritte, Abrisse mit Uhrzeit.
 
 **Berge** — automatisch erkannte Anstiege mit Rangliste: Zeit und Höhenmeter pro Stunde für jeden, der oben angekommen ist.
 
-**Gruppe** — Name, Farbe, Link teilen, Sonnenmodus, Export.
+**Gruppe** — Name, Farbe, Link teilen, QR-Code zum Einscannen, Simulation, Sonnenmodus, Export.
 
 ---
 
@@ -29,7 +31,7 @@ Lade **eine** dieser Varianten auf deinen Webspace:
 
 1. Seite öffnen. Beim ersten Aufruf wird automatisch ein Gruppenschlüssel erzeugt und an die Adresse gehängt (hinter dem `#`).
 2. Unter **Gruppe** Namen und Farbe setzen.
-3. **Link zum Mitfahren teilen** — per WhatsApp, Signal, wie auch immer. Alle öffnen ihn.
+3. **Link zum Mitfahren teilen** — per WhatsApp, Signal, wie auch immer. Alle öffnen ihn. Steht jemand neben dir: **QR-Code zum Einscannen zeigen** und die Kamera des anderen Handys draufhalten.
 4. Jeder tippt **Ausfahrt starten** und erlaubt Standort (iOS fragt zusätzlich nach Bewegungssensoren).
 5. Losfahren.
 
@@ -153,3 +155,35 @@ Die Module sind bewusst getrennt und ohne Browser testbar:
 | `js/ui.js` / `js/app.js` | Darstellung und Verdrahtung |
 
 Naheliegende Erweiterungen: ein QR-Code zum Link (praktisch am Treffpunkt), Sprachausgabe bei Abriss („Dirk ist 200 m zurück"), Zwischensprints auf frei gesetzten Marken, oder die Achse aus einer importierten GPX-Route vorbelegen statt sie erst zu lernen — dann stünden Reihenfolge und Berge ab Meter eins.
+
+---
+
+## Karte und QR-Code: was dahintersteckt
+
+**Keine Kartenkacheln.** Eine Kachel-Anfrage würde dem Kartenserver verraten, wo die Gruppe fährt – und damit die Ende-zu-Ende-Verschlüsselung der Positionen unterlaufen. Die Karte zeichnet deshalb nur, was die App ohnehin weiß: die Streckenachse und die Fahrer. Sie funktioniert auch im Funkloch. Der Preis: keine Straßennamen, kein Hintergrund.
+
+**Die Achse ist ein Spline.** Durch die Stützpunkte (alle 20 m) läuft eine Catmull-Rom-Kurve, ohne dass ein Punkt verschoben wird. Das Achsenende liegt meist ein Stück hinter dem Führenden; die gestrichelte Verbindung schließt diese Lücke.
+
+**Beschriftungen weichen aus.** Fahren mehrere dicht beisammen, probiert jeder Name nacheinander unten, oben, rechts, links – du zuerst, dann nach Rang. Findet sich kein Platz, bleibt die Rangzahl im Punkt.
+
+**QR-Code:** Er kodiert denselben Link wie „Link teilen“ (inklusive Relay und Gruppenschlüssel), immer schwarz auf weiß mit Ruhezone, Fehlerkorrektur M. Erzeugt wird er lokal (Bibliothek *qrcode-generator*, MIT, in `js/qrcode.js`); es wird nichts nachgeladen. Da der Code den Schlüssel enthält, gilt dasselbe wie für den Link: nur zeigen, wenn jemand wirklich mitfahren soll.
+
+Die Prüfbilder dazu liegen in `test/debug/`.
+
+---
+
+## Simulation zum Ausprobieren
+
+Unter **Gruppe → Simulation starten** (oder direkt mit `…/index.html?sim`) fährst du mit vier virtuellen Mitfahrern – Anna, Ben, Carla und Dirk – eine 6-km-Testrunde mit Kurven, zwei Serpentinen und drei Anstiegen. Du bist der Fünfte. Es braucht weder GPS noch Netz, und es wird nichts gesendet.
+
+Die Leiste unten bleibt in jeder Ansicht sichtbar:
+
+| | |
+|---|---|
+| **×1 / ×5 / ×20** | Zeitraffer. Die Auswertung rechnet dabei mit derselben Taktung von 1 Hz wie in Echtzeit. |
+| **− / +** | Deine Leistung in 10-%-Schritten (50 bis 160 %). Damit hängst du dich an oder lässt dich abhängen. |
+| **Antritt!** | 15 Sekunden mit mindestens 150 %, um zu überholen oder eine Lücke aufzureißen. |
+
+Die Positionen laufen durch denselben Weg wie echte Meldungen, samt GPS-Rauschen von rund 4 m. Tacho, Karte, Verlauf und Berge zeigen deshalb, was sie auch bei einer echten Ausfahrt zeigen würden. Anna klettert am besten, Ben tritt vor dem ersten Berg an, Dirk baut nach etwa vier Minuten ein und wird abgerissen. Ist der Führende im Ziel, endet die Simulation; **Simulation beenden** setzt alles zurück.
+
+Die Bilder zur Simulation und das Prüfskript liegen in `test/debug/`.
