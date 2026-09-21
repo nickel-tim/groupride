@@ -572,6 +572,80 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
 .sumhl .emo { width: 1.15em; height: 1.15em; }
 .note a { color: var(--ink2); text-decoration: underline; }
 
+/* ---------------- Liga ---------------- */
+.ligaroot { padding-bottom: 24px; }
+.ligaroot input[type=email], .ligaroot input[type=number], .ligaroot input[type=date] {
+    width: 100%; padding: 11px 10px; background: var(--bg2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 7px; font-family: inherit; font-size: 15px; margin-top: 4px; box-sizing: border-box;
+}
+.ligaroot input[type=text] { width: 100%; box-sizing: border-box; }
+.ligaroot select { width: 100%; box-sizing: border-box; }
+.ligaroot .btn { margin-top: 9px; }
+.btn.danger { color: var(--bad); }
+.lg-err { color: var(--bad); font-weight: 600; }
+.lg-ok  { color: var(--good); }
+.lg-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin-top: 12px; }
+.lg-ct { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink2); font-weight: 600; margin-bottom: 4px; }
+.lg-gl { font-size: 12px; color: var(--ink2); margin-top: 10px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.lg-gsub { font-size: 11px; color: var(--ink3); margin-top: 6px; }
+.lg-none { font-size: 12px; color: var(--ink3); padding: 6px 0; }
+.lg-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.lg-row:last-child { border-bottom: none; }
+.lg-row.me { background: var(--bg3); margin: 0 -8px; padding: 6px 8px; border-radius: 6px; font-weight: 600; }
+.lg-rk { min-width: 20px; color: var(--ink3); font-size: 12px; text-align: right; }
+.lg-em { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.lg-em .emo { width: 18px; height: 18px; display: block; }
+.lg-nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-v { color: var(--ink2); font-size: 13px; white-space: nowrap; }
+.lg-mini { border: 1px solid var(--line); background: var(--bg3); color: var(--ink2); border-radius: 6px; font-family: inherit; font-size: 11px; padding: 5px 8px; margin: 6px 6px 0 0; }
+.lg-mini.on { color: var(--warn); border-color: var(--warn); }
+.lg-mini:active { filter: brightness(1.25); }
+.lg-league { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; text-align: left; margin-top: 8px; padding: 11px 12px; background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 9px; font-family: inherit; font-size: 15px; }
+.lg-league span { font-size: 12px; color: var(--ink2); }
+.lg-back { border: none; background: none; color: var(--ink2); font-family: inherit; font-size: 13px; padding: 4px 0; }
+.lg-period { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.lg-period > div { flex: 1; text-align: center; display: flex; flex-direction: column; font-size: 15px; }
+.lg-period span { font-size: 11px; color: var(--ink3); }
+.lg-nav { width: 40px; height: 40px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); border-radius: 8px; font-size: 20px; }
+.lg-nav:disabled { opacity: .3; }
+.lg-tabs { margin: 12px 0 2px; }
+.lg-tabs button { padding: 9px 2px; font-size: 12px; }
+.lg-goal { margin-top: 6px; font-size: 12px; color: var(--ink2); }
+.lg-bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-bottom: 3px; }
+.lg-bar i { display: block; height: 100%; background: var(--good); }
+.lg-grow { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.lg-grow select { flex: 2; min-width: 0; }
+.lg-grow input { flex: 1; min-width: 0; width: auto !important; }
+.lg-grow span { font-size: 12px; color: var(--ink3); min-width: 34px; }
+.lg-cat { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
+.lg-cat label, .lg-check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin: 0; }
+.lg-cat label em { font-size: 11px; color: var(--ink3); font-style: normal; }
+.lg-pts { color: var(--ink2) !important; font-size: 12px !important; }
+.lg-check { margin-top: 12px; }
+.lg-cat input, .lg-check input { width: 20px; height: 20px; margin: 0; }
+.lg-ride { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.lg-rt { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.lg-rt span { font-size: 12px; color: var(--ink3); white-space: nowrap; }
+.lg-share { background: var(--bg3); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }
+.lg-me { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.lg-qr { width: 200px; max-width: 70%; margin: 10px auto; }
+.lg-qr svg { width: 100%; height: auto; display: block; border-radius: 6px; }
+.lg-devs { margin-top: 8px; }
+
+/* Liga-Stand im Tacho: eine Zeile, Tippen wechselt die Kategorie */
+.ligarow { flex: none; display: block; width: 100%; text-align: left; margin: 6px 0 0; padding: 8px 10px; background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 13px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ligarow[hidden] { display: none; }
+.ligarow b { font-weight: 600; }
+.lg-tl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--ink3); margin-right: 4px; }
+.lg-tm { color: var(--ink3); }
+.lg-up { color: var(--warn); }
+.lg-dn { color: var(--ink2); }
+.lg-pass { color: var(--good); font-weight: 600; }
+.lg-tabs button { flex: 1; }
+.lg-cat label, .lg-check { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.lg-cat input, .lg-check input { accent-color: var(--good); }
+.lg-pts { font-size: 12px !important; }
+
 </style>
 </head>
 <body>
@@ -598,6 +672,7 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
         </div>
 
         <div class="segbanner" id="segBanner" hidden></div>
+        <button class="ligarow" id="ligaRow" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
 
         <div class="compasswrap">
             <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
@@ -664,6 +739,10 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
     </section>
 
     <!-- ============ Gruppe ============ -->
+    <section class="view scroll" id="v-liga">
+        <div class="ligaroot" id="ligaRoot"></div>
+    </section>
+
     <section class="view scroll" id="v-group">
         <h2>Ich</h2>
         <label for="inName">Name</label>
@@ -748,6 +827,7 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
     <button data-v="map">Karte</button>
     <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
     <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
+    <button data-v="liga">Liga</button>
     <button data-v="group">Gruppe</button>
 </nav>
 
@@ -1634,6 +1714,10 @@ var Analytics = (function () {
     var STOP_SPEED    = 1.5;     // m/s
     var STOP_TIME     = 30000;   // ms
 
+    // --- Liga-Kennzahlen ---
+    var SOLO_GAP      = 50;      // m Vorsprung auf den Zweiten: das zaehlt als "Ausreisser"
+    var TOGETHER_GAP  = 100;     // m: so nah an einem anderen Fahrer gilt als "gemeinsam gefahren"
+
     var STALE_MS      = 15000;   // ohne Update gilt ein Fahrer als veraltet
     var GONE_MS       = 180000;  // danach ganz raus
 
@@ -1683,6 +1767,8 @@ var Analytics = (function () {
                 s: null, offset: null, speed: 0, heading: null,
                 t: 0, lastSeen: 0,
                 frontMs: 0, maxSpeed: 0,
+                soloRun: 0, soloMax: 0,   // Zeit an der Spitze mit >= SOLO_GAP Vorsprung: laufend / laengste
+                togetherM: 0,             // Meter, die ein anderer Fahrer in der Naehe war
                 hist: [],                 // {t, s} fuer Bergzeiten
                 vHist: [],                // {t, v} fuer Antritts-Erkennung
                 stoppedSince: null,
@@ -1801,6 +1887,18 @@ var Analytics = (function () {
         // --- Fuehrungsarbeit + Ablosungen ---
         var lead = ord[0];
         if (dt) lead.frontMs += dt;
+        // Ausreisser und gemeinsames Fahren: erst wenn die Achse lang genug ist (wie bei Ueberholungen)
+        if (dt && this.route.length() > 150) {
+            var solo = ord.length > 1 && lead.s - ord[1].s >= SOLO_GAP;
+            for (var q = 0; q < ord.length; q++) {
+                var rq = ord[q];
+                if (q === 0 && solo) { rq.soloRun += dt; if (rq.soloRun > rq.soloMax) rq.soloMax = rq.soloRun; }
+                else rq.soloRun = 0;
+                var near = (q > 0 && ord[q - 1].s - rq.s < TOGETHER_GAP) ||
+                           (q < ord.length - 1 && rq.s - ord[q + 1].s < TOGETHER_GAP);
+                if (near && !this.isStale(rq)) rq.togetherM += rq.speed * dt / 1000;
+            }
+        }
 
         if (this.leader !== lead.id) {
             if (this.leader !== null) {
@@ -4205,7 +4303,7 @@ var SimMode = (function () {
  *
  * Format einer gespeicherten Fahrt (kompakt, ca. 35 Byte je Punkt,
  * also rund 250 KB fuer drei Stunden):
- *   { id, name, src, start, dur, dist, n,
+ *   { id, name, src, start, dur, dist, n, x?,
  *     p: [[sekunden seit Start, lat, lon, hoehe|null], ...] }
  * src: 'ride' (gefahren), 'sim' (Simulation), 'gpx' (importiert),
  *      'plan' (aus einem Trainingsplan erzeugt)
@@ -4270,6 +4368,7 @@ var Rides = (function () {
             dist: Math.round(distanceOf(o.pts)), n: o.pts.length,
             p: pack(o.pts)
         };
+        if (o.x) rec.x = o.x;               // Zusatzangaben der Aufzeichnung, z. B. { coffee: 2 } fuer die Liga
         if (!write(PFX + id, rec)) return { ok: false, err: 'Speicher voll – alte Ausfahrten löschen oder als GPX sichern.' };
         var hasGroup = false;
         if (o.group) {
@@ -4839,7 +4938,7 @@ var Segments = (function () {
             }
             if (best < Infinity) out['d' + L] = best;
         });
-        [300000, 1200000].forEach(function (W) {
+        [300000, 1200000, 3600000].forEach(function (W) {
             var total = pts[n - 1].t - pts[0].t;
             if (total < W) return;
             var best = 0;
@@ -5982,6 +6081,1510 @@ var Ghost = (function () {
 
 </script>
 <script>
+/* ==== js/liga-codec.js ==== */
+/* ============================================================
+ * liga-codec.js -- Track und Kacheln kompakt kodieren
+ * ============================================================
+ * Diese Datei wird von der App UND vom Server (api/) benutzt -- gleiche Quelle, damit
+ * beide Seiten nie auseinanderlaufen. Deshalb am Ende die CommonJS-Weiche.
+ *
+ * Track, Format 1 (vor gzip):
+ *   varint n, varint startMs, varint flags (Bit 0: Hoehe vorhanden)
+ *   je Punkt: zz dt (Zehntelsekunden seit vorigem), zz dlat, zz dlon (1e-5 Grad ~ 1,1 m),
+ *             [zz dele (Dezimeter)]
+ *   Der erste Punkt hat dt 0 und dlat/dlon/dele relativ zu 0 (also absolut).
+ * varint: 7 Bit je Byte, hoechstes Bit = "es folgt noch eins". zz: Vorzeichen in Bit 0.
+ * Alles mit normaler Arithmetik statt Bitoperationen, weil startMs (~1,7e12) nicht in 32 Bit passt.
+ *
+ * Kacheln (Zoom 15, id = x * 32768 + y): sortiert, Differenzen als varint.
+ * ============================================================ */
+
+var LigaCodec = (function () {
+    'use strict';
+
+    var Q = 1e5;                 // Grad -> ganze Einheiten
+    var TILE_Z = 15;
+
+    function zz(n) { return n >= 0 ? n * 2 : -n * 2 - 1; }
+    function unzz(u) { return u % 2 === 0 ? u / 2 : -(u + 1) / 2; }
+
+    function Writer() { this.b = []; }
+    Writer.prototype.u = function (n) {
+        while (n >= 128) { this.b.push((n % 128) + 128); n = Math.floor(n / 128); }
+        this.b.push(n);
+    };
+    Writer.prototype.s = function (n) { this.u(zz(n)); };
+    Writer.prototype.bytes = function () { return new Uint8Array(this.b); };
+
+    function Reader(bytes) { this.b = bytes; this.i = 0; }
+    Reader.prototype.u = function () {
+        var n = 0, mul = 1, byte, guard = 0;
+        do {
+            if (this.i >= this.b.length) throw new Error('Track abgeschnitten');
+            byte = this.b[this.i++];
+            n += (byte % 128) * mul; mul *= 128;
+            if (++guard > 8) throw new Error('Ungueltige Zahl im Track');
+        } while (byte >= 128);
+        return n;
+    };
+    Reader.prototype.s = function () { return unzz(this.u()); };
+
+    /* pts: [{t (ms), lat, lon, ele|null}] aufsteigend nach t  ->  Uint8Array (ungepackt) */
+    function pack(pts) {
+        var w = new Writer(), n = pts.length, hasEle = false, i;
+        for (i = 0; i < n; i++) if (pts[i].ele !== null && pts[i].ele !== undefined && !isNaN(pts[i].ele)) { hasEle = true; break; }
+        w.u(n); w.u(Math.round(pts[0].t)); w.u(hasEle ? 1 : 0);
+        var t0 = pts[0].t, pq = 0, pla = 0, plo = 0, pe = 0, lastEle = 0;
+        for (i = 0; i < n; i++) {
+            var p = pts[i], q = Math.round((p.t - t0) / 100);
+            var la = Math.round(p.lat * Q), lo = Math.round(p.lon * Q);
+            w.s(q - pq); w.s(la - pla); w.s(lo - plo);
+            if (hasEle) {
+                var e = (p.ele === null || p.ele === undefined || isNaN(p.ele)) ? lastEle : Math.round(p.ele * 10);
+                w.s(e - pe); pe = e; lastEle = e;
+            }
+            pq = q; pla = la; plo = lo;
+        }
+        return w.bytes();
+    }
+
+    /* Uint8Array -> { n, t0, hasEle, pts: [{t, lat, lon, ele}] }. maxN begrenzt, was gelesen wird. */
+    function unpack(bytes, maxN) {
+        var r = new Reader(bytes), n = r.u(), t0 = r.u(), flags = r.u();
+        if (n > (maxN || 200000)) throw new Error('Track zu lang');
+        var hasEle = !!(flags & 1), pts = new Array(n), q = 0, la = 0, lo = 0, e = 0;
+        for (var i = 0; i < n; i++) {
+            q += r.s(); la += r.s(); lo += r.s();
+            if (hasEle) e += r.s();
+            pts[i] = { t: t0 + q * 100, lat: la / Q, lon: lo / Q, ele: hasEle ? e / 10 : null };
+        }
+        return { n: n, t0: t0, hasEle: hasEle, pts: pts };
+    }
+
+    /* ---- Kacheln ---- */
+    function tileOf(lat, lon) {
+        var n = 1 << TILE_Z, x = Math.floor((lon + 180) / 360 * n);
+        var s = Math.sin(lat * Math.PI / 180);
+        var y = Math.floor((0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n);
+        x = Math.max(0, Math.min(n - 1, x)); y = Math.max(0, Math.min(n - 1, y));
+        return x * n + y;
+    }
+    function tilesOf(pts) {
+        var seen = {}, out = [];
+        for (var i = 0; i < pts.length; i++) {
+            var id = tileOf(pts[i].lat, pts[i].lon);
+            if (!seen[id]) { seen[id] = 1; out.push(id); }
+        }
+        return out.sort(function (a, b) { return a - b; });
+    }
+    function packTiles(ids) {
+        var w = new Writer(), prev = 0;
+        w.u(ids.length);
+        for (var i = 0; i < ids.length; i++) { w.u(ids[i] - prev); prev = ids[i]; }
+        return w.bytes();
+    }
+    function unpackTiles(bytes, maxN) {
+        var r = new Reader(bytes), n = r.u(), out = new Array(n), prev = 0;
+        if (n > (maxN || 5000)) throw new Error('Zu viele Kacheln');
+        for (var i = 0; i < n; i++) { prev += r.u(); out[i] = prev; }
+        return out;
+    }
+
+    /* ---- Base64 (URL-sicher, ohne Auffuellung) ---- */
+    function toB64(bytes) {
+        var s = '', CH = 0x8000;
+        for (var i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function fromB64(str) {
+        str = String(str).replace(/-/g, '+').replace(/_/g, '/');
+        while (str.length % 4) str += '=';
+        var s = atob(str), out = new Uint8Array(s.length);
+        for (var i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+        return out;
+    }
+
+    /* ---- gzip (Browser und Worker haben CompressionStream) ---- */
+    function pipe(bytes, stream) {
+        return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (b) { return new Uint8Array(b); });
+    }
+    function gzip(bytes) { return pipe(bytes, new CompressionStream('gzip')); }
+    function gunzip(bytes, maxOut) {
+        // Schutz gegen Zip-Bomben: Ergebnis begrenzen
+        var reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')).getReader(), parts = [], total = 0;
+        function next() {
+            return reader.read().then(function (r) {
+                if (r.done) {
+                    var out = new Uint8Array(total), o = 0;
+                    parts.forEach(function (p) { out.set(p, o); o += p.length; });
+                    return out;
+                }
+                total += r.value.length;
+                if (total > (maxOut || 4000000)) { reader.cancel(); throw new Error('Track zu gross'); }
+                parts.push(r.value);
+                return next();
+            });
+        }
+        return next();
+    }
+
+    /* Komplett: Punkte -> gzip -> Base64, und zurueck */
+    function encode(pts) { return gzip(pack(pts)).then(toB64); }
+    function decode(b64, maxN) { return gunzip(fromB64(b64)).then(function (b) { return unpack(b, maxN); }); }
+
+    return {
+        Q: Q, TILE_Z: TILE_Z, pack: pack, unpack: unpack,
+        tileOf: tileOf, tilesOf: tilesOf, packTiles: packTiles, unpackTiles: unpackTiles,
+        toB64: toB64, fromB64: fromB64, gzip: gzip, gunzip: gunzip, encode: encode, decode: decode
+    };
+})();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = LigaCodec;
+
+</script>
+<script>
+/* ==== js/liga-cats.js ==== */
+/* ============================================================
+ * liga-cats.js -- Katalog der Liga-Kategorien
+ * ============================================================
+ * Eine Quelle fuer App UND Server (api/): Name, Rechenart und Anzeige.
+ *
+ * agg  Wie die Rangliste aus den Fahrten des Zeitraums zusammenrechnet:
+ *      sum      Summe aller Fahrt-Werte
+ *      max/min  bester Einzelwert (min = kleiner ist besser, Zeiten)
+ *      days     Anzahl verschiedener Kalendertage mit einer Fahrt
+ *      streak   laengste Folge aufeinanderfolgender Tage mit >= 5 km
+ *      dayMax   Tagessumme, davon das Maximum
+ *      explore  neue Kacheln im Zeitraum (kommt aus account_tiles)
+ *      kom      Punkte aus Liga-Segmenten der Art "Anstieg"
+ *      seg      Zeit auf einem Liga-Segment (Schluessel "seg:<id>")
+ * src  Aus welchen gespeicherten Werten die Rangliste gelesen wird (Standard: der Schluessel selbst)
+ * unit Anzeige: km | dur | kmh | m | count | time | points
+ * team true = summierbar, taugt fuer Team-Ziele
+ * grp  true = gibt es nur, wenn die Fahrt in einer Gruppe aufgezeichnet wurde
+ * ============================================================ */
+
+var LigaCats = (function () {
+    'use strict';
+
+    var LIST = [
+        { key: 'dist',      label: 'Kilometer',                  grp: 'Distanz',  agg: 'sum',    unit: 'km',    team: true },
+        { key: 'time',      label: 'Fahrzeit',                   grp: 'Distanz',  agg: 'sum',    unit: 'dur',   team: true },
+        { key: 'gain',      label: 'Höhenmeter',                 grp: 'Distanz',  agg: 'sum',    unit: 'm',     team: true },
+        { key: 'rides',     label: 'Anzahl Fahrten',             grp: 'Distanz',  agg: 'sum',    unit: 'count', team: true },
+        { key: 'days',      label: 'Fahrtage',                   grp: 'Distanz',  agg: 'days',   unit: 'count', src: 'rides' },
+        { key: 'streak',    label: 'Serie (Tage in Folge)',      grp: 'Distanz',  agg: 'streak', unit: 'count', src: 'dist' },
+        { key: 'long_dist', label: 'Längste Fahrt',              grp: 'Distanz',  agg: 'max',    unit: 'km',    src: 'dist' },
+        { key: 'long_time', label: 'Längste Fahrzeit',           grp: 'Distanz',  agg: 'max',    unit: 'dur',   src: 'time' },
+        { key: 'gain_day',  label: 'Höhenmeter an einem Tag',    grp: 'Distanz',  agg: 'dayMax', unit: 'm',     src: 'gain' },
+
+        { key: 'top',       label: 'Topspeed',                   grp: 'Tempo',    agg: 'max',    unit: 'kmh' },
+        { key: 'avg20',     label: 'Schnellster Schnitt (ab 20 km)', grp: 'Tempo', agg: 'max',   unit: 'kmh' },
+        { key: 't10k',      label: 'Bestzeit 10 km',             grp: 'Tempo',    agg: 'min',    unit: 'time' },
+        { key: 't20k',      label: 'Bestzeit 20 km',             grp: 'Tempo',    agg: 'min',    unit: 'time' },
+        { key: 't40k',      label: 'Bestzeit 40 km',             grp: 'Tempo',    agg: 'min',    unit: 'time' },
+        { key: 'avg1h',     label: 'Beste Stunde',               grp: 'Tempo',    agg: 'max',    unit: 'kmh' },
+
+        { key: 'vam',       label: 'Steigrate',                  grp: 'Berg',     agg: 'max',    unit: 'mh' },
+        { key: 'kom',       label: 'Kletterkönig',               grp: 'Berg',     agg: 'kom',    unit: 'points' },
+
+        { key: 'front',     label: 'Wasserträger (Führung)',     grp: 'Gruppe',   agg: 'sum',    unit: 'dur',   team: true, gp: true },
+        { key: 'attacks',   label: 'Angriffe',                   grp: 'Gruppe',   agg: 'sum',    unit: 'count', team: true, gp: true },
+        { key: 'escape',    label: 'Ausreißer',                  grp: 'Gruppe',   agg: 'max',    unit: 'dur',   gp: true },
+        { key: 'together',  label: 'Gemeinsam gefahren',         grp: 'Gruppe',   agg: 'sum',    unit: 'km',    team: true, gp: true },
+        { key: 'coffee',    label: 'Kaffeepausen',               grp: 'Gruppe',   agg: 'sum',    unit: 'count', team: true, gp: true },
+
+        { key: 'explore',   label: 'Entdecken (neue Kacheln)',   grp: 'Entdecken', agg: 'explore', unit: 'count', team: true }
+    ];
+
+    // Von der App je Fahrt gemeldete Werte (die Tabelle ride_values). Der Rest wird abgeleitet.
+    var STORED = ['dist', 'time', 'gain', 'rides', 'top', 'avg20', 't10k', 't20k', 't40k', 'avg1h', 'vam',
+                  'front', 'attacks', 'escape', 'together', 'coffee'];
+
+    var DEFAULT_ON = ['dist', 'time', 'gain', 'long_dist', 'days', 'top', 'front'];
+    var MAP = {};
+    LIST.forEach(function (c) { MAP[c.key] = c; });
+
+    function get(key) {
+        if (MAP[key]) return MAP[key];
+        if (/^seg:[A-Za-z0-9_-]{1,40}$/.test(key)) return { key: key, label: 'Segment', grp: 'Berg', agg: 'seg', unit: 'time', src: null };
+        return null;
+    }
+    function valid(key) { return !!get(key); }
+    function srcOf(c) { return c.src || c.key; }
+    function smaller(c) { return c.agg === 'min' || c.agg === 'seg'; }         // kleiner ist besser
+
+    /* ---- Anzeige ---- */
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    function fmtDur(ms) {
+        var s = Math.round(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+        return h ? h + ':' + two(m) + ' h' : m + ' min';
+    }
+    function fmtTime(ms) {
+        var s = Math.round(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+        return h ? h + ':' + two(m) + ':' + two(r) : m + ':' + two(r);
+    }
+    function num(v, d) { return v.toFixed(d).replace('.', ','); }
+    function format(key, v) {
+        var c = get(key);
+        if (v === null || v === undefined || isNaN(v)) return '–';
+        switch (c ? c.unit : 'count') {
+            case 'km':     return num(v / 1000, v >= 100000 ? 0 : 1) + ' km';
+            case 'dur':    return fmtDur(v);
+            case 'time':   return fmtTime(v);
+            case 'kmh':    return num(v * 3.6, 1) + ' km/h';
+            case 'm':      return Math.round(v) + ' m';
+            case 'mh':     return Math.round(v) + ' m/h';
+            case 'points': return Math.round(v) + ' P.';
+            default:       return String(Math.round(v));
+        }
+    }
+    /* Unterschied fuer den Tacho ("+12,4 km") */
+    function formatDelta(key, d) {
+        var s = d < 0 ? '−' : '+';
+        return s + format(key, Math.abs(d)).replace(' P.', '');
+    }
+
+    return { LIST: LIST, STORED: STORED, DEFAULT_ON: DEFAULT_ON, get: get, valid: valid, srcOf: srcOf,
+             smaller: smaller, format: format, formatDelta: formatDelta, fmtDur: fmtDur, fmtTime: fmtTime };
+})();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = LigaCats;
+
+</script>
+<script>
+/* ==== js/liga-id.js ==== */
+/* ============================================================
+ * liga-id.js -- Geraeteschluessel fuer die Liga
+ * ============================================================
+ * Ein ECDSA-P-256-Schluesselpaar pro Geraet, im Browser erzeugt. Der private Schluessel ist
+ * NICHT auslesbar (extractable = false) und liegt in IndexedDB; er verlaesst das Geraet nie.
+ * Jede Anfrage an die Liga wird damit signiert (siehe api/auth.js).
+ *
+ * Gehen die Browserdaten verloren, ist der Schluessel weg -- das Konto nicht: man meldet sich
+ * per E-Mail-Code neu an und bekommt einen neuen Schluessel fuer dasselbe Konto.
+ *
+ * Ohne IndexedDB (privates Fenster) haelt die App den Schluessel nur bis zum Neuladen.
+ * ============================================================ */
+
+var LigaId = (function () {
+    'use strict';
+
+    var DB = 'groupride-liga', STORE = 'kv', KEY = 'device';
+    var mem = null, pending = null;
+
+    function open() {
+        return new Promise(function (res, rej) {
+            try {
+                var r = indexedDB.open(DB, 1);
+                r.onupgradeneeded = function () { r.result.createObjectStore(STORE); };
+                r.onsuccess = function () { res(r.result); };
+                r.onerror = function () { rej(r.error); };
+            } catch (e) { rej(e); }
+        });
+    }
+    function idb(mode, fn) {
+        return open().then(function (db) {
+            return new Promise(function (res, rej) {
+                var tx = db.transaction(STORE, mode), out = fn(tx.objectStore(STORE));
+                tx.oncomplete = function () { db.close(); res(out && out.result); };
+                tx.onerror = tx.onabort = function () { db.close(); rej(tx.error); };
+            });
+        });
+    }
+    function load() { return idb('readonly', function (s) { return s.get(KEY); }).catch(function () { return null; }); }
+    function put(v) { return idb('readwrite', function (s) { return s.put(v, KEY); }).catch(function () {}); }
+
+    /* Vorhandenen Schluessel laden, ohne einen neuen zu erzeugen. -> {priv, pub} | null */
+    function peek() {
+        if (mem) return Promise.resolve(mem);
+        return load().then(function (v) { if (v && v.priv && v.pub) mem = v; return mem; });
+    }
+
+    /* Schluessel holen, sonst erzeugen. */
+    function ensure() {
+        if (mem) return Promise.resolve(mem);
+        if (pending) return pending;
+        pending = peek().then(function (v) {
+            if (v) return v;
+            return crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']).then(function (kp) {
+                return crypto.subtle.exportKey('raw', kp.publicKey).then(function (raw) {
+                    mem = { priv: kp.privateKey, pub: LigaCodec.toB64(new Uint8Array(raw)) };
+                    return put(mem).then(function () { return mem; });
+                });
+            });
+        }).then(function (v) { pending = null; return v; }, function (e) { pending = null; throw e; });
+        return pending;
+    }
+
+    /* Text signieren -> base64url (r||s, 64 Byte) */
+    function sign(text) {
+        return ensure().then(function (k) {
+            return crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, k.priv, new TextEncoder().encode(text));
+        }).then(function (sig) { return LigaCodec.toB64(new Uint8Array(sig)); });
+    }
+
+    function reset() {
+        mem = null;
+        return idb('readwrite', function (s) { return s.delete(KEY); }).catch(function () {});
+    }
+
+    return { ensure: ensure, peek: peek, sign: sign, reset: reset };
+})();
+
+</script>
+<script>
+/* ==== js/liga-api.js ==== */
+/* ============================================================
+ * liga-api.js -- Anfragen an die Liga (signiert) und Anmeldung
+ * ============================================================
+ * Nichts hier wird ohne Anmeldung benutzt: die Live-Gruppe kennt die Liga nicht.
+ * call() wirft nie: Netzfehler und Serverfehler kommen als { status, error } zurueck,
+ * damit die Oberflaeche sie anzeigen kann. status 0 = keine Verbindung.
+ * ============================================================ */
+
+var LigaApi = (function () {
+    'use strict';
+
+    var K_ACCT = 'liga:acct';
+    var listeners = [];
+
+    function read(k) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+    function write(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+    var acct = read(K_ACCT);
+
+    function base() { try { return localStorage.getItem('liga:base') || ''; } catch (e) { return ''; } }
+    function changed() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
+    function onChange(f) { listeners.push(f); }
+    function account() { return acct; }
+    function setAccount(a) { acct = a; write(K_ACCT, a); changed(); }
+
+    function sha256hex(bytes) {
+        return crypto.subtle.digest('SHA-256', bytes).then(function (b) {
+            return Array.prototype.map.call(new Uint8Array(b), function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+        });
+    }
+
+    /* method path body -> Promise<{status, ...json}> */
+    function call(method, path, body) {
+        var text = body === undefined ? '' : JSON.stringify(body), bytes = new TextEncoder().encode(text), ts = Date.now();
+        return LigaId.ensure().then(function (k) {
+            return sha256hex(bytes).then(function (h) {
+                return LigaId.sign(method + '\n' + path + '\n' + ts + '\n' + h).then(function (sig) {
+                    var headers = { 'x-key': k.pub, 'x-ts': String(ts), 'x-sig': sig };
+                    if (text) headers['content-type'] = 'application/json';
+                    return fetch(base() + path, { method: method, headers: headers, body: text || undefined });
+                });
+            });
+        }).then(function (res) {
+            return res.text().then(function (t) {
+                var out;
+                try { out = JSON.parse(t); } catch (e) { out = null; }
+                if (!out) return { status: res.status, unavailable: true, error: 'Die Liga gibt es auf diesem Server nicht.' };
+                out.status = res.status;
+                if (res.status === 401 && (out.code === 'unknown_key' || out.code === 'bad_sig') && acct) { setAccount(null); }
+                if (res.status >= 400 && !out.error) out.error = 'Fehler ' + res.status;
+                return out;
+            });
+        }, function () { return { status: 0, offline: true, error: 'Keine Verbindung.' }; });
+    }
+
+    /* ---- Anmeldung ---- */
+    function start(email) { return call('POST', '/api/auth/start', { email: email }); }
+    function verify(email, code, profile) {
+        var b = { email: email, code: code };
+        if (profile) { b.name = profile.name; b.emoji = profile.emoji; b.color = profile.color; }
+        return call('POST', '/api/auth/verify', b).then(function (r) {
+            if (r.status === 200 && r.account) setAccount(r.account);
+            return r;
+        });
+    }
+    /* Dieses Geraet abmelden: Schluessel und alle lokalen Liga-Daten weg. Das Konto bleibt bestehen. */
+    function logout() {
+        return LigaId.reset().then(function () {
+            try {
+                var del = [];
+                for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('liga:') === 0 && k !== 'liga:base') del.push(k); }
+                del.forEach(function (k) { localStorage.removeItem(k); });
+            } catch (e) {}
+            setAccount(null);
+        });
+    }
+    /* Beim Start pruefen, ob dieses Geraet noch angemeldet ist (Schluessel da, Konto bekannt) */
+    function refresh() {
+        return LigaId.peek().then(function (k) {
+            if (!k) { if (acct) setAccount(null); return null; }
+            if (!acct) return null;
+            return call('GET', '/api/me').then(function (r) {
+                if (r.status === 200) { setAccount(r.account); return r; }
+                return r;
+            });
+        });
+    }
+
+    return { call: call, start: start, verify: verify, logout: logout, refresh: refresh,
+             account: account, setAccount: setAccount, onChange: onChange, read: read, write: write, sha256hex: sha256hex };
+})();
+
+</script>
+<script>
+/* ==== js/liga-metrics.js ==== */
+/* ============================================================
+ * liga-metrics.js -- Liga-Kennzahlen einer gespeicherten Fahrt
+ * ============================================================
+ * Rechnet im Browser (der Server prueft nur, siehe api/rides.js) und baut den Upload:
+ * Kennzahlen + kompakter Track + besuchte Kacheln.
+ *
+ * ALGO: Version dieser Berechnung. Wird ein Wert hier verbessert, ALGO erhoehen -- der Server
+ * merkt sich die Version je Fahrt, und die App kann aeltere Fahrten neu berechnen.
+ *
+ * Nutzt vorhandene Bausteine: Track.stats (Strecke, Bewegungszeit, Hoehenmeter, Topspeed),
+ * Segments.computeRecords (schnellste 10/20/40 km, beste Stunde) und die Gruppenauswertung
+ * (Session) fuer Fuehrung, Antritte, Ausreisser und gemeinsames Fahren.
+ * ============================================================ */
+
+var LigaMetrics = (function () {
+    'use strict';
+
+    var ALGO = 1;
+    var MAX_UPLOAD_POINTS = 39000;
+    var VAM_WINDOW = 300000;          // 5 min
+    var VAM_MIN_GAIN = 40;            // m
+    var VAM_MIN_GRADE = 0.03;
+    var VAM_MAX = 3000;               // darueber ist es Hoehenrauschen
+
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    function dayOf(t) { var d = new Date(t); return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()); }
+
+    /* Punkte mit strikt steigender Zeit; sehr lange Fahrten ausduennen (Server: max. 40000) */
+    function clean(pts) {
+        var out = [], last = -Infinity;
+        for (var i = 0; i < pts.length; i++) {
+            var p = pts[i];
+            if (!(p.t > last) || isNaN(p.lat) || isNaN(p.lon)) continue;
+            out.push({ t: Math.round(p.t), lat: p.lat, lon: p.lon, ele: (p.ele === null || p.ele === undefined || isNaN(p.ele)) ? null : p.ele });
+            last = p.t;
+        }
+        if (out.length > MAX_UPLOAD_POINTS) {
+            var k = Math.ceil(out.length / MAX_UPLOAD_POINTS), thin = [];
+            for (var j = 0; j < out.length; j += k) thin.push(out[j]);
+            out = thin;
+        }
+        return out;
+    }
+
+    /* Beste Steigrate (Hoehenmeter je Stunde) ueber 5 Minuten mit >= 3 % Steigung.
+       Hoehe wird ueber +-40 m Strecke gemittelt (rohe GPS-Hoehe rauscht um mehrere Meter). */
+    function vam(pts) {
+        var n = pts.length;
+        if (n < 60) return null;
+        for (var q = 0; q < n; q++) if (pts[q].ele === null) return null;
+        var cum = Track.cumulative(pts), e = new Array(n), lo = 0, hi = 0, sum = 0;
+        for (var i = 0; i < n; i++) {
+            while (hi < n && cum[hi] <= cum[i] + 40) { sum += pts[hi].ele; hi++; }
+            while (cum[lo] < cum[i] - 40) { sum -= pts[lo].ele; lo++; }
+            e[i] = sum / (hi - lo);
+        }
+        var best = 0, j = 0;
+        for (var a = 0; a < n; a += 3) {
+            if (j < a) j = a;
+            while (j < n - 1 && pts[j].t - pts[a].t < VAM_WINDOW) j++;
+            if (pts[j].t - pts[a].t < VAM_WINDOW * 0.98) break;
+            var gain = e[j] - e[a], d = cum[j] - cum[a];
+            if (gain >= VAM_MIN_GAIN && d > 0 && gain / d >= VAM_MIN_GRADE) {
+                var v = gain / ((pts[j].t - pts[a].t) / 3600000);
+                if (v > best) best = v;
+            }
+        }
+        return best > 0 && best <= VAM_MAX ? best : null;
+    }
+
+    /* Werte, die nur eine Gruppenfahrt hat. -> Promise<{front, attacks, escape, together}> */
+    function groupValues(rec) {
+        var g = Rides.getGroup(rec.id);
+        if (!g) return Promise.resolve({});
+        var data;
+        try { data = Recorder.unpack(g); } catch (e) { return Promise.resolve({}); }
+        if (!data || Object.keys(data.riders).length < 2 || !data.riders[data.me]) return Promise.resolve({});
+        var sess = new Session(data);
+        return sess.workAsync(sess.t1, 3000).then(function () {
+            var an = sess.an, r = an.riders[data.me], out = {};
+            if (!r) return out;
+            out.front = Math.round(r.frontMs);
+            out.attacks = an.events.filter(function (e) { return e.type === 'attack' && e.id === data.me; }).length;
+            if (r.soloMax >= 20000) out.escape = Math.round(r.soloMax);
+            if (r.togetherM > 0) out.together = Math.round(r.togetherM);
+            return out;
+        }, function () { return {}; });
+    }
+
+    /* Kaffeepausen: hoechstens eine je 15 Minuten (sonst gewinnt, wer am meisten tippt) */
+    function coffee(rec) { return rec.x && rec.x.coffee > 0 ? Math.floor(rec.x.coffee) : 0; }
+    function countCoffee(stamps) {
+        var n = 0, last = -Infinity;
+        stamps.slice().sort(function (a, b) { return a - b; }).forEach(function (t) { if (t - last >= 900000) { n++; last = t; } });
+        return n;
+    }
+
+    /* Alle Werte ausser den Gruppenwerten. Rein synchron, fuer Tests gut zugaenglich. */
+    function values(pts) {
+        var st = Track.stats(pts), sm = Track.smooth(pts, 2), rc = Segments.computeRecords(sm), v = {};
+        if (st.gain > 0) v.gain = Math.round(st.gain);
+        if (rc.top > 0 && rc.top < 30) v.top = +rc.top.toFixed(2);
+        if (st.dist >= 20000 && st.avg > 0) v.avg20 = +st.avg.toFixed(3);
+        if (rc.d10000) v.t10k = Math.round(rc.d10000);
+        if (rc.d20000) v.t20k = Math.round(rc.d20000);
+        if (rc.d40000) v.t40k = Math.round(rc.d40000);
+        if (rc.t3600000) v.avg1h = +(rc.t3600000 / 3600).toFixed(3);
+        var va = vam(sm);
+        if (va) v.vam = Math.round(va);
+        return { stats: st, values: v };
+    }
+
+    /* Fahrt-ID auf dem Server: stabil je Konto und Startzeit, damit ein zweiter Upload harmlos ist */
+    function sidOf(accountId, rec) {
+        return LigaApi.sha256hex(new TextEncoder().encode(accountId + '|' + rec.start)).then(function (h) { return 'r' + h.slice(0, 23); });
+    }
+
+    /* rec: gespeicherte Fahrt (Rides.get) -> Promise<Upload-Koerper> */
+    function build(rec, accountId) {
+        var pts = clean(Rides.unpack(rec));
+        if (pts.length < 40) return Promise.reject(new Error('Zu wenige Punkte.'));
+        var m = values(pts);
+        return Promise.all([sidOf(accountId, rec), groupValues(rec), LigaCodec.encode(pts)]).then(function (r) {
+            var v = m.values, gv = r[1];
+            for (var k in gv) if (gv[k] > 0) v[k] = gv[k];
+            var c = coffee(rec); if (c > 0) v.coffee = c;
+            return {
+                id: r[0], name: rec.name, src: rec.src, day: dayOf(rec.start),
+                dist: Math.round(m.stats.dist), moving: Math.max(1000, Math.round(m.stats.moving)),
+                algo: ALGO, values: v, track: r[2],
+                tiles: LigaCodec.toB64(LigaCodec.packTiles(LigaCodec.tilesOf(pts)))
+            };
+        });
+    }
+
+    /* Kopie fuer Mitglieder: Anfang und Ende (trim Meter) weg */
+    function trimmed(rec, trim) {
+        var pts = clean(Rides.unpack(rec)), cum = Track.cumulative(pts), tot = cum[cum.length - 1];
+        var a = 0, b = pts.length - 1;
+        while (a < b && cum[a] < trim) a++;
+        while (b > a && tot - cum[b] < trim) b--;
+        return pts.slice(a, b + 1);
+    }
+
+    return { ALGO: ALGO, countCoffee: countCoffee, values: values, build: build, clean: clean, trimmed: trimmed, sidOf: sidOf, dayOf: dayOf, vam: vam };
+})();
+
+</script>
+<script>
+/* ==== js/liga-sync.js ==== */
+/* ============================================================
+ * liga-sync.js -- Fahrten hochladen, Segmente abgleichen, Tacho-Stand holen
+ * ============================================================
+ * Laeuft im Hintergrund und darf nie die Fahrt stoeren:
+ *   - Uploads stehen in einer Warteschlange (localStorage) und werden bei Netz nachgeholt.
+ *   - Zaehlt nur, wenn man angemeldet und in mindestens einer Liga ist (sonst wird nichts gesendet).
+ *   - Was hochgeladen wurde, steht in liga:up { lokale Fahrt-ID: { state, sid, reason } }.
+ *       state: wait (in der Schlange) | ok | rej (Server lehnt ab, Grund in reason)
+ * ============================================================ */
+
+var LigaSync = (function () {
+    'use strict';
+
+    var K_UP = 'liga:up', K_LEAGUES = 'liga:leagues', K_AUTO = 'liga:auto', K_TACHO = 'liga:tacho', K_ST = 'liga:st', K_SEG = 'liga:seg';
+    var MAX_AGE = 395 * 86400000;
+    var listeners = [], flushing = false;
+
+    function read(k, d) { var v = LigaApi.read(k); return v === null || v === undefined ? d : v; }
+    function write(k, v) { LigaApi.write(k, v); }
+    function onChange(f) { listeners.push(f); }
+    function changed() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
+
+    function up() { return read(K_UP, {}); }
+    function setUp(id, o) { var u = up(); if (o === null) delete u[id]; else u[id] = o; write(K_UP, u); }
+    function status(id) { return up()[id] || null; }
+
+    function leagues() { return read(K_LEAGUES, []); }
+    function setLeagues(l) { write(K_LEAGUES, l); }
+    function auto() { return read(K_AUTO, '1') !== '0'; }
+    function setAuto(on) { write(K_AUTO, on ? '1' : '0'); }
+    function active() { return !!LigaApi.account() && leagues().length > 0; }
+
+    function eligible(rec) {
+        return !!rec && (rec.src === 'ride' || rec.src === 'gpx') && rec.dur >= 120000 && rec.dist >= 500 &&
+               rec.n >= 40 && Date.now() - rec.start < MAX_AGE;
+    }
+
+    /* ---- Uploads ---- */
+    function enqueue(id) {
+        var rec = Rides.get(id);
+        if (!eligible(rec)) return false;
+        var s = status(id);
+        if (s && (s.state === 'ok' || s.state === 'rej')) return false;
+        setUp(id, { state: 'wait' });
+        return true;
+    }
+
+    /* Nach dem Speichern einer Fahrt: einreihen und losschicken */
+    function rideSaved(rec) {
+        if (!active() || !auto() || !rec) return Promise.resolve();
+        if (enqueue(rec.id)) { changed(); return flush(); }
+        return Promise.resolve();
+    }
+
+    /* Alle bisherigen, noch nicht gesendeten Fahrten einreihen */
+    function backfill() {
+        var n = 0;
+        Rides.list().forEach(function (r) { if (enqueue(r.id)) n++; });
+        changed();
+        return n;
+    }
+
+    function pending() { var u = up(), n = 0; for (var k in u) if (u[k].state === 'wait') n++; return n; }
+
+    function flush() {
+        if (flushing || !LigaApi.account()) return Promise.resolve();
+        flushing = true;
+        var ids = Object.keys(up()).filter(function (k) { return up()[k].state === 'wait'; });
+        function next() {
+            var id = ids.shift();
+            if (!id) return Promise.resolve();
+            var rec = Rides.get(id);
+            if (!rec) { setUp(id, null); return next(); }
+            return LigaMetrics.build(rec, LigaApi.account().id).then(function (body) {
+                return LigaApi.call('POST', '/api/rides', body).then(function (r) {
+                    if (r.status === 200) { setUp(id, { state: 'ok', sid: body.id, dropped: r.dropped || [] }); changed(); return next(); }
+                    if (r.status === 409 && r.reason === 'overlap') { setUp(id, { state: 'rej', reason: 'Zu dieser Zeit gibt es schon eine Fahrt.' }); changed(); return next(); }
+                    if (r.status === 422) { setUp(id, { state: 'rej', reason: r.error }); changed(); return next(); }
+                    return null;                                     // offline, 429, 401 ...: spaeter erneut
+                });
+            }, function (e) { setUp(id, { state: 'rej', reason: e.message || 'Auswertung fehlgeschlagen.' }); changed(); return next(); });
+        }
+        return next().then(function () { flushing = false; changed(); }, function () { flushing = false; });
+    }
+
+    /* Ligen des Kontos vom Server holen und merken */
+    function loadLeagues() {
+        if (!LigaApi.account()) { setLeagues([]); return Promise.resolve([]); }
+        return LigaApi.call('GET', '/api/leagues').then(function (r) {
+            if (r.status === 200) { setLeagues(r.leagues); changed(); return r.leagues; }
+            return leagues();
+        });
+    }
+
+    /* ---- Liga-Segmente: eigene Fahrten dagegen abgleichen und die Zeiten melden ---- */
+    function decodeSeg(s) {
+        return LigaCodec.decode(s.poly, 3000).then(function (tr) {
+            var p = tr.pts;
+            return { id: s.id, len: s.len, a: { lat: p[0].lat, lon: p[0].lon }, b: { lat: p[p.length - 1].lat, lon: p[p.length - 1].lon },
+                     poly: p.map(function (q) { return [q.lat, q.lon]; }) };
+        });
+    }
+    function syncSegments(leagueId, segs) {
+        var done = read(K_SEG, {}), u = up();
+        var rides = Object.keys(u).filter(function (id) { return u[id].state === 'ok' && Rides.get(id); });
+        function forSeg(i) {
+            if (i >= segs.length) return Promise.resolve();
+            var s = segs[i], key = leagueId + ':' + s.id, seen = done[key] || [];
+            var todo = rides.filter(function (id) { return seen.indexOf(id) < 0; });
+            if (!todo.length) return forSeg(i + 1);
+            return decodeSeg(s).then(function (seg) {
+                var efforts = [];
+                todo.forEach(function (id) {
+                    var rec = Rides.get(id), pts = Track.smooth(Rides.unpack(rec), 2), m = Segments.match(pts, seg);
+                    if (m.length) efforts.push({ ride: u[id].sid, ms: Math.round(Math.min.apply(null, m.map(function (x) { return x.ms; }))) });
+                });
+                var send = efforts.length ? LigaApi.call('PUT', '/api/leagues/' + leagueId + '/segments/' + s.id + '/efforts', { efforts: efforts }) : Promise.resolve({ status: 200 });
+                return send.then(function (r) {
+                    if (r.status === 200) { done[key] = seen.concat(todo); write(K_SEG, done); return forSeg(i + 1); }
+                });
+            });
+        }
+        return forSeg(0);
+    }
+
+    /* ---- Tacho-Zeile: gewaehlte Liga und Kategorie ---- */
+    function tacho() { return read(K_TACHO, null); }
+    function setTacho(t) { write(K_TACHO, t); write(K_ST, null); changed(); }
+    function standing() { return read(K_ST, null); }
+    function fetchStanding() {
+        var t = tacho();
+        if (!t || !LigaApi.account()) return Promise.resolve(null);
+        return LigaApi.call('GET', '/api/leagues/' + t.league + '/standing?cat=' + encodeURIComponent(t.cat)).then(function (r) {
+            if (r.status === 200 && r.standing) {
+                var s = { t: Date.now(), league: t.league, cat: t.cat, standing: r.standing, period: r.period };
+                write(K_ST, s); return s;
+            }
+            if (r.status === 404) setTacho(null);                    // Liga gibt es nicht mehr
+            return standing();
+        });
+    }
+
+    return {
+        eligible: eligible, status: status, up: up, enqueue: enqueue, rideSaved: rideSaved, backfill: backfill,
+        pending: pending, flush: flush, auto: auto, setAuto: setAuto, active: active,
+        leagues: leagues, loadLeagues: loadLeagues, onChange: onChange, syncSegments: syncSegments,
+        tacho: tacho, setTacho: setTacho, standing: standing, fetchStanding: fetchStanding, setUp: setUp
+    };
+})();
+
+</script>
+<script>
+/* ==== js/liga-ui.js ==== */
+/* ============================================================
+ * liga-ui.js -- der Reiter "Liga" und die Liga-Zeile im Tacho
+ * ============================================================
+ * Getippt wird nur beim Anmelden (E-Mail, Code) und beim Einrichten einer Liga (Name) --
+ * nie auf dem Rad. Unterwegs gibt es nur Tippen: die Kategorie der Tacho-Zeile wechseln.
+ *
+ * Alles wird als HTML-Text zusammengesetzt und ueber data-act an EINEN Klick-Handler
+ * gehaengt; jede Eingabe wird vor dem Einsetzen mit UI.escapeHtml behandelt.
+ * ============================================================ */
+
+var LigaUI = (function () {
+    'use strict';
+
+    var cfg = null;                 // Anbindung an app.js: { me, live, showView, ridesChanged }
+    var root = null;
+    var st = {
+        page: 'home', league: null, tab: 'stand', period: null,
+        ov: null, hall: null, shared: null, segs: null, mine: null,      // vom Server geladen
+        login: { step: 1, email: '', dev: '' }, msg: '', err: '', busy: false,
+        form: null, shareFor: null, invite: null, devices: null
+    };
+    var tachoTimer = null, lastStandingAt = 0;
+
+    function esc(s) { return UI.escapeHtml(String(s === null || s === undefined ? '' : s)); }
+    function $(id) { return document.getElementById(id); }
+    function num2(n) { return (n < 10 ? '0' : '') + n; }
+    function emo(i) { var e = UI.emojiOf(i); return e ? '<span class="lg-em">' + Emo.img(e) + '</span>' : '<span class="lg-em"></span>'; }
+
+    /* ---------- Zeit ---------- */
+    function fmtDay(ts, tz) { return new Date(ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', timeZone: tz }); }
+    function fmtDayY(ts, tz) { return new Date(ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: tz }); }
+    function periodLabel(lg, p) {
+        if (!lg || !p) return '';
+        if (lg.unit === 'month' && lg.every === 1) return new Date(p.start + 43200000).toLocaleDateString('de-DE', { month: 'long', year: 'numeric', timeZone: lg.tz });
+        if (lg.unit === 'year' && lg.every === 1) return new Date(p.start + 43200000).toLocaleDateString('de-DE', { year: 'numeric', timeZone: lg.tz });
+        return fmtDay(p.start, lg.tz) + ' – ' + fmtDayY(p.end - 3600000, lg.tz);
+    }
+    function periodState(p) {
+        var now = Date.now();
+        if (p.frozen) return 'abgeschlossen';
+        if (p.upcoming) return 'beginnt am ' + fmtDayY(p.start);
+        if (p.open) { var d = Math.ceil((p.end - now) / 86400000); return d <= 1 ? 'endet heute' : 'noch ' + d + ' Tage'; }
+        return 'Nachfrist läuft – spät hochgeladene Fahrten zählen noch';
+    }
+    function unitLabel(lg) {
+        if (lg.unit === 'once') return 'einmalig';
+        var u = { day: ['Tag', 'Tage'], week: ['Woche', 'Wochen'], month: ['Monat', 'Monate'], year: ['Jahr', 'Jahre'] }[lg.unit];
+        return lg.every === 1 ? (lg.unit === 'week' ? 'wöchentlich' : lg.unit === 'month' ? 'monatlich' : lg.unit === 'year' ? 'jährlich' : 'täglich') : 'alle ' + lg.every + ' ' + u[1];
+    }
+
+    /* ---------- Bausteine ---------- */
+    function btn(act, label, extra, cls) {
+        return '<button class="btn ' + (cls || '') + '" data-act="' + act + '"' + (extra ? ' ' + extra : '') + '>' + label + '</button>';
+    }
+    function msgBox() {
+        return (st.err ? '<div class="note lg-err">' + esc(st.err) + '</div>' : '') + (st.msg ? '<div class="note lg-ok">' + esc(st.msg) + '</div>' : '');
+    }
+    function catLabel(key) {
+        var c = LigaCats.get(key);
+        if (c && c.agg === 'seg' && st.segs) { var s = st.segs.filter(function (x) { return 'seg:' + x.id === key; })[0]; return s ? 'Segment: ' + s.name : 'Segment'; }
+        return c ? c.label : key;
+    }
+    function bar(progress, target, cat) {
+        var pct = Math.max(0, Math.min(100, Math.round(progress / target * 100)));
+        return '<div class="lg-goal"><div class="lg-bar"><i style="width:' + pct + '%"></i></div><span class="num">' +
+               LigaCats.format(cat, progress) + ' / ' + LigaCats.format(cat, target) + ' · ' + pct + ' %</span></div>';
+    }
+    function setMsg(ok, err) { st.msg = ok || ''; st.err = err || ''; }
+
+    /* ---------- Rendern ---------- */
+    function render() {
+        if (!root) return;
+        var acct = LigaApi.account();
+        var html;
+        if (!acct) html = renderLogin();
+        else if (st.page === 'league' && st.league) html = renderLeague();
+        else if (st.page === 'form') html = renderForm();
+        else html = renderHome();
+        var keep = root.scrollTop;
+        root.innerHTML = html;
+        root.scrollTop = keep;
+    }
+
+    /* ---- Anmeldung ---- */
+    function renderLogin() {
+        var l = st.login, h = '<h2>Liga</h2>' +
+            '<div class="note">Monats- oder Wochen-Wettbewerbe mit Freunden: Kilometer, Höhenmeter, Topspeed, Führungsarbeit und mehr. ' +
+            'Dafür werden deine <b>Fahrten samt Strecke</b> auf dem Server gespeichert. Den Verlauf sieht nur du, die anderen sehen nur Zahlen ' +
+            '(und Fahrten, die du ausdrücklich teilst). Die Live-Gruppe funktioniert weiter ohne Konto.</div>' + msgBox();
+        if (st.invite) h += '<div class="note lg-ok">Du wurdest zu einer Liga eingeladen. Melde dich an, dann kannst du beitreten.</div>';
+        if (l.step === 1) {
+            h += '<label for="lgEmail">E-Mail-Adresse</label>' +
+                 '<input type="email" id="lgEmail" autocomplete="email" inputmode="email" placeholder="du@beispiel.de" value="' + esc(l.email) + '">' +
+                 btn('login-start', 'Code per E-Mail senden', '', 'go') +
+                 '<div class="note">Die Adresse dient nur dazu, dir einen Code zu schicken und dich auf einem neuen Gerät wiederzuerkennen. ' +
+                 'Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus dem Reiter „Gruppe“.</div>';
+        } else {
+            h += '<div class="note">Ein 6-stelliger Code wurde an <b>' + esc(l.email) + '</b> geschickt (10 Minuten gültig).</div>' +
+                 (l.dev ? '<div class="note lg-ok">Entwicklungsmodus: Code ' + esc(l.dev) + '</div>' : '') +
+                 '<label for="lgCode">Code</label>' +
+                 '<input type="text" id="lgCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="123456" value="' + esc(l.dev) + '">' +
+                 btn('login-verify', 'Anmelden', '', 'go') + btn('login-back', 'Andere Adresse');
+        }
+        return h;
+    }
+
+    /* ---- Startseite ---- */
+    function renderHome() {
+        var a = LigaApi.account(), lgs = LigaSync.leagues(), h = '<h2>Liga</h2>' + msgBox();
+        if (st.invite) {
+            h += '<div class="lg-card"><b>Einladung zu einer Liga</b><div class="note">Möchtest du beitreten? Die anderen Mitglieder sehen danach deinen Namen und deine Zahlen.</div>' +
+                 btn('join', 'Beitreten', '', 'go') + btn('join-no', 'Ablehnen') + '</div>';
+        }
+        h += '<h2>Ligen</h2>';
+        if (!lgs.length) h += '<div class="note">Noch in keiner Liga. Lege eine an oder öffne den Einladungslink eines Freundes.</div>';
+        lgs.forEach(function (l) {
+            var p = l.period;
+            h += '<button class="lg-league" data-act="open" data-id="' + esc(l.id) + '"><b>' + esc(l.name) + '</b>' +
+                 '<span>' + esc(unitLabel(l)) + (p ? ' · ' + esc(periodLabel(l, p)) : '') + (l.isAdmin ? ' · Admin' : '') + '</span></button>';
+        });
+        h += btn('new', 'Neue Liga anlegen', '', 'go') +
+             '<label for="lgInvite">Einladungslink einfügen</label><input type="text" id="lgInvite" placeholder="https://…#l=…" autocomplete="off">' +
+             btn('paste-join', 'Beitreten');
+
+        h += '<h2>Meine Fahrten</h2>' + renderRides();
+
+        h += '<h2>Konto</h2><div class="lg-card"><div class="lg-me">' + emo(a.emoji) + '<b>' + esc(a.name) + '</b></div>' +
+             '<div class="note">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du unter „Gruppe“.</div>' +
+             btn('devices', 'Geräte anzeigen') + (st.devices ? renderDevices() : '') +
+             btn('logout', 'Auf diesem Gerät abmelden') + btn('delete-account', 'Konto und alle Daten löschen', '', 'danger') + '</div>';
+        return h;
+    }
+
+    function renderDevices() {
+        return '<div class="lg-devs">' + st.devices.map(function (d) {
+            return '<div class="lg-row"><span class="lg-nm">' + esc(d.label || 'Gerät') + (d.current ? ' (dieses)' : '') + '</span>' +
+                   '<span class="lg-v">seit ' + esc(new Date(d.created_at).toLocaleDateString('de-DE')) + '</span>' +
+                   (d.current ? '' : '<button class="lg-mini" data-act="dev-rm" data-id="' + esc(d.id) + '">abmelden</button>') + '</div>';
+        }).join('') + '</div>';
+    }
+
+    function renderRides() {
+        var rides = Rides.list().filter(LigaSync.eligible), up = LigaSync.up();
+        var ok = 0, wait = 0, rej = 0, none = 0;
+        rides.forEach(function (r) { var s = up[r.id]; if (!s) none++; else if (s.state === 'ok') ok++; else if (s.state === 'wait') wait++; else rej++; });
+        var h = '<div class="note">' + ok + ' hochgeladen' + (wait ? ' · ' + wait + ' warten auf Netz' : '') + (rej ? ' · ' + rej + ' abgelehnt' : '') + (none ? ' · ' + none + ' noch nicht gesendet' : '') + '</div>' +
+                '<label class="lg-check"><input type="checkbox" id="lgAuto"' + (LigaSync.auto() ? ' checked' : '') + '> Neue Fahrten automatisch hochladen</label>';
+        if (none || wait) h += btn('backfill', none ? 'Bisherige Fahrten hochladen (' + none + ')' : 'Jetzt erneut versuchen');
+        rides.slice(0, 12).forEach(function (r) {
+            var s = up[r.id], badge = !s ? 'nicht gesendet' : s.state === 'ok' ? 'hochgeladen' : s.state === 'wait' ? 'wartet' : 'abgelehnt';
+            h += '<div class="lg-ride"><div class="lg-rt"><b>' + esc(r.name) + '</b><span>' + esc(UI.fmtDist(r.dist)) + ' · ' + esc(badge) + '</span></div>' +
+                 (s && s.state === 'rej' ? '<div class="note lg-err">' + esc(s.reason || '') + '</div>' : '') +
+                 (s && s.state === 'ok' ? '<button class="lg-mini" data-act="share-open" data-id="' + esc(r.id) + '">Teilen …</button>' +
+                                          '<button class="lg-mini" data-act="ride-rm" data-id="' + esc(r.id) + '">Vom Server löschen</button>' : '') +
+                 (s && s.state === 'rej' ? '<button class="lg-mini" data-act="ride-retry" data-id="' + esc(r.id) + '">Erneut versuchen</button>' : '') +
+                 (st.shareFor === r.id ? renderSharePanel(r.id) : '') + '</div>';
+        });
+        if (rides.length > 12) h += '<div class="note">… und ' + (rides.length - 12) + ' ältere Fahrten.</div>';
+        return h;
+    }
+
+    function renderSharePanel(localId) {
+        var sid = (LigaSync.status(localId) || {}).sid, lgs = LigaSync.leagues();
+        var mine = st.mine && st.mine.filter(function (r) { return r.id === sid; })[0];
+        var shared = mine ? mine.shared : [];
+        if (!lgs.length) return '<div class="note">Du bist in keiner Liga.</div>';
+        return '<div class="lg-share"><div class="note">Andere Mitglieder sehen die Strecke ohne die ersten und letzten 300 m (damit dein Zuhause nicht auftaucht) und können sie als Ghost laden.</div>' +
+            lgs.map(function (l) {
+                var on = shared.indexOf(l.id) >= 0;
+                return '<div class="lg-row"><span class="lg-nm">' + esc(l.name) + '</span><button class="lg-mini ' + (on ? 'on' : '') + '" data-act="' + (on ? 'unshare' : 'share') + '" data-id="' + esc(localId) + '" data-league="' + esc(l.id) + '">' + (on ? 'zurücknehmen' : 'teilen') + '</button></div>';
+            }).join('') + '</div>';
+    }
+
+    /* ---- Liga ---- */
+    var TABS = [['stand', 'Stand'], ['ziele', 'Ziele'], ['halle', 'Halle'], ['geteilt', 'Geteilt'], ['segmente', 'Segmente'], ['mehr', 'Mehr']];
+
+    function renderLeague() {
+        var ov = st.ov, h = '<button class="lg-back" data-act="home">‹ Ligen</button>';
+        if (!ov) return h + '<div class="note">Lade …</div>' + msgBox();
+        var lg = ov.league, p = ov.period;
+        h += '<h2>' + esc(lg.name) + '</h2>' +
+             '<div class="lg-period"><button class="lg-nav" data-act="prev"' + (p.prev === null ? ' disabled' : '') + ' aria-label="Voriger Zeitraum">‹</button>' +
+             '<div><b>' + esc(periodLabel(lg, p)) + '</b><span>' + esc(periodState(p)) + '</span></div>' +
+             '<button class="lg-nav" data-act="next"' + (p.next === null ? ' disabled' : '') + ' aria-label="Nächster Zeitraum">›</button></div>';
+        h += '<div class="seg lg-tabs" role="tablist">' + TABS.map(function (t) {
+            return '<button data-act="tab" data-tab="' + t[0] + '" class="' + (st.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>';
+        }).join('') + '</div>' + msgBox();
+        if (st.tab === 'stand') h += tabStand(ov);
+        else if (st.tab === 'ziele') h += tabGoals(ov);
+        else if (st.tab === 'halle') h += tabHall();
+        else if (st.tab === 'geteilt') h += tabShared();
+        else if (st.tab === 'segmente') h += tabSegs(ov);
+        else h += tabMore(ov);
+        return h;
+    }
+
+    function rowsHtml(rows, cat, meId, limit) {
+        var ranked = rows.filter(function (r) { return r.rank !== null; }), none = rows.filter(function (r) { return r.rank === null; });
+        var h = ranked.slice(0, limit || 50).map(function (r) {
+            return '<div class="lg-row' + (r.id === meId ? ' me' : '') + '"><span class="lg-rk num">' + r.rank + '</span>' + emo(r.emoji) +
+                   '<span class="lg-nm">' + esc(r.name) + '</span><span class="lg-v num">' + esc(cat === '_total' ? Math.round(r.points) + ' P.' : LigaCats.format(cat, r.v)) + '</span></div>';
+        }).join('');
+        if (!ranked.length) h = '<div class="lg-none">Noch keine Wertung.</div>';
+        else if (none.length) h += '<div class="lg-none">ohne Wertung: ' + none.map(function (r) { return esc(r.name); }).join(', ') + '</div>';
+        return h;
+    }
+
+    function tabStand(ov) {
+        var meId = LigaApi.account().id, h = '', tacho = LigaSync.tacho();
+        if (ov.total) h += '<div class="lg-card"><div class="lg-ct">Gesamtwertung</div>' + rowsHtml(ov.total, '_total', meId) +
+                           '<div class="note">Je Kategorie gibt es Punkte: Mitglieder − Platz + 1.</div></div>';
+        var order = LigaCats.LIST.map(function (c) { return c.key; });
+        Object.keys(ov.boards).sort(function (a, b) { var ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }).forEach(function (key) {
+            var pinned = tacho && tacho.league === ov.league.id && tacho.cat === key;
+            h += '<div class="lg-card"><div class="lg-ct">' + esc(catLabel(key)) +
+                 (ov.period.open ? '<button class="lg-mini ' + (pinned ? 'on' : '') + '" data-act="pin" data-cat="' + esc(key) + '" aria-label="Im Tacho anzeigen">' + (pinned ? '★ im Tacho' : '☆ Tacho') + '</button>' : '') +
+                 '</div>' + rowsHtml(ov.boards[key], key, meId, 10) + '</div>';
+        });
+        if (!Object.keys(ov.boards).length) h += '<div class="note">Der Admin hat noch keine Kategorien gewählt.</div>';
+        return h;
+    }
+
+    function tabGoals(ov) {
+        var g = ov.goals || { team: [], personal: [] }, meId = LigaApi.account().id, h = '';
+        if (ov.period.frozen) return '<div class="note">Für abgeschlossene Zeiträume werden Ziele nicht mehr angezeigt.</div>';
+        h += '<div class="lg-card"><div class="lg-ct">Team-Ziele</div>';
+        if (!g.team.length) h += '<div class="lg-none">Kein Team-Ziel. Der Admin kann eins unter „Mehr“ festlegen.</div>';
+        g.team.forEach(function (t) { h += '<div class="lg-gl">' + esc(catLabel(t.cat)) + '</div>' + bar(t.progress, t.target, t.cat); });
+        h += '</div><div class="lg-card"><div class="lg-ct">Persönliche Ziele</div>';
+        var mem = ov.members.reduce(function (o, m) { o[m.id] = m; return o; }, {}), any = false;
+        g.personal.forEach(function (p) {
+            any = true;
+            h += '<div class="lg-gl">' + emo(mem[p.id] && mem[p.id].emoji) + esc(mem[p.id] ? mem[p.id].name : '?') + (p.id === meId ? ' (du)' : '') + '</div>';
+            p.goals.forEach(function (x) { h += '<div class="lg-gsub">' + esc(catLabel(x.cat)) + '</div>' + bar(x.progress, x.target, x.cat); });
+        });
+        if (!any) h += '<div class="lg-none">Noch niemand hat ein persönliches Ziel gesetzt.</div>';
+        h += '</div><div class="lg-card"><div class="lg-ct">Mein Ziel setzen</div>' + goalEditor(meGoals(ov), 'my', false) + btn('goals-save', 'Meine Ziele speichern') + '</div>';
+        return h;
+    }
+    function meGoals(ov) {
+        var meId = LigaApi.account().id, p = (ov.goals.personal || []).filter(function (x) { return x.id === meId; })[0];
+        return st.form && st.form.myGoals ? st.form.myGoals : (p ? p.goals.map(function (x) { return { cat: x.cat, target: x.target }; }) : []);
+    }
+
+    function tabHall() {
+        var hall = st.hall;
+        if (!hall) return '<div class="note">Lade …</div>';
+        if (!hall.periods.length) return '<div class="note">Die Ruhmeshalle füllt sich, sobald ein Zeitraum abgeschlossen ist.</div>';
+        var h = '';
+        if (hall.titles.length) {
+            h += '<div class="lg-card"><div class="lg-ct">Titel</div>' + hall.titles.map(function (t) {
+                return '<div class="lg-row">' + emo(t.emoji) + '<span class="lg-nm">' + esc(t.name) + '</span><span class="lg-v num">' + t.total + '× Gesamt · ' + t.cats + '× Kategorie</span></div>';
+            }).join('') + '</div>';
+        }
+        var lg = st.ov.league;
+        hall.periods.forEach(function (p) {
+            h += '<div class="lg-card"><div class="lg-ct">' + esc(periodLabel(lg, p)) + '</div>';
+            if (p.total.length) h += '<div class="lg-gl">Gesamt</div>' + p.total.map(function (e) { return medal(e, '_total'); }).join('');
+            Object.keys(p.cats).forEach(function (k) {
+                h += '<div class="lg-gl">' + esc(catLabel(k)) + '</div>' + p.cats[k].map(function (e) { return medal(e, k); }).join('');
+            });
+            h += '</div>';
+        });
+        return h;
+    }
+    function medal(e, cat) {
+        return '<div class="lg-row"><span class="lg-rk num">' + e.rank + '</span>' + emo(e.emoji) + '<span class="lg-nm">' + esc(e.name) + '</span><span class="lg-v num">' +
+               esc(cat === '_total' ? Math.round(e.points) + ' P.' : LigaCats.format(cat, e.v)) + '</span></div>';
+    }
+
+    function tabShared() {
+        if (!st.shared) return '<div class="note">Lade …</div>';
+        if (!st.shared.length) return '<div class="note">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Ligen → Meine Fahrten“.</div>';
+        return st.shared.map(function (r) {
+            return '<div class="lg-card"><div class="lg-me">' + emo(r.emoji) + '<b>' + esc(r.name) + '</b></div>' +
+                   '<div class="note">' + esc(r.owner_name) + ' · ' + esc(UI.fmtDist(r.dist_m)) + ' · ' + esc(fmtDayY(r.start_ts)) + '</div>' +
+                   btn('ghost', 'Als Ghost speichern', 'data-ride="' + esc(r.id) + '" data-owner="' + esc(r.owner_name) + '" data-name="' + esc(r.name) + '"') + '</div>';
+        }).join('') + '<div class="note">Der Ghost liegt danach unter „Gruppe → Gespeicherte Ausfahrten“ und lässt sich dort als Gegner wählen.</div>';
+    }
+
+    function tabSegs(ov) {
+        if (!st.segs) return '<div class="note">Lade …</div>';
+        var lg = ov.league, meId = LigaApi.account().id, h = '';
+        h += '<div class="note">Liga-Segmente sind Strecken, auf denen sich alle messen (z. B. ein Anstieg). Sobald eins angelegt ist, gleicht jedes Mitglied seine Fahrten damit ab. ' +
+             'Anstiegs-Segmente zählen für den Kletterkönig; jedes Segment kann außerdem eine eigene Rangliste bekommen.</div>';
+        st.segs.forEach(function (s) {
+            var on = lg.cats.indexOf('seg:' + s.id) >= 0;
+            h += '<div class="lg-card"><div class="lg-ct">' + esc(s.name) + '</div><div class="note">' + esc(s.kind === 'climb' ? 'Anstieg' : s.kind === 'sprint' ? 'Sprint' : 'Segment') + ' · ' +
+                 esc(UI.fmtDist(s.len)) + (s.gain ? ' · ' + Math.round(s.gain) + ' m hoch' : '') + '</div>' +
+                 (lg.isAdmin ? '<button class="lg-mini ' + (on ? 'on' : '') + '" data-act="seg-board" data-id="' + esc(s.id) + '">' + (on ? 'hat eine Rangliste' : 'Rangliste anlegen') + '</button>' : '') +
+                 (lg.isAdmin || s.created_by === meId ? '<button class="lg-mini" data-act="seg-rm" data-id="' + esc(s.id) + '">löschen</button>' : '') + '</div>';
+        });
+        var mine = (typeof Segments !== 'undefined' ? Segments.list() : []).filter(function (m) { return m.poly && m.poly.length > 1; });
+        h += '<div class="lg-card"><div class="lg-ct">Aus meinen Segmenten übernehmen</div>';
+        if (!mine.length) h += '<div class="lg-none">Du hast noch keine Segmente. Lege welche unter „Berge → Segmente“ an.</div>';
+        mine.slice(0, 20).forEach(function (m) {
+            h += '<div class="lg-row"><span class="lg-nm">' + esc(m.name) + '</span><span class="lg-v">' + esc(UI.fmtDist(m.len)) + '</span>' +
+                 '<button class="lg-mini" data-act="seg-add" data-id="' + esc(m.id) + '">hinzufügen</button></div>';
+        });
+        return h + '</div>';
+    }
+
+    function tabMore(ov) {
+        var lg = ov.league, meId = LigaApi.account().id, h = '';
+        h += '<div class="lg-card"><div class="lg-ct">Mitglieder (' + ov.members.length + ')</div>' + ov.members.map(function (m) {
+            return '<div class="lg-row">' + emo(m.emoji) + '<span class="lg-nm">' + esc(m.name) + (m.id === lg.admin ? ' · Admin' : '') + (m.me ? ' · du' : '') + '</span>' +
+                   (lg.isAdmin && !m.me ? '<button class="lg-mini" data-act="member-rm" data-id="' + esc(m.id) + '">entfernen</button>' : '') + '</div>';
+        }).join('') + '</div>';
+        h += '<div class="lg-card"><div class="lg-ct">Freunde einladen</div>';
+        if (st.invite_link) {
+            h += '<div class="lg-qr">' + QR.svg(st.invite_link) + '</div><div class="note"><code>' + esc(st.invite_link) + '</code></div>' +
+                 btn('invite-share', 'Link teilen') + btn('invite-copy', 'Link kopieren');
+        } else if (lg.isAdmin) {
+            h += '<div class="note">Aus Sicherheitsgründen kennt der Server den Einladungslink nicht. Erzeuge einen neuen; der alte wird ungültig.</div>' + btn('invite-new', 'Neuen Einladungslink erzeugen');
+        } else h += '<div class="note">Den Einladungslink kann nur der Admin erzeugen.</div>';
+        h += '</div>';
+        if (lg.isAdmin) h += '<div class="lg-card"><div class="lg-ct">Einstellungen</div><div class="note">' + esc(unitLabel(lg)) + ' · ' + lg.cats.length + ' Kategorien</div>' + btn('edit', 'Liga bearbeiten') + '</div>';
+        h += '<div class="lg-card">' + btn('leave', 'Liga verlassen', '', 'danger') + (lg.isAdmin ? btn('delete-league', 'Liga löschen', '', 'danger') : '') + '</div>';
+        return h;
+    }
+
+    /* ---- Formular: Liga anlegen / bearbeiten ---- */
+    var PRESETS = [['week', 'Woche'], ['month', 'Monat'], ['quarter', '3 Monate'], ['year', 'Jahr'], ['days', 'Alle N Tage'], ['once', 'Einmalig von – bis']];
+    var GOAL_UNITS = { km: { f: 1000, l: 'km' }, dur: { f: 3600000, l: 'Stunden' }, m: { f: 1, l: 'm' }, count: { f: 1, l: '' }, kmh: { f: 1, l: '' }, time: { f: 1, l: '' } };
+    function ymd(ts) { var d = new Date(ts); return d.getFullYear() + '-' + num2(d.getMonth() + 1) + '-' + num2(d.getDate()); }
+    function ts(ymdStr) { var p = ymdStr.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]).getTime(); }
+
+    function presetOf(lg) {
+        if (lg.unit === 'once') return 'once';
+        if (lg.unit === 'week' && lg.every === 1) return 'week';
+        if (lg.unit === 'month' && lg.every === 1) return 'month';
+        if (lg.unit === 'month' && lg.every === 3) return 'quarter';
+        if (lg.unit === 'year' && lg.every === 1) return 'year';
+        return 'days';
+    }
+    function newForm() {
+        return { id: null, name: '', preset: 'month', n: 10, start: ymd(Date.now()), end: ymd(Date.now() + 30 * 86400000),
+                 cats: LigaCats.DEFAULT_ON.slice(), noPts: [], scoring: true, goals: [], grace: 48 };
+    }
+    function formOf(lg) {
+        var f = newForm();
+        f.id = lg.id; f.name = lg.name; f.preset = presetOf(lg); f.n = lg.unit === 'day' ? lg.every : 10;
+        f.start = ymd(lg.start_ts); f.end = lg.end_ts ? ymd(lg.end_ts - 86400000) : f.end;
+        f.cats = lg.cats.filter(function (k) { return k.indexOf('seg:') !== 0; }); f.segCats = lg.cats.filter(function (k) { return k.indexOf('seg:') === 0; });
+        f.noPts = lg.no_points.slice(); f.scoring = lg.scoring; f.grace = lg.grace_h;
+        f.goals = lg.goals.map(function (g) { return { cat: g.cat, target: g.target }; });
+        f.orig = timeKey(f);
+        return f;
+    }
+    function goalEditor(goals, prefix, teamOnly) {
+        var cats = LigaCats.LIST.filter(function (c) { return !teamOnly || c.team; });
+        return '<div id="' + prefix + 'Goals">' + goals.map(function (g, i) {
+            var c = LigaCats.get(g.cat) || cats[0], u = GOAL_UNITS[c.unit] || GOAL_UNITS.count;
+            return '<div class="lg-grow"><select data-goal="' + i + '" data-f="cat">' + cats.map(function (k) { return '<option value="' + k.key + '"' + (k.key === g.cat ? ' selected' : '') + '>' + esc(k.label) + '</option>'; }).join('') + '</select>' +
+                   '<input type="number" inputmode="decimal" min="0" step="any" data-goal="' + i + '" data-f="target" value="' + esc(+(g.target / u.f).toFixed(2)) + '"><span>' + esc(u.l) + '</span>' +
+                   '<button class="lg-mini" data-act="goal-rm" data-scope="' + prefix + '" data-i="' + i + '" aria-label="Ziel entfernen">✕</button></div>';
+        }).join('') + '</div>' + '<button class="lg-mini" data-act="goal-add" data-scope="' + prefix + '">+ Ziel</button>';
+    }
+
+    function renderForm() {
+        var f = st.form, h = '<button class="lg-back" data-act="' + (f.id ? 'open-back' : 'home') + '">‹ Zurück</button><h2>' + (f.id ? 'Liga bearbeiten' : 'Neue Liga') + '</h2>' + msgBox();
+        h += '<label for="fName">Name</label><input type="text" id="fName" maxlength="40" placeholder="z. B. Feierabendrunde" value="' + esc(f.name) + '">';
+        h += '<label for="fPreset">Zeitraum</label><select id="fPreset">' + PRESETS.map(function (p) { return '<option value="' + p[0] + '"' + (f.preset === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('') + '</select>';
+        if (f.preset === 'days') h += '<label for="fN">Anzahl Tage</label><input type="number" id="fN" min="1" max="366" inputmode="numeric" value="' + esc(f.n) + '">';
+        h += '<label for="fStart">' + (f.preset === 'once' ? 'Erster Tag' : 'Beginn') + '</label><input type="date" id="fStart" value="' + esc(f.start) + '">';
+        if (f.preset === 'once') h += '<label for="fEnd">Letzter Tag</label><input type="date" id="fEnd" value="' + esc(f.end) + '">';
+        else h += '<div class="note">Wochen beginnen am Montag, Monate am 1., Jahre am 1. Januar; Ergebnisse werden am Ende jedes Zeitraums festgehalten (Ruhmeshalle).</div>';
+        h += '<label for="fGrace">Nachfrist für spät hochgeladene Fahrten</label><select id="fGrace">' + [0, 24, 48, 72, 168].map(function (g) { return '<option value="' + g + '"' + (f.grace === g ? ' selected' : '') + '>' + (g ? g + ' Stunden' : 'keine') + '</option>'; }).join('') + '</select>';
+        h += '<label class="lg-check"><input type="checkbox" id="fScoring"' + (f.scoring ? ' checked' : '') + '> Gesamtwertung nach Punkten</label>';
+
+        h += '<h2>Kategorien</h2><div class="note">Häkchen links = Kategorie ist aktiv. „P.“ = zählt für die Gesamtwertung.</div>';
+        var grp = '';
+        LigaCats.LIST.forEach(function (c) {
+            if (c.grp !== grp) { grp = c.grp; h += '<div class="lg-gl">' + esc(grp) + '</div>'; }
+            h += '<div class="lg-cat"><label><input type="checkbox" data-cat="' + c.key + '"' + (f.cats.indexOf(c.key) >= 0 ? ' checked' : '') + '> ' + esc(c.label) + (c.gp ? ' <em>(Gruppenfahrt)</em>' : '') + '</label>' +
+                 '<label class="lg-pts"><input type="checkbox" data-pts="' + c.key + '"' + (f.noPts.indexOf(c.key) < 0 ? ' checked' : '') + '> P.</label></div>';
+        });
+        h += '<h2>Team-Ziele</h2><div class="note">Alle zusammen, z. B. 3000 km im Zeitraum.</div>' + goalEditor(f.goals, 'team', true);
+        h += btn('form-save', f.id ? 'Speichern' : 'Liga anlegen', '', 'go');
+        return h;
+    }
+
+    /* Formularfelder in den Zustand uebernehmen (vor jedem Neuzeichnen) */
+    function readForm() {
+        var f = st.form; if (!f || !$('fName')) return;
+        f.name = $('fName').value; f.preset = $('fPreset').value; if ($('fN')) f.n = +$('fN').value || 10;
+        f.start = $('fStart').value || f.start; if ($('fEnd')) f.end = $('fEnd').value || f.end;
+        f.grace = +$('fGrace').value; f.scoring = $('fScoring').checked;
+        f.cats = []; f.noPts = [];
+        root.querySelectorAll('[data-cat]').forEach(function (c) { if (c.checked) f.cats.push(c.dataset.cat); });
+        root.querySelectorAll('[data-pts]').forEach(function (c) { if (!c.checked) f.noPts.push(c.dataset.pts); });
+        f.goals = readGoals('team', f.goals);
+    }
+    function readGoals(scope, old) {
+        var box = $(scope + 'Goals'); if (!box) return old;
+        var out = [];
+        box.querySelectorAll('.lg-grow').forEach(function (row) {
+            var cat = row.querySelector('select').value, v = parseFloat(row.querySelector('input').value), c = LigaCats.get(cat), u = GOAL_UNITS[c.unit] || GOAL_UNITS.count;
+            out.push({ cat: cat, target: v > 0 ? Math.round(v * u.f) : 0 });
+        });
+        return out;
+    }
+
+    function timeKey(f) { return [f.preset, f.preset === 'days' ? f.n : '', f.start, f.preset === 'once' ? f.end : ''].join('|'); }
+
+    function formBody() {
+        var f = st.form, body = { name: f.name.trim(), scoring: f.scoring, no_points: f.noPts, grace_h: f.grace,
+            cats: f.cats.concat(f.segCats || []), goals: f.goals.filter(function (g) { return g.target > 0; }),
+            tz: (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return 'Europe/Berlin'; } })() };
+        // Beim Bearbeiten den Zeitraum nur senden, wenn er wirklich geaendert wurde (nach dem ersten Abschluss ist er fest)
+        if (f.id && f.orig === timeKey(f)) { delete body.tz; return body; }
+        var map = { week: ['week', 1], month: ['month', 1], quarter: ['month', 3], year: ['year', 1], days: ['day', Math.max(1, f.n | 0)], once: ['once', 1] };
+        body.unit = map[f.preset][0]; body.every = map[f.preset][1];
+        body.start_ts = ts(f.start);
+        if (f.preset === 'once') body.end_ts = ts(f.end) + 86400000;
+        return body;
+    }
+
+    /* ---------- Daten laden ---------- */
+    function loadLeague(id, periodStart) {
+        st.busy = true; st.ov = null; render();
+        var q = periodStart ? '?p=' + periodStart : '';
+        return LigaApi.call('GET', '/api/leagues/' + id + q).then(function (r) {
+            st.busy = false;
+            if (r.status !== 200) { setMsg('', r.error); st.page = 'home'; render(); return; }
+            st.ov = r; st.league = id; st.period = periodStart || null;
+            render();
+            if (st.tab === 'halle') loadTab('halle'); if (st.tab === 'geteilt') loadTab('geteilt'); if (st.tab === 'segmente') loadTab('segmente');
+        });
+    }
+    function loadTab(tab) {
+        var id = st.league;
+        if (tab === 'halle') return LigaApi.call('GET', '/api/leagues/' + id + '/hall').then(function (r) { if (r.status === 200) { st.hall = r; render(); } });
+        if (tab === 'geteilt') return LigaApi.call('GET', '/api/leagues/' + id + '/shared').then(function (r) { if (r.status === 200) { st.shared = r.rides; render(); } });
+        if (tab === 'segmente') return LigaApi.call('GET', '/api/leagues/' + id + '/segments').then(function (r) {
+            if (r.status === 200) { st.segs = r.segments; render(); LigaSync.syncSegments(id, r.segments); }
+        });
+    }
+    function reload() { return loadLeague(st.league, st.period); }
+
+    function refreshHome() {
+        return LigaSync.loadLeagues().then(function () {
+            return LigaApi.call('GET', '/api/rides').then(function (r) { if (r.status === 200) st.mine = r.rides; render(); });
+        });
+    }
+
+    /* ---------- Aktionen ---------- */
+    function act(a, el) {
+        var d = el ? el.dataset : {};
+        setMsg('', '');
+        switch (a) {
+            case 'login-start': return loginStart();
+            case 'login-verify': return loginVerify();
+            case 'login-back': st.login = { step: 1, email: st.login.email, dev: '' }; return render();
+            case 'home': st.page = 'home'; st.ov = null; st.invite_link = null; render(); return refreshHome();
+            case 'open': st.page = 'league'; st.tab = 'stand'; st.hall = st.shared = st.segs = null; st.invite_link = null; return loadLeague(d.id);
+            case 'open-back': st.page = 'league'; render(); return;
+            case 'prev': return loadLeague(st.league, st.ov.period.prev);
+            case 'next': return loadLeague(st.league, st.ov.period.next);
+            case 'tab': st.tab = d.tab; render(); return loadTab(d.tab);
+            case 'pin': LigaSync.setTacho({ league: st.league, cat: d.cat }); LigaSync.fetchStanding().then(tachoRender); setMsg('Wird im Tacho angezeigt. Dort wechselst du die Kategorie per Tippen.'); return render();
+            case 'new': st.form = newForm(); st.page = 'form'; return render();
+            case 'edit': st.form = formOf(st.ov.league); st.page = 'form'; return render();
+            case 'form-save': return formSave();
+            case 'goal-add': return goalAdd(d.scope);
+            case 'goal-rm': return goalRm(d.scope, +d.i);
+            case 'goals-save': return goalsSave();
+            case 'join': return join(st.invite);
+            case 'join-no': st.invite = null; try { sessionStorage.removeItem('liga:inv'); } catch (e) {} return render();
+            case 'paste-join': return pasteJoin();
+            case 'backfill': var n = LigaSync.backfill(); setMsg(n ? n + ' Fahrten werden hochgeladen …' : ''); render(); return LigaSync.flush().then(refreshHome);
+            case 'ride-retry': LigaSync.setUp(d.id, null); LigaSync.enqueue(d.id); render(); return LigaSync.flush().then(refreshHome);
+            case 'ride-rm': return rideRemove(d.id);
+            case 'share-open': st.shareFor = st.shareFor === d.id ? null : d.id; render(); return;
+            case 'share': return shareRide(d.id, d.league);
+            case 'unshare': return unshareRide(d.id, d.league);
+            case 'ghost': return ghostFrom(d);
+            case 'seg-add': return segAdd(d.id);
+            case 'seg-rm': return segRemove(d.id);
+            case 'seg-board': return segBoard(d.id);
+            case 'invite-new': return inviteNew();
+            case 'invite-share': return inviteShare();
+            case 'invite-copy': try { navigator.clipboard.writeText(st.invite_link); setMsg('Link kopiert.'); } catch (e) { setMsg('', 'Kopieren nicht möglich – Link von Hand markieren.'); } return render();
+            case 'member-rm': return memberRemove(d.id);
+            case 'leave': return leave();
+            case 'delete-league': return deleteLeague();
+            case 'devices': return LigaApi.call('GET', '/api/me').then(function (r) { if (r.status === 200) { st.devices = r.devices; render(); } });
+            case 'dev-rm': return LigaApi.call('DELETE', '/api/devices/' + d.id).then(function (r) { if (r.status === 200) return act('devices'); setMsg('', r.error); render(); });
+            case 'logout': if (!confirm('Auf diesem Gerät abmelden? Deine Fahrten und dein Konto bleiben erhalten, du meldest dich später per E-Mail-Code wieder an.')) return; return LigaApi.logout().then(function () { st = freshState(st); render(); tachoRender(); });
+            case 'delete-account': return deleteAccount();
+        }
+    }
+    function freshState(old) { return { page: 'home', league: null, tab: 'stand', period: null, ov: null, hall: null, shared: null, segs: null, mine: null, login: { step: 1, email: '', dev: '' }, msg: '', err: '', busy: false, form: null, shareFor: null, invite: old.invite, devices: null }; }
+
+    function loginStart() {
+        var email = ($('lgEmail').value || '').trim();
+        st.login.email = email;
+        return LigaApi.start(email).then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            st.login = { step: 2, email: email, dev: r.devCode || '' }; render();
+        });
+    }
+    function loginVerify() {
+        var code = ($('lgCode').value || '').trim(), me = cfg.me();
+        return LigaApi.verify(st.login.email, code, { name: me.name, emoji: me.emoji, color: me.color }).then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            st.login = { step: 1, email: '', dev: '' };
+            profileChanged(true);
+            setMsg(r.created ? 'Konto angelegt.' : 'Angemeldet.');
+            render(); return refreshHome().then(function () { return LigaSync.flush(); });
+        });
+    }
+
+    function goalAdd(scope) {
+        if (scope === 'team') { readForm(); st.form.goals.push({ cat: 'dist', target: 100000 }); }
+        else { st.form = st.form || {}; st.form.myGoals = readGoals('my', meGoals(st.ov)); st.form.myGoals.push({ cat: 'dist', target: 100000 }); }
+        render();
+    }
+    function goalRm(scope, i) {
+        if (scope === 'team') { readForm(); st.form.goals.splice(i, 1); }
+        else { st.form = st.form || {}; st.form.myGoals = readGoals('my', meGoals(st.ov)); st.form.myGoals.splice(i, 1); }
+        render();
+    }
+    function goalsSave() {
+        var goals = readGoals('my', meGoals(st.ov)).filter(function (g) { return g.target > 0; });
+        return LigaApi.call('PUT', '/api/leagues/' + st.league + '/goals', { goals: goals }).then(function (r) {
+            if (r.status === 200) { st.form = null; setMsg('Ziele gespeichert.'); return reload(); }
+            setMsg('', r.error); render();
+        });
+    }
+
+    function formSave() {
+        readForm();
+        var body = formBody(), f = st.form;
+        if (!body.name) { setMsg('', 'Bitte einen Namen eingeben.'); return render(); }
+        if (!body.cats.length) { setMsg('', 'Mindestens eine Kategorie wählen.'); return render(); }
+        var p = f.id ? LigaApi.call('PATCH', '/api/leagues/' + f.id, body) : LigaApi.call('POST', '/api/leagues', body);
+        return p.then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            st.form = null; st.page = 'league';
+            if (!f.id) { st.league = r.id; st.tab = 'mehr'; st.invite_link = inviteUrl(r.invite); setMsg('Liga angelegt. Lade jetzt Freunde ein.'); }
+            else { setMsg('Gespeichert.'); if (r.invite) st.invite_link = inviteUrl(r.invite); }
+            return LigaSync.loadLeagues().then(function () { return loadLeague(st.league); }).then(function () {
+                if (LigaSync.auto()) { LigaSync.backfill(); LigaSync.flush(); }
+            });
+        });
+    }
+
+    function inviteUrl(inv) { return location.origin + location.pathname + '#l=' + inv; }
+    function inviteNew() {
+        if (!confirm('Einen neuen Einladungslink erzeugen? Der bisherige Link wird ungültig.')) return;
+        return LigaApi.call('PATCH', '/api/leagues/' + st.league, { rotateInvite: true }).then(function (r) {
+            if (r.status === 200 && r.invite) { st.invite_link = inviteUrl(r.invite); render(); } else { setMsg('', r.error); render(); }
+        });
+    }
+    function inviteShare() {
+        var url = st.invite_link, name = st.ov.league.name;
+        if (navigator.share) return navigator.share({ title: 'Gruppenausfahrt-Liga „' + name + '“', text: 'Komm in meine Liga „' + name + '“:', url: url }).catch(function () {});
+        act('invite-copy');
+    }
+
+    function parseInvite(text) {
+        var m = /(?:^|[#&?])l=([\w-]{6,40})\.([\w-]{8,64})/.exec(String(text || ''));
+        return m ? m[1] + '.' + m[2] : null;
+    }
+    function pasteJoin() {
+        var inv = parseInvite($('lgInvite').value);
+        if (!inv) { setMsg('', 'In diesem Link steckt keine Einladung.'); return render(); }
+        return join(inv);
+    }
+    function join(inv) {
+        if (!inv) return;
+        var parts = inv.split('.');
+        return LigaApi.call('POST', '/api/leagues/join', { id: parts[0], secret: parts[1] }).then(function (r) {
+            st.invite = null; try { sessionStorage.removeItem('liga:inv'); } catch (e) {}
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            setMsg(r.already ? 'Du bist schon in „' + r.name + '“.' : 'Beigetreten: „' + r.name + '“.');
+            return LigaSync.loadLeagues().then(function () { if (LigaSync.auto()) { LigaSync.backfill(); LigaSync.flush(); } return refreshHome(); });
+        });
+    }
+
+    function leave() {
+        if (!confirm('Liga wirklich verlassen? Deine Fahrten bleiben im Konto.')) return;
+        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/members/' + LigaApi.account().id).then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            return LigaSync.loadLeagues().then(function () { act('home'); });
+        });
+    }
+    function deleteLeague() {
+        if (!confirm('Liga für ALLE löschen? Das lässt sich nicht rückgängig machen.')) return;
+        return LigaApi.call('DELETE', '/api/leagues/' + st.league).then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            return LigaSync.loadLeagues().then(function () { act('home'); });
+        });
+    }
+    function memberRemove(id) {
+        if (!confirm('Mitglied aus der Liga entfernen?')) return;
+        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/members/' + id).then(function (r) { if (r.status !== 200) setMsg('', r.error); return reload(); });
+    }
+    function deleteAccount() {
+        if (!confirm('Konto, alle hochgeladenen Fahrten und deine Ligen-Mitgliedschaften unwiderruflich löschen?')) return;
+        return LigaApi.call('DELETE', '/api/me', { confirm: true }).then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            return LigaApi.logout().then(function () { st = freshState(st); setMsg('Konto gelöscht.'); render(); tachoRender(); });
+        });
+    }
+
+    function rideRemove(localId) {
+        var s = LigaSync.status(localId);
+        if (!s || !s.sid || !confirm('Diese Fahrt vom Server löschen? Sie zählt danach in keiner Liga mehr. Auf deinem Gerät bleibt sie erhalten.')) return;
+        return LigaApi.call('DELETE', '/api/rides/' + s.sid).then(function (r) {
+            if (r.status === 200) { LigaSync.setUp(localId, null); setMsg('Vom Server gelöscht.'); } else setMsg('', r.error);
+            return refreshHome();
+        });
+    }
+    function shareRide(localId, leagueId) {
+        var s = LigaSync.status(localId), rec = Rides.get(localId);
+        if (!s || !rec) return;
+        var pts = LigaMetrics.trimmed(rec, 300);
+        if (pts.length < 10) { setMsg('', 'Die Fahrt ist zu kurz zum Teilen.'); return render(); }
+        return LigaCodec.encode(pts).then(function (track) {
+            return LigaApi.call('POST', '/api/rides/' + s.sid + '/share', { league: leagueId, track: track, trim: 300 });
+        }).then(function (r) { if (r.status === 200) setMsg('Geteilt.'); else setMsg('', r.error); return refreshHome(); });
+    }
+    function unshareRide(localId, leagueId) {
+        var s = LigaSync.status(localId);
+        return LigaApi.call('DELETE', '/api/rides/' + s.sid + '/share/' + leagueId).then(function (r) { if (r.status === 200) setMsg('Zurückgenommen.'); else setMsg('', r.error); return refreshHome(); });
+    }
+    function ghostFrom(d) {
+        return LigaApi.call('GET', '/api/leagues/' + st.league + '/shared/' + d.ride + '/track').then(function (r) {
+            if (r.status !== 200) { setMsg('', r.error); return render(); }
+            return LigaCodec.decode(r.track).then(function (tr) {
+                // src "plan": zaehlt nie als eigene Fahrt und wird nie hochgeladen
+                var res = Rides.save({ src: 'plan', name: 'Liga: ' + d.owner + ' – ' + d.name, pts: tr.pts });
+                setMsg(res.ok ? 'Gespeichert. Unter „Gruppe → Gespeicherte Ausfahrten“ als Ghost wählbar.' : '', res.ok ? '' : res.err);
+                if (res.ok && cfg.ridesChanged) cfg.ridesChanged();
+                render();
+            });
+        });
+    }
+
+    function segAdd(localId) {
+        var m = Segments.get(localId); if (!m) return;
+        var pts = m.poly.map(function (q, i) { return { t: 1e12 + i * 1000, lat: q[0], lon: q[1], ele: null }; });
+        return LigaCodec.encode(pts).then(function (poly) {
+            var kind = m.len > 0 && m.gain / m.len >= 0.03 ? 'climb' : 'other';
+            return LigaApi.call('POST', '/api/leagues/' + st.league + '/segments', { name: m.name, kind: kind, len: m.len, gain: m.gain, poly: poly });
+        }).then(function (r) { if (r.status === 200) setMsg('Segment hinzugefügt. Deine Fahrten werden damit abgeglichen.'); else setMsg('', r.error); return loadTab('segmente'); });
+    }
+    function segRemove(id) {
+        if (!confirm('Segment für die ganze Liga löschen?')) return;
+        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/segments/' + id).then(function (r) { if (r.status !== 200) setMsg('', r.error); return loadTab('segmente').then(reload); });
+    }
+    function segBoard(id) {
+        var lg = st.ov.league, key = 'seg:' + id, cats = lg.cats.slice(), i = cats.indexOf(key);
+        if (i >= 0) cats.splice(i, 1); else cats.push(key);
+        return LigaApi.call('PATCH', '/api/leagues/' + st.league, { cats: cats }).then(function (r) { if (r.status !== 200) setMsg('', r.error); return reload().then(function () { return loadTab('segmente'); }); });
+    }
+
+    /* ---------- Profil ---------- */
+    function profileChanged(force) {
+        var a = LigaApi.account(); if (!a || !cfg) return;
+        var me = cfg.me();
+        if (!force && a.name === me.name && a.emoji === me.emoji && a.color === me.color) return;
+        LigaApi.call('PUT', '/api/me', { name: me.name, emoji: me.emoji, color: me.color }).then(function (r) { if (r.status === 200) LigaApi.setAccount(r.account); });
+    }
+
+    /* ---------- Tacho-Zeile ---------- */
+    function tachoRender(liveOverride) {
+        var el = $('ligaRow'); if (!el) return;
+        var t = LigaSync.tacho(), a = LigaApi.account();
+        if (!t || !a) { el.hidden = true; return; }
+        var s = LigaSync.standing(), c = LigaCats.get(t.cat), lg = LigaSync.leagues().filter(function (l) { return l.id === t.league; })[0];
+        el.hidden = false;
+        if (!s || s.cat !== t.cat || !s.standing) { el.innerHTML = '<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> <span class="lg-tm">lädt …</span>'; return; }
+        var sd = s.standing, live = liveOverride || (cfg.live ? cfg.live() : null), add = 0;
+        if (live && c) { if (t.cat === 'dist') add = live.dist; else if (t.cat === 'time') add = live.moving; }
+        var mine = sd.me && sd.me.v !== null && sd.me.v !== undefined ? sd.me.v : (c && c.agg === 'sum' ? 0 : null);
+        var myV = mine === null ? null : mine + add, smaller = c && LigaCats.smaller(c);
+        function gap(o) { return Math.abs(o.v - myV); }
+        var parts = [];
+        if (sd.above && myV !== null) {
+            var ahead = smaller ? sd.above.v < myV : sd.above.v > myV;
+            parts.push(ahead ? '<span class="lg-up">▲ ' + esc(sd.above.name) + ' +' + esc(LigaCats.format(t.cat, gap(sd.above)).replace(' P.', '')) + '</span>' : '<span class="lg-pass">✓ ' + esc(sd.above.name) + ' überholt</span>');
+        }
+        parts.push('<b>Du ' + esc(myV === null ? '–' : LigaCats.format(t.cat, myV)) + (sd.me && sd.me.rank && !add ? ' · Platz ' + sd.me.rank : '') + '</b>');
+        if (sd.below && myV !== null) parts.push('<span class="lg-dn">▼ ' + esc(sd.below.name) + ' −' + esc(LigaCats.format(t.cat, gap(sd.below)).replace(' P.', '')) + '</span>');
+        el.innerHTML = '<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> ' + parts.join(' · ');
+        el.title = lg ? lg.name : '';
+    }
+    function tachoCycle() {
+        var t = LigaSync.tacho(); if (!t) return;
+        var lg = LigaSync.leagues().filter(function (l) { return l.id === t.league; })[0]; if (!lg) return;
+        var cats = lg.cats.slice(); if (lg.scoring) cats.unshift('_total');
+        var i = cats.indexOf(t.cat), next = cats[(i + 1) % cats.length];
+        LigaSync.setTacho({ league: t.league, cat: next });
+        tachoRender();
+        LigaSync.fetchStanding().then(tachoRender);
+    }
+    function tachoTick() {
+        tachoRender();
+        var now = Date.now(), t = LigaSync.tacho();
+        if (!t || !LigaApi.account()) return;
+        var s = LigaSync.standing();
+        if (!s || s.cat !== t.cat || now - s.t > 600000) LigaSync.fetchStanding().then(tachoRender);
+    }
+
+    /* ---------- Start ---------- */
+    function init(c) {
+        cfg = c; root = $('ligaRoot');
+        // Einladung aus dem Link: merken und aus der Adresszeile nehmen (sonst landet sie im Gruppenlink)
+        var frag = new URLSearchParams(location.hash.replace(/^#/, '')), inv = frag.get('l');
+        if (inv && parseInvite('l=' + inv)) {
+            st.invite = inv; try { sessionStorage.setItem('liga:inv', inv); } catch (e) {}
+            frag.delete('l'); history.replaceState(null, '', location.pathname + location.search + (frag.toString() ? '#' + frag.toString() : ''));
+        } else { try { st.invite = sessionStorage.getItem('liga:inv'); } catch (e) { st.invite = null; } }
+
+        root.addEventListener('click', function (e) {
+            var b = e.target.closest('[data-act]');
+            if (b && !b.disabled) act(b.dataset.act, b);
+        });
+        root.addEventListener('change', function (e) {
+            if (e.target.id === 'lgAuto') { LigaSync.setAuto(e.target.checked); if (e.target.checked) { LigaSync.backfill(); LigaSync.flush().then(refreshHome); } render(); return; }
+            if (e.target.id === 'fPreset') { readForm(); render(); }
+        });
+        var row = $('ligaRow'); if (row) row.addEventListener('click', tachoCycle);
+
+        LigaApi.onChange(function () { tachoRender(); if (isOpen()) render(); });
+        LigaSync.onChange(function () { if (st.page === 'home' && isOpen()) render(); });
+        window.addEventListener('online', function () { LigaSync.flush(); });
+        setInterval(tachoTick, 5000);
+        setInterval(function () { if (LigaSync.pending()) LigaSync.flush(); }, 120000);
+
+        LigaApi.refresh().then(function () { return LigaSync.loadLeagues(); }).then(function () { render(); tachoRender(); LigaSync.flush(); });
+        render();
+    }
+    function isOpen() { var v = $('v-liga'); return v && v.classList.contains('active'); }
+    /* Wird vom Reiterwechsel gerufen */
+    function opened() {
+        render();
+        if (LigaApi.account()) {
+            if (st.page === 'league' && st.league) reload(); else refreshHome();
+        }
+    }
+    function hasInvite() { return !!st.invite; }
+
+    return { init: init, opened: opened, profileChanged: profileChanged, tachoTick: tachoTick, hasInvite: hasInvite,
+             _tachoRender: tachoRender, _st: function () { return st; } };
+})();
+
+</script>
+<script>
 /* ==== js/app.js ==== */
 /* ============================================================
  * app.js -- Verdrahtung
@@ -6014,6 +7617,7 @@ var Ghost = (function () {
     var lastSend = 0;
     var myFix = null;         // letzte eigene Position
     var myTrack = [];         // fuer den GPX-Export
+    var coffeeStamps = [];    // Zeitpunkte eigener Kaffee-Nachrichten in dieser Fahrt (Liga-Kategorie)
     var seenEvents = 0, seenClimbs = 0;
     var relayUrl = null;
     // Kartenansicht: "Alle" passt den Ausschnitt an die Gruppe an, "Ich" haelt
@@ -6439,13 +8043,14 @@ var Ghost = (function () {
 
     function finishRecording(src) {
         if (myTrack.length < Rides.MIN_POINTS) { Rides.clearDraft(); return; }
-        var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null });
+        var cof = LigaMetrics.countCoffee(coffeeStamps);
+        var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null, x: cof ? { coffee: cof } : null });
         Rides.clearDraft();
         setRideMsg(r.ok ? '„' + r.rec.name + '“ gespeichert – ' + UI.fmtDist(r.rec.dist) + ', ' +
                           UI.fmtDur(r.rec.dur) + '. Unten als Ghost verwendbar.'
                         : r.err);
         renderRides();
-        if (r.ok) analyseRide(r.rec);
+        if (r.ok) { analyseRide(r.rec); if (src === 'ride') LigaSync.rideSaved(r.rec); }
     }
 
     /* Nach der Fahrt: Segmente finden, Bestzeiten und Rekorde nachfuehren. Laeuft in kleinen
@@ -6758,14 +8363,14 @@ var Ghost = (function () {
         setRideMsg(res.ok ? '„' + res.rec.name + '“ importiert – ' + UI.fmtDist(res.rec.dist) + ', ' +
                             UI.fmtDur(res.rec.dur) + '.' : res.err);
         renderRides();
-        if (res.ok && res.rec.src === 'gpx') analyseRide(res.rec);      // Segmente/Rekorde aus alten Fahrten
+        if (res.ok && res.rec.src === 'gpx') { analyseRide(res.rec); LigaSync.rideSaved(res.rec); }   // Segmente/Rekorde und Liga aus alten Fahrten
     }
 
     /* ---------------- Reiter ---------------- */
     function isActive(v) { return $('v-' + v).classList.contains('active'); }
 
     function showView(v) {
-        ['tacho', 'map', 'log', 'climbs', 'group'].forEach(function (x) {
+        ['tacho', 'map', 'log', 'climbs', 'liga', 'group'].forEach(function (x) {
             $('v-' + x).classList.toggle('active', x === v);
         });
         document.querySelectorAll('nav button').forEach(function (b) {
@@ -6773,7 +8378,8 @@ var Ghost = (function () {
         });
         if (v === 'map')    { render(); liveMap.ensureLoop(); }
         if (v === 'climbs') { renderProfiles(); }
-        if (v === 'tacho')  { ensureCompassLoop(); }
+        if (v === 'tacho')  { ensureCompassLoop(); LigaUI.tachoTick(); }
+        if (v === 'liga')   { LigaUI.opened(); }
         if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
         if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
     }
@@ -6800,6 +8406,7 @@ var Ghost = (function () {
             store('rname', me.name);
             if (an.riders[me.id]) an.riders[me.id].name = me.name;
             sendMine();
+            LigaUI.profileChanged();
         });
 
         // Symbol: feste Auswahl, getippt wird nichts. "–" = keins.
@@ -6820,6 +8427,7 @@ var Ghost = (function () {
             if (an.riders[me.id]) an.riders[me.id].emoji = me.emoji;
             drawEmojiPick();
             sendMine();                                   // die anderen sehen es beim naechsten Takt
+            LigaUI.profileChanged();
         });
 
         var sw = $('swatches');
@@ -6834,6 +8442,7 @@ var Ghost = (function () {
                 });
                 if (an.riders[me.id]) an.riders[me.id].color = myColor();
                 sendMine();
+                LigaUI.profileChanged();
             });
             sw.appendChild(b);
         });
@@ -6853,7 +8462,7 @@ var Ghost = (function () {
                 return;
             }
             if (sim) simStop();
-            myTrack = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
+            myTrack = []; coffeeStamps = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
             SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
@@ -6899,10 +8508,18 @@ var Ghost = (function () {
         });
 
         ReplayUI.wire(); SegUI.init();
+        LigaUI.init({
+            me: function () { return { name: me.name, emoji: me.emoji, color: myColor() }; },
+            live: function () { return running && !sim && myTrack.length > 1 ? { dist: Rides.distanceOf(myTrack), moving: Track.movingMs(myTrack) } : null; },
+            ridesChanged: function () { renderRides(); }
+        });
         Msg.init({
             send: sendMsgWire,
             meId: function () { return me.id; }, meName: function () { return me.name; },
-            log: function (id, name, code, t) { an._event(t, 'msg', { id: id, q: code, name: name }); }
+            log: function (id, name, code, t) {
+                an._event(t, 'msg', { id: id, q: code, name: name });
+                if (id === me.id && code === 'coffee' && running) coffeeStamps.push(t);
+            }
         });
         $('sumClose').addEventListener('click', function () { $('sumOverlay').hidden = true; });
         $('sumOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
@@ -7028,7 +8645,7 @@ var Ghost = (function () {
         }, 1000);
         setInterval(saveDraftNow, 60000);
         window.addEventListener('pagehide', saveDraftNow);
-        showView('group');
+        showView(LigaUI.hasInvite() ? 'liga' : 'group');
         setInterval(render, RENDER_MS);
         render();
         if (new URLSearchParams(location.search).has('sim')) simStart();

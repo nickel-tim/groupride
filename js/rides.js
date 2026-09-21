@@ -8,7 +8,7 @@
  *
  * Format einer gespeicherten Fahrt (kompakt, ca. 35 Byte je Punkt,
  * also rund 250 KB fuer drei Stunden):
- *   { id, name, src, start, dur, dist, n,
+ *   { id, name, src, start, dur, dist, n, x?,
  *     p: [[sekunden seit Start, lat, lon, hoehe|null], ...] }
  * src: 'ride' (gefahren), 'sim' (Simulation), 'gpx' (importiert),
  *      'plan' (aus einem Trainingsplan erzeugt)
@@ -73,6 +73,7 @@ var Rides = (function () {
             dist: Math.round(distanceOf(o.pts)), n: o.pts.length,
             p: pack(o.pts)
         };
+        if (o.x) rec.x = o.x;               // Zusatzangaben der Aufzeichnung, z. B. { coffee: 2 } fuer die Liga
         if (!write(PFX + id, rec)) return { ok: false, err: 'Speicher voll – alte Ausfahrten löschen oder als GPX sichern.' };
         var hasGroup = false;
         if (o.group) {

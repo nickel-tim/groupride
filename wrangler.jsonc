@@ -1,8 +1,17 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "groupride",
-  "compatibility_date": "2026-01-01",
-  // Static site only, no Worker code. The repo root is the asset directory;
-  // .assetsignore keeps the relay, tests and docs out of the upload.
-  "assets": { "directory": "." }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "groupride",
+	"compatibility_date": "2026-01-01",
+	// Static site only, no Worker code. The repo root is the asset directory;
+	// .assetsignore keeps the relay, tests and docs out of the upload.
+	"assets": {
+		"directory": "."
+	},
+	"d1_databases": [
+		{
+			"binding": "groupride",
+			"database_name": "groupride",
+			"database_id": "7926bf9b-723e-450d-b933-bc90127a8ad4"
+		}
+	]
 }

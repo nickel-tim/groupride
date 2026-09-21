@@ -44,6 +44,10 @@ var Analytics = (function () {
     var STOP_SPEED    = 1.5;     // m/s
     var STOP_TIME     = 30000;   // ms
 
+    // --- Liga-Kennzahlen ---
+    var SOLO_GAP      = 50;      // m Vorsprung auf den Zweiten: das zaehlt als "Ausreisser"
+    var TOGETHER_GAP  = 100;     // m: so nah an einem anderen Fahrer gilt als "gemeinsam gefahren"
+
     var STALE_MS      = 15000;   // ohne Update gilt ein Fahrer als veraltet
     var GONE_MS       = 180000;  // danach ganz raus
 
@@ -93,6 +97,8 @@ var Analytics = (function () {
                 s: null, offset: null, speed: 0, heading: null,
                 t: 0, lastSeen: 0,
                 frontMs: 0, maxSpeed: 0,
+                soloRun: 0, soloMax: 0,   // Zeit an der Spitze mit >= SOLO_GAP Vorsprung: laufend / laengste
+                togetherM: 0,             // Meter, die ein anderer Fahrer in der Naehe war
                 hist: [],                 // {t, s} fuer Bergzeiten
                 vHist: [],                // {t, v} fuer Antritts-Erkennung
                 stoppedSince: null,
@@ -211,6 +217,18 @@ var Analytics = (function () {
         // --- Fuehrungsarbeit + Ablosungen ---
         var lead = ord[0];
         if (dt) lead.frontMs += dt;
+        // Ausreisser und gemeinsames Fahren: erst wenn die Achse lang genug ist (wie bei Ueberholungen)
+        if (dt && this.route.length() > 150) {
+            var solo = ord.length > 1 && lead.s - ord[1].s >= SOLO_GAP;
+            for (var q = 0; q < ord.length; q++) {
+                var rq = ord[q];
+                if (q === 0 && solo) { rq.soloRun += dt; if (rq.soloRun > rq.soloMax) rq.soloMax = rq.soloRun; }
+                else rq.soloRun = 0;
+                var near = (q > 0 && ord[q - 1].s - rq.s < TOGETHER_GAP) ||
+                           (q < ord.length - 1 && rq.s - ord[q + 1].s < TOGETHER_GAP);
+                if (near && !this.isStale(rq)) rq.togetherM += rq.speed * dt / 1000;
+            }
+        }
 
         if (this.leader !== lead.id) {
             if (this.leader !== null) {

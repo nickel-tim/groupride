@@ -1,0 +1,29 @@
+// So soll die wrangler.jsonc im Projektstamm aussehen, sobald die Liga in Betrieb geht.
+// Anleitung: liga/DEPLOY.md. Der Ordner "liga" und "api" stehen in .assetsignore und werden
+// nicht als Webseite ausgeliefert.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "groupride",
+  "compatibility_date": "2026-01-01",
+  "main": "api/index.js",
+
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    // Statische Dateien kommen direkt von Cloudflare, der Worker laeuft nur fuer die API.
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "groupride",
+      "database_id": "HIER-DIE-ID-AUS-wrangler-d1-create",
+      "migrations_dir": "liga/migrations"
+    }
+  ],
+
+  // Absender der Anmelde-Mails; die Domain muss bei Resend verifiziert sein.
+  // Geheimnisse (AUTH_SECRET, RESEND_API_KEY) NICHT hier, sondern: npx wrangler secret put <NAME>
+  "vars": { "MAIL_FROM": "Gruppenausfahrt <login@example.com>" }
+}

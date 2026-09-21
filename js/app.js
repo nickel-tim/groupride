@@ -29,6 +29,7 @@
     var lastSend = 0;
     var myFix = null;         // letzte eigene Position
     var myTrack = [];         // fuer den GPX-Export
+    var coffeeStamps = [];    // Zeitpunkte eigener Kaffee-Nachrichten in dieser Fahrt (Liga-Kategorie)
     var seenEvents = 0, seenClimbs = 0;
     var relayUrl = null;
     // Kartenansicht: "Alle" passt den Ausschnitt an die Gruppe an, "Ich" haelt
@@ -454,13 +455,14 @@
 
     function finishRecording(src) {
         if (myTrack.length < Rides.MIN_POINTS) { Rides.clearDraft(); return; }
-        var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null });
+        var cof = LigaMetrics.countCoffee(coffeeStamps);
+        var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null, x: cof ? { coffee: cof } : null });
         Rides.clearDraft();
         setRideMsg(r.ok ? '„' + r.rec.name + '“ gespeichert – ' + UI.fmtDist(r.rec.dist) + ', ' +
                           UI.fmtDur(r.rec.dur) + '. Unten als Ghost verwendbar.'
                         : r.err);
         renderRides();
-        if (r.ok) analyseRide(r.rec);
+        if (r.ok) { analyseRide(r.rec); if (src === 'ride') LigaSync.rideSaved(r.rec); }
     }
 
     /* Nach der Fahrt: Segmente finden, Bestzeiten und Rekorde nachfuehren. Laeuft in kleinen
@@ -773,14 +775,14 @@
         setRideMsg(res.ok ? '„' + res.rec.name + '“ importiert – ' + UI.fmtDist(res.rec.dist) + ', ' +
                             UI.fmtDur(res.rec.dur) + '.' : res.err);
         renderRides();
-        if (res.ok && res.rec.src === 'gpx') analyseRide(res.rec);      // Segmente/Rekorde aus alten Fahrten
+        if (res.ok && res.rec.src === 'gpx') { analyseRide(res.rec); LigaSync.rideSaved(res.rec); }   // Segmente/Rekorde und Liga aus alten Fahrten
     }
 
     /* ---------------- Reiter ---------------- */
     function isActive(v) { return $('v-' + v).classList.contains('active'); }
 
     function showView(v) {
-        ['tacho', 'map', 'log', 'climbs', 'group'].forEach(function (x) {
+        ['tacho', 'map', 'log', 'climbs', 'liga', 'group'].forEach(function (x) {
             $('v-' + x).classList.toggle('active', x === v);
         });
         document.querySelectorAll('nav button').forEach(function (b) {
@@ -788,7 +790,8 @@
         });
         if (v === 'map')    { render(); liveMap.ensureLoop(); }
         if (v === 'climbs') { renderProfiles(); }
-        if (v === 'tacho')  { ensureCompassLoop(); }
+        if (v === 'tacho')  { ensureCompassLoop(); LigaUI.tachoTick(); }
+        if (v === 'liga')   { LigaUI.opened(); }
         if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
         if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
     }
@@ -815,6 +818,7 @@
             store('rname', me.name);
             if (an.riders[me.id]) an.riders[me.id].name = me.name;
             sendMine();
+            LigaUI.profileChanged();
         });
 
         // Symbol: feste Auswahl, getippt wird nichts. "–" = keins.
@@ -835,6 +839,7 @@
             if (an.riders[me.id]) an.riders[me.id].emoji = me.emoji;
             drawEmojiPick();
             sendMine();                                   // die anderen sehen es beim naechsten Takt
+            LigaUI.profileChanged();
         });
 
         var sw = $('swatches');
@@ -849,6 +854,7 @@
                 });
                 if (an.riders[me.id]) an.riders[me.id].color = myColor();
                 sendMine();
+                LigaUI.profileChanged();
             });
             sw.appendChild(b);
         });
@@ -868,7 +874,7 @@
                 return;
             }
             if (sim) simStop();
-            myTrack = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
+            myTrack = []; coffeeStamps = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
             SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
@@ -914,10 +920,18 @@
         });
 
         ReplayUI.wire(); SegUI.init();
+        LigaUI.init({
+            me: function () { return { name: me.name, emoji: me.emoji, color: myColor() }; },
+            live: function () { return running && !sim && myTrack.length > 1 ? { dist: Rides.distanceOf(myTrack), moving: Track.movingMs(myTrack) } : null; },
+            ridesChanged: function () { renderRides(); }
+        });
         Msg.init({
             send: sendMsgWire,
             meId: function () { return me.id; }, meName: function () { return me.name; },
-            log: function (id, name, code, t) { an._event(t, 'msg', { id: id, q: code, name: name }); }
+            log: function (id, name, code, t) {
+                an._event(t, 'msg', { id: id, q: code, name: name });
+                if (id === me.id && code === 'coffee' && running) coffeeStamps.push(t);
+            }
         });
         $('sumClose').addEventListener('click', function () { $('sumOverlay').hidden = true; });
         $('sumOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
@@ -1043,7 +1057,7 @@
         }, 1000);
         setInterval(saveDraftNow, 60000);
         window.addEventListener('pagehide', saveDraftNow);
-        showView('group');
+        showView(LigaUI.hasInvite() ? 'liga' : 'group');
         setInterval(render, RENDER_MS);
         render();
         if (new URLSearchParams(location.search).has('sim')) simStart();

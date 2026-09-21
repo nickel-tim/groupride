@@ -1,0 +1,15 @@
+// NUR ZUM LOKALEN AUSPROBIEREN (nie deployen).
+//   npx wrangler d1 migrations apply groupride --local -c liga/wrangler.dev.jsonc
+//   npx wrangler dev -c liga/wrangler.dev.jsonc
+// Startet die App samt Liga-API auf http://localhost:8787 mit einer lokalen Datenbank.
+// DEV_MAIL=1: der Anmeldecode steht direkt in der Antwort, es wird keine Mail verschickt.
+{
+  "name": "groupride-dev",
+  "main": "../api/index.js",
+  "compatibility_date": "2026-01-01",
+  "assets": { "directory": "..", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "groupride", "database_id": "local-dev", "migrations_dir": "migrations" }
+  ],
+  "vars": { "DEV_MAIL": "1", "AUTH_SECRET": "dev-secret-nur-lokal-0123456789" }
+}

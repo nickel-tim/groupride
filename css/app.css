@@ -558,3 +558,77 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
 .rdot.em .emo { width: 14px; height: 14px; display: block; margin: 2px; vertical-align: baseline; }
 .sumhl .emo { width: 1.15em; height: 1.15em; }
 .note a { color: var(--ink2); text-decoration: underline; }
+
+/* ---------------- Liga ---------------- */
+.ligaroot { padding-bottom: 24px; }
+.ligaroot input[type=email], .ligaroot input[type=number], .ligaroot input[type=date] {
+    width: 100%; padding: 11px 10px; background: var(--bg2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 7px; font-family: inherit; font-size: 15px; margin-top: 4px; box-sizing: border-box;
+}
+.ligaroot input[type=text] { width: 100%; box-sizing: border-box; }
+.ligaroot select { width: 100%; box-sizing: border-box; }
+.ligaroot .btn { margin-top: 9px; }
+.btn.danger { color: var(--bad); }
+.lg-err { color: var(--bad); font-weight: 600; }
+.lg-ok  { color: var(--good); }
+.lg-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin-top: 12px; }
+.lg-ct { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink2); font-weight: 600; margin-bottom: 4px; }
+.lg-gl { font-size: 12px; color: var(--ink2); margin-top: 10px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.lg-gsub { font-size: 11px; color: var(--ink3); margin-top: 6px; }
+.lg-none { font-size: 12px; color: var(--ink3); padding: 6px 0; }
+.lg-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.lg-row:last-child { border-bottom: none; }
+.lg-row.me { background: var(--bg3); margin: 0 -8px; padding: 6px 8px; border-radius: 6px; font-weight: 600; }
+.lg-rk { min-width: 20px; color: var(--ink3); font-size: 12px; text-align: right; }
+.lg-em { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.lg-em .emo { width: 18px; height: 18px; display: block; }
+.lg-nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-v { color: var(--ink2); font-size: 13px; white-space: nowrap; }
+.lg-mini { border: 1px solid var(--line); background: var(--bg3); color: var(--ink2); border-radius: 6px; font-family: inherit; font-size: 11px; padding: 5px 8px; margin: 6px 6px 0 0; }
+.lg-mini.on { color: var(--warn); border-color: var(--warn); }
+.lg-mini:active { filter: brightness(1.25); }
+.lg-league { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; text-align: left; margin-top: 8px; padding: 11px 12px; background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 9px; font-family: inherit; font-size: 15px; }
+.lg-league span { font-size: 12px; color: var(--ink2); }
+.lg-back { border: none; background: none; color: var(--ink2); font-family: inherit; font-size: 13px; padding: 4px 0; }
+.lg-period { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.lg-period > div { flex: 1; text-align: center; display: flex; flex-direction: column; font-size: 15px; }
+.lg-period span { font-size: 11px; color: var(--ink3); }
+.lg-nav { width: 40px; height: 40px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); border-radius: 8px; font-size: 20px; }
+.lg-nav:disabled { opacity: .3; }
+.lg-tabs { margin: 12px 0 2px; }
+.lg-tabs button { padding: 9px 2px; font-size: 12px; }
+.lg-goal { margin-top: 6px; font-size: 12px; color: var(--ink2); }
+.lg-bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-bottom: 3px; }
+.lg-bar i { display: block; height: 100%; background: var(--good); }
+.lg-grow { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.lg-grow select { flex: 2; min-width: 0; }
+.lg-grow input { flex: 1; min-width: 0; width: auto !important; }
+.lg-grow span { font-size: 12px; color: var(--ink3); min-width: 34px; }
+.lg-cat { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
+.lg-cat label, .lg-check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin: 0; }
+.lg-cat label em { font-size: 11px; color: var(--ink3); font-style: normal; }
+.lg-pts { color: var(--ink2) !important; font-size: 12px !important; }
+.lg-check { margin-top: 12px; }
+.lg-cat input, .lg-check input { width: 20px; height: 20px; margin: 0; }
+.lg-ride { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.lg-rt { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.lg-rt span { font-size: 12px; color: var(--ink3); white-space: nowrap; }
+.lg-share { background: var(--bg3); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }
+.lg-me { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.lg-qr { width: 200px; max-width: 70%; margin: 10px auto; }
+.lg-qr svg { width: 100%; height: auto; display: block; border-radius: 6px; }
+.lg-devs { margin-top: 8px; }
+
+/* Liga-Stand im Tacho: eine Zeile, Tippen wechselt die Kategorie */
+.ligarow { flex: none; display: block; width: 100%; text-align: left; margin: 6px 0 0; padding: 8px 10px; background: var(--bg2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 13px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ligarow[hidden] { display: none; }
+.ligarow b { font-weight: 600; }
+.lg-tl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--ink3); margin-right: 4px; }
+.lg-tm { color: var(--ink3); }
+.lg-up { color: var(--warn); }
+.lg-dn { color: var(--ink2); }
+.lg-pass { color: var(--good); font-weight: 600; }
+.lg-tabs button { flex: 1; }
+.lg-cat label, .lg-check { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.lg-cat input, .lg-check input { accent-color: var(--good); }
+.lg-pts { font-size: 12px !important; }

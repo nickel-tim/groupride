@@ -36,6 +36,7 @@
         </div>
 
         <div class="segbanner" id="segBanner" hidden></div>
+        <button class="ligarow" id="ligaRow" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
 
         <div class="compasswrap">
             <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
@@ -102,6 +103,10 @@
     </section>
 
     <!-- ============ Gruppe ============ -->
+    <section class="view scroll" id="v-liga">
+        <div class="ligaroot" id="ligaRoot"></div>
+    </section>
+
     <section class="view scroll" id="v-group">
         <h2>Ich</h2>
         <label for="inName">Name</label>
@@ -186,6 +191,7 @@
     <button data-v="map">Karte</button>
     <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
     <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
+    <button data-v="liga">Liga</button>
     <button data-v="group">Gruppe</button>
 </nav>
 
@@ -293,6 +299,13 @@
 <script src="js/messages.js"></script>
 <script src="js/replayui.js"></script>
 <script src="js/ghost.js"></script>
+<script src="js/liga-codec.js"></script>
+<script src="js/liga-cats.js"></script>
+<script src="js/liga-id.js"></script>
+<script src="js/liga-api.js"></script>
+<script src="js/liga-metrics.js"></script>
+<script src="js/liga-sync.js"></script>
+<script src="js/liga-ui.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

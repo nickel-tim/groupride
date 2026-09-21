@@ -53,7 +53,7 @@ Also: **oberhalb von 2,5 m/s der GPS-Kurs, darunter der Magnetometer als Rückfa
 
 Jedes Handy rechnet selbst. Die absoluten Streckenpositionen unterscheiden sich deshalb von Gerät zu Gerät — jede Achse beginnt dort, wo *dieses* Handy die erste Position gesehen hat. Die **Differenzen** sind auf allen Geräten gleich, und nur die zählen: Reihenfolge, Lücken, Bergzeiten.
 
-Der Preis: Nach einem Funkloch können zwei Handys kurz leicht verschiedene Stände zeigen. Der Gewinn: kein Backend, keine Registrierung, kein Datenabfluss.
+Der Preis: Nach einem Funkloch können zwei Handys kurz leicht verschiedene Stände zeigen. Der Gewinn: kein Backend, keine Registrierung, kein Datenabfluss. (Ausnahme: die optionale **Liga**, siehe unten – die Live-Gruppe bleibt davon unberührt.)
 
 ---
 
@@ -327,3 +327,45 @@ Unter *Gruppe → Ich → Symbol* wählst du aus 24 festen Symbolen (🚴 🦊 �
 **Was über die Leitung geht:** nur die **Nummer** aus der Liste (`"j": 5`), kein Text und kein Emoji. Wer kein Symbol gewählt hat, sendet nichts Zusätzliches – die Meldung bleibt wie bisher. Beim Empfänger wird die Nummer geprüft: Eine Zahl außerhalb der Liste, ein Bruch, ein Text oder ein Objekt gelten als „kein Symbol“. Damit lässt sich nichts einschleusen (getestet mit `<img src=x onerror=…>` als „Symbol“; jedes Bild im Dokument ist ein mitgeliefertes Symbol). Die Liste darf nur hinten wachsen, sonst zeigen ältere Apps ein falsches Symbol.
 
 **Grenzen:** Der Ghost behält sein „G“. Ältere Fahrten ohne Symbol zeigen weiter die Rangzahl. Sollen weitere Symbole dazukommen, muss die Grafik in `js/emoji.js` ergänzt werden; die Auswahl selbst steht in `UI.EMOJIS` in `js/ui.js`.
+
+---
+
+## Liga: Wettbewerbe im Freundeskreis (optional)
+
+Wer mag, meldet sich unter **Liga** an und misst sich mit Freunden: Wer fährt im Monat die meisten Kilometer,
+die meisten Höhenmeter, das höchste Tempo, führt am längsten? Die Live-Gruppe braucht das nicht und läuft
+weiter ohne Konto.
+
+**Anmeldung:** E-Mail eingeben, Code aus der Mail eintippen, fertig. Ein neues Handy oder gelöschte Browserdaten
+sind kein Problem: gleiche Adresse, neuer Code, dasselbe Konto. Die Adresse selbst wird auf dem Server nicht
+gespeichert, nur ein Prüfwert.
+
+**Ligen:** Du legst eine an (Name, Zeitraum, Kategorien) und verschickst den Einladungslink oder QR-Code.
+Zeiträume: Woche, Monat, 3 Monate, Jahr, alle N Tage oder einmalig von–bis. Am Ende jedes Zeitraums wird
+der Stand festgehalten (**Ruhmeshalle**, Titel-Zähler). Fahrten dürfen bis zu 48 Stunden nach Ende noch
+nachgeliefert werden. Du kannst in mehreren Ligen gleichzeitig sein; der Ersteller ist Admin.
+
+**Fahrten:** Nach jeder Fahrt werden Kennzahlen und die Strecke hochgeladen (automatisch, wenn du das
+möchtest; ohne Netz später). Auch importierte GPX-Dateien zählen. Simulation, Ghost und Pläne nie. Der Server
+lehnt Unmögliches ab (GPS-Sprünge, über 72 km/h im Schnitt, doppelte Fahrten) und sagt warum.
+
+**Kategorien (alle einzeln wählbar):**
+Kilometer, Fahrzeit, Höhenmeter, Anzahl Fahrten, Fahrtage, Serie (Tage in Folge), längste Fahrt, längste
+Fahrzeit, Höhenmeter an einem Tag · Topspeed, schnellster Schnitt ab 20 km, Bestzeit 10/20/40 km, beste Stunde ·
+Steigrate, Kletterkönig (Punkte aus Liga-Segmenten) · Wasserträger (Führungszeit), Angriffe, Ausreißer,
+gemeinsam gefahrene Kilometer, Kaffeepausen · Entdecken (neue Kartenkacheln von ca. 0,8 km).
+Dazu eine **Gesamtwertung** nach Platzpunkten, **Team-Ziele** („zusammen 3000 km") und **persönliche Ziele**.
+
+**Liga-Stand im Tacho:** Unter dem Tempo steht eine Zeile, z. B. „▲ Anna +12,4 km · Du 314 km · ▼ Ben −8,1 km".
+Tippen wechselt die Kategorie. Kilometer und Fahrzeit laufen während der Fahrt live mit; die anderen zeigen
+den Stand vom letzten Abruf.
+
+**Datenschutz:** Deine Strecken sieht **nur du**. Die anderen sehen Zahlen und Fahrtnamen. Willst du eine
+Fahrt zeigen, teilst du sie ausdrücklich („Meine Fahrten → Teilen"); dann fehlen die ersten und letzten
+300 m, damit dein Zuhause nicht auftaucht, und die anderen können sie als Ghost laden. Gruppenaufzeichnungen
+(mit Positionen anderer) werden nie hochgeladen. Alles ist jederzeit löschbar (Fahrt, Liga verlassen, Konto).
+Die Daten liegen bei Cloudflare, nicht Ende-zu-Ende verschlüsselt.
+
+**Einrichten (für dich als Betreiber):** [liga/DEPLOY.md](liga/DEPLOY.md). Ohne diese Schritte zeigt die App
+„Die Liga gibt es auf diesem Server nicht". Hintergrund und Entscheidungen: [liga/PLAN.md](liga/PLAN.md).
+

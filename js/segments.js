@@ -214,7 +214,7 @@ var Segments = (function () {
             }
             if (best < Infinity) out['d' + L] = best;
         });
-        [300000, 1200000].forEach(function (W) {
+        [300000, 1200000, 3600000].forEach(function (W) {
             var total = pts[n - 1].t - pts[0].t;
             if (total < W) return;
             var best = 0;
