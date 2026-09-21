@@ -22,92 +22,168 @@
 
 <main>
 
-    <!-- ============ Speedometer ============ -->
-    <section class="view active" id="v-tacho">
-        <div class="speedrow">
-            <div style="display:flex;align-items:flex-end;gap:7px">
-                <span class="speedbig num" id="mySpeed">--</span>
-                <span class="speedunit">km/h</span>
+    <!-- ============ Ride: ready state, then the live screen ============ -->
+    <section class="view active" id="v-ride">
+
+        <!-- Ready: everything you do BEFORE the start -->
+        <div class="ready scroll" id="rideReady">
+            <button class="btn go bigstart" id="btnStart">Ausfahrt starten</button>
+            <button class="ligarow" id="ligaRowReady" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
+            <button class="mechip" id="meChip" aria-label="Name und Symbol ändern"></button>
+
+            <div class="card">
+                <div class="ctitle">Gruppe</div>
+                <div class="note">Wer den Link öffnet oder den Code scannt, fährt mit – ohne Installation, ohne Konto.</div>
+                <div class="btnrow">
+                    <button class="btn" id="btnShare">Link teilen</button>
+                    <button class="btn" id="btnQr">QR-Code zeigen</button>
+                </div>
+                <details class="fold">
+                    <summary>Link anzeigen · neue Gruppe</summary>
+                    <div class="note" id="linkNote"></div>
+                    <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
+                </details>
             </div>
-            <div class="rankbox">
-                <div class="rankbig num" id="myRank">–</div>
-                <div class="ranklbl" id="myRankLbl">Position</div>
+
+            <div class="card">
+                <div class="ctitle">Ghost <span class="hint">– eine gespeicherte Fahrt fährt als grauer Mitfahrer mit</span></div>
+                <div class="note" id="ghostState"></div>
+                <div class="btnrow">
+                    <button class="btn" id="btnGhostOff" hidden>Ghost entfernen</button>
+                </div>
+                <div id="ghostPaceBox" hidden>
+                    <label for="ghostPace">Ghost-Tempo</label>
+                    <select id="ghostPace">
+                        <option value="0.9">90 % – gemütlicher als damals</option>
+                        <option value="0.95">95 %</option>
+                        <option value="1" selected>100 % – wie damals</option>
+                        <option value="1.02">102 %</option>
+                        <option value="1.05">105 %</option>
+                        <option value="1.1">110 % – schneller als damals</option>
+                    </select>
+                </div>
+                <button class="btn" id="btnGhostPick">Fahrt als Ghost wählen …</button>
+            </div>
+
+            <div class="card">
+                <div class="ctitle">Route <span class="hint">– als Linie auf der Karte und im Höhenprofil</span></div>
+                <div class="note" id="routeState"></div>
+                <div class="btnrow">
+                    <button class="btn" id="btnRouteOff" hidden>Route entfernen</button>
+                    <button class="btn" id="btnRoutePick">Route wählen …</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="ctitle">Ausprobieren</div>
+                <div class="note">Vier virtuelle Mitfahrer auf einer Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet.
+                    Leistung und Antritt regelst du in der Leiste unten.</div>
+                <button class="btn" id="btnSim">Simulation starten</button>
             </div>
         </div>
 
-        <div class="segbanner" id="segBanner" hidden></div>
-        <button class="ligarow" id="ligaRow" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
+        <!-- Live: what you need WHILE riding -->
+        <div class="live" id="rideLive">
+            <div class="speedrow">
+                <div style="display:flex;align-items:flex-end;gap:7px">
+                    <span class="speedbig num" id="mySpeed">--</span>
+                    <span class="speedunit">km/h</span>
+                </div>
+                <div class="rankbox">
+                    <div class="rankbig num" id="myRank">–</div>
+                    <div class="ranklbl" id="myRankLbl">Position</div>
+                </div>
+            </div>
 
-        <div class="compasswrap">
-            <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
-                <circle class="cring faint" cx="0" cy="0" r="30"></circle>
-                <circle class="cring faint" cx="0" cy="0" r="62"></circle>
-                <circle class="cring" cx="0" cy="0" r="92"></circle>
-                <!-- labelled at the bottom: the direction-of-travel marker sits at the top -->
-                <text class="clbl" x="3" y="34">30 m</text>
-                <text class="clbl" x="3" y="66">150 m</text>
-                <text class="clbl" x="3" y="96">500 m</text>
-                <!-- own direction of travel: always up (track-up) -->
-                <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
-                <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
-                <g id="cPeers"></g>
-            </svg>
+            <div class="segbanner" id="segBanner" hidden></div>
+            <button class="ligarow" id="ligaRow" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
+            <div class="ghostrow" id="ghostLive" hidden><span id="ghostLiveTxt"></span><button id="btnGhostNow">Jetzt starten</button></div>
+
+            <div class="seg switcher" role="tablist" aria-label="Ansicht">
+                <button data-lv="compass" class="on">Kompass</button>
+                <button data-lv="map">Karte</button>
+                <button data-lv="prof">Profil<span class="bdg" id="bdgClimbs" hidden>0</span></button>
+                <button data-lv="log">Ereignisse<span class="bdg" id="bdgLog" hidden>0</span></button>
+            </div>
+
+            <div class="lpane active" id="lv-compass">
+                <div class="compasswrap">
+                    <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
+                        <circle class="cring faint" cx="0" cy="0" r="30"></circle>
+                        <circle class="cring faint" cx="0" cy="0" r="62"></circle>
+                        <circle class="cring" cx="0" cy="0" r="92"></circle>
+                        <!-- labelled at the bottom: the direction-of-travel marker sits at the top -->
+                        <text class="clbl" x="3" y="34">30 m</text>
+                        <text class="clbl" x="3" y="66">150 m</text>
+                        <text class="clbl" x="3" y="96">500 m</text>
+                        <!-- own direction of travel: always up (track-up) -->
+                        <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
+                        <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
+                        <g id="cPeers"></g>
+                    </svg>
+                </div>
+                <div class="riders" id="riderList"></div>
+            </div>
+
+            <div class="lpane" id="lv-map">
+                <div class="mapmount" id="liveMap"></div>
+                <div class="profstrip" id="mapProf" hidden>
+                    <svg id="mapProfSvg" aria-label="Höhenprofil"></svg>
+                    <div class="profinfo" id="mapProfInfo"></div>
+                </div>
+            </div>
+
+            <div class="lpane scroll" id="lv-prof">
+                <div class="profcard">
+                    <svg id="climbProfSvg" aria-label="Höhenprofil"></svg>
+                    <div class="profinfo" id="climbProfInfo"></div>
+                </div>
+                <div class="seg profmode" role="group" aria-label="Ausschnitt des Profils">
+                    <button data-pm="all">Alles</button>
+                    <button data-pm="ahead">Voraus</button>
+                </div>
+                <h2>Bergsprints</h2>
+                <div id="climbList"></div>
+            </div>
+
+            <div class="lpane scroll" id="lv-log">
+                <h2>Führungsarbeit</h2>
+                <div id="frontWork"></div>
+                <h2>Was passiert ist</h2>
+                <div id="eventList"></div>
+            </div>
+
+            <div class="quickrow" id="quickRow" aria-label="Schnellnachrichten an die Gruppe"></div>
+            <button class="btn stop endbtn" id="btnStop">Ausfahrt beenden</button>
         </div>
-
-        <div class="riders" id="riderList"></div>
-        <div class="quickrow" id="quickRow" aria-label="Schnellnachrichten an die Gruppe"></div>
     </section>
 
-    <!-- ============ Map ============ -->
-    <section class="view" id="v-map">
-        <div class="mapmount" id="liveMap"></div>
-        <div class="profstrip" id="mapProf" hidden>
-            <svg id="mapProfSvg" aria-label="Höhenprofil"></svg>
-            <div class="profinfo" id="mapProfInfo"></div>
-        </div>
-    </section>
-
-    <!-- ============ Log ============ -->
-    <section class="view scroll" id="v-log">
-        <h2>Führungsarbeit</h2>
-        <div id="frontWork"></div>
-        <h2>Was passiert ist</h2>
-        <div id="eventList"></div>
-    </section>
-
-    <!-- ============ Climbs ============ -->
-    <section class="view scroll" id="v-climbs">
+    <!-- ============ Rides: history ============ -->
+    <section class="view scroll" id="v-rides">
         <div class="subtabs">
-            <div class="seg" role="tablist" aria-label="Berge und Rekorde">
-                <button data-sub="now" class="on">Jetzt</button>
+            <div class="seg" role="tablist" aria-label="Fahrten, Segmente und Rekorde">
+                <button data-sub="rides" class="on">Fahrten</button>
                 <button data-sub="seg">Segmente</button>
                 <button data-sub="rec">Rekorde</button>
             </div>
         </div>
-
-        <div class="sub" id="sub-now">
-            <h2>Höhenprofil</h2>
-            <div class="profcard">
-                <svg id="climbProfSvg" aria-label="Höhenprofil"></svg>
-                <div class="profinfo" id="climbProfInfo"></div>
-            </div>
-            <div class="seg profmode" role="group" aria-label="Ausschnitt des Profils">
-                <button data-pm="all">Alles</button>
-                <button data-pm="ahead">Voraus</button>
-            </div>
-            <h2>Bergsprints</h2>
-            <div id="climbList"></div>
+        <div class="sub" id="sub-rides">
+            <button class="btn" id="btnImport">GPX oder Trainingsplan importieren</button>
+            <input type="file" id="fileImport" accept=".gpx,.json,application/json,application/gpx+xml,text/xml" hidden>
+            <div class="note" id="rideMsg"></div>
+            <div id="rideList"></div>
         </div>
         <div class="sub" id="sub-seg" hidden><div id="segPane"></div></div>
         <div class="sub" id="sub-rec" hidden><div id="recPane"></div></div>
     </section>
 
-    <!-- ============ Group ============ -->
+    <!-- ============ League ============ -->
     <section class="view scroll" id="v-liga">
         <div class="ligaroot" id="ligaRoot"></div>
     </section>
 
-    <section class="view scroll" id="v-group">
+    <!-- ============ More: settings ============ -->
+    <section class="view scroll" id="v-more">
         <h2>Ich</h2>
         <label for="inName">Name</label>
         <input type="text" id="inName" maxlength="14" placeholder="Dein Name" autocomplete="off">
@@ -115,56 +191,35 @@
         <div class="swatches" id="swatches"></div>
         <label>Symbol</label>
         <div class="emojis" id="emojiPick" role="group" aria-label="Symbol wählen"></div>
-        <div class="note">Emoji-Grafiken: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a>, © Twitter, Inc. und Mitwirkende, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY 4.0</a>.</div>
-
-        <h2>Gruppe</h2>
-        <button class="btn go" id="btnStart">Ausfahrt starten</button>
-        <button class="btn" id="btnShare">Link zum Mitfahren teilen</button>
-        <button class="btn" id="btnQr">QR-Code zum Einscannen zeigen</button>
-        <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
-        <div class="note" id="linkNote"></div>
-
-        <h2>Simulation</h2>
-        <button class="btn" id="btnSim">Simulation starten</button>
-        <div class="note">Zum Ausprobieren ohne Fahrrad: vier virtuelle Mitfahrer auf einer
-            Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet.
-            Leistung und Antritt regelst du in der Leiste unten.</div>
-
-        <h2>Ghost</h2>
-        <div class="note" id="ghostState"></div>
-        <button class="btn" id="btnGhostNow" hidden>Ghost jetzt starten</button>
-        <button class="btn" id="btnGhostOff" hidden>Ghost entfernen</button>
-        <label for="ghostPace">Ghost-Tempo</label>
-        <select id="ghostPace">
-            <option value="0.9">90 % – gemütlicher als damals</option>
-            <option value="0.95">95 %</option>
-            <option value="1" selected>100 % – wie damals</option>
-            <option value="1.02">102 %</option>
-            <option value="1.05">105 %</option>
-            <option value="1.1">110 % – schneller als damals</option>
-        </select>
-
-        <h2>Gespeicherte Ausfahrten</h2>
-        <div id="rideList"></div>
-        <button class="btn" id="btnImport">GPX oder Trainingsplan importieren</button>
-        <input type="file" id="fileImport" accept=".gpx,.json,application/json,application/gpx+xml,text/xml" hidden>
-        <div class="note" id="rideMsg"></div>
 
         <h2>Anzeige</h2>
-        <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
-        <button class="btn" id="btnLang"></button>
+        <div class="btnrow">
+            <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
+            <button class="btn" id="btnLang"></button>
+        </div>
 
-        <h2>Auswertung</h2>
-        <button class="btn" id="btnExport">Ausfahrt als JSON sichern</button>
-        <button class="btn" id="btnGpx">Eigene Spur als GPX</button>
+        <h2>Liga-Konto</h2>
+        <div id="accountRoot"></div>
 
-        <h2>Verbindung</h2>
+        <h2>Daten sichern</h2>
+        <div class="btnrow">
+            <button class="btn" id="btnGpx">Eigene Spur als GPX</button>
+            <button class="btn" id="btnExport">Ausfahrt als JSON</button>
+        </div>
+        <div class="note">Gespeicherte Fahrten liegen nur in diesem Browser. Jede Fahrt lässt sich unter „Fahrten“ als GPX sichern.</div>
+
+        <h2>Verbindung und Datenschutz</h2>
         <div class="note" id="netNote"></div>
-        <label for="inRelay">Eigener Relay (optional)</label>
-        <input type="url" id="inRelay" placeholder="wss://dein-worker.workers.dev" autocomplete="off">
-        <button class="btn" id="btnRelay">Relay übernehmen und neu laden</button>
-
+        <details class="fold">
+            <summary>Erweitert: eigener Relay</summary>
+            <label for="inRelay">Eigener Relay (optional)</label>
+            <input type="url" id="inRelay" placeholder="wss://dein-worker.workers.dev" autocomplete="off">
+            <button class="btn" id="btnRelay">Relay übernehmen und neu laden</button>
+        </details>
         <div class="warnbox" id="privacyNote"></div>
+
+        <h2>Info</h2>
+        <div class="note">Emoji-Grafiken: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a>, © Twitter, Inc. und Mitwirkende, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY 4.0</a>.</div>
         <div style="height:24px"></div>
     </section>
 
@@ -188,12 +243,10 @@
 </div>
 
 <nav>
-    <button class="on" data-v="tacho">Tacho</button>
-    <button data-v="map">Karte</button>
-    <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
-    <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
-    <button data-v="liga">Liga</button>
-    <button data-v="group">Gruppe</button>
+    <button class="on" data-v="ride"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-6"/></svg>Ausfahrt</button>
+    <button data-v="rides"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Fahrten</button>
+    <button data-v="liga"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg>Liga</button>
+    <button data-v="more"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Mehr</button>
 </nav>
 
 <!-- Messages: incoming banners and the selection of all short messages -->
@@ -203,6 +256,25 @@
         <div class="qrttl">Nachricht an die Gruppe</div>
         <div class="msggrid" id="msgGrid"></div>
         <button class="btn" id="msgClose">Schließen</button>
+    </div>
+</div>
+
+<!-- Picker: choose a saved ride as ghost or route -->
+<div id="pickOverlay" class="overlay" hidden>
+    <div class="qrcard" role="dialog" aria-modal="true" aria-label="Fahrt wählen">
+        <div class="qrttl" id="pickTitle">Fahrt wählen</div>
+        <div id="pickList"></div>
+        <button class="btn" id="pickClose">Schließen</button>
+    </div>
+</div>
+
+<!-- Details of a saved ride: all actions in one place -->
+<div id="rideOverlay" class="overlay" hidden>
+    <div class="qrcard" role="dialog" aria-modal="true" aria-label="Fahrt">
+        <div class="qrttl" id="rideTitle"></div>
+        <div class="note" id="rideMeta"></div>
+        <div id="rideActs"></div>
+        <button class="btn" id="rideClose">Schließen</button>
     </div>
 </div>
 

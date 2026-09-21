@@ -214,9 +214,9 @@ var MapView = (function () {
         if (!placed.length && !ov) {
             clearTiles(d.tileSvg);
             svg.innerHTML = '<text class="mempty" x="' + (W / 2) + '" y="' + (H / 2) +
-                '" text-anchor="middle">Noch keine Positionen.</text>' +
+                '" text-anchor="middle">' + T('Noch keine Positionen.') + '</text>' +
                 '<text class="mempty" x="' + (W / 2) + '" y="' + (H / 2 + 20) +
-                '" text-anchor="middle">Unter „Gruppe“ die Ausfahrt starten.</text>';
+                '" text-anchor="middle">' + T('Sobald GPS und Mitfahrer da sind, erscheinen sie hier.') + '</text>';
             return { riders: 0, length: 0 };
         }
 

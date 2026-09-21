@@ -53,6 +53,7 @@
     var GHOST_COLOR = '#9aa7ad';  // mid grey: readable on dark and light backgrounds
 
     function $(id) { return document.getElementById(id); }
+    function isLive() { return running || !!sim; }
     function store(k, v) { try { if (v === undefined) return localStorage.getItem(k);
                                  localStorage.setItem(k, v); } catch (e) { return null; } }
 
@@ -68,6 +69,13 @@
     }
 
     function myColor() { return UI.COLORS[me.colorIdx]; }
+
+    /* "Riding as ..." on the ready screen: opens the profile under "More" */
+    function syncMeChip() {
+        var e = UI.emojiOf(me.emoji);
+        $('meChip').innerHTML = (e ? Emo.img(e) : '<span class="rdot" style="display:inline-block;background:' + myColor() + '"></span>') +
+                                '<span>' + T('Du fährst als') + ' <b>' + UI.escapeHtml(me.name) + '</b> ›</span>';
+    }
 
     /* ---------------- Room from the URL fragment ----------------
        The fragment (after the #) is NOT sent to servers by the browser.
@@ -239,7 +247,7 @@
         lastCompass = { ord: ord, heading: h.deg };
         ensureCompassLoop();
         lastMap = { ord: ord, heading: h.deg };
-        if (isActive('map')) liveMap.ensureLoop();
+        if (isPane('map')) liveMap.ensureLoop();
         renderProfiles();
 
         // --- List: gap always relative to ME, that is the number
@@ -282,9 +290,9 @@
                      }) };
         }));
 
-        if (an.events.length > seenEvents && !isActive('log'))
+        if (an.events.length > seenEvents && !isPane('log'))
             UI.badge('bdgLog', an.events.length - seenEvents);
-        if (an.climbs.length > seenClimbs && !isActive('climbs'))
+        if (an.climbs.length > seenClimbs && !isPane('prof'))
             UI.badge('bdgClimbs', an.climbs.length - seenClimbs);
 
         if (running && !Net.online()) netStatus('wait', 'kein Netz – nur eigene Daten');
@@ -339,12 +347,12 @@
     }
 
     function compassLoop(ts) {
-        if (!isActive('tacho') || document.hidden) { compassLoopOn = false; return; }
+        if (!isPane('compass') || document.hidden) { compassLoopOn = false; return; }
         if (ts - compassLoopT >= 33 && lastCompass) { compassLoopT = ts; drawCompass(lastCompass.ord, lastCompass.heading); }
         requestAnimationFrame(compassLoop);
     }
     function ensureCompassLoop() {
-        if (compassLoopOn || !isActive('tacho')) return;
+        if (compassLoopOn || !isPane('compass')) return;
         compassLoopOn = true;
         requestAnimationFrame(compassLoop);
     }
@@ -375,8 +383,7 @@
                                colors: others.slice(0, 4) });
         simWarp = 1;
         $('simbar').hidden = false;
-        $('btnSim').textContent = T('Simulation beenden');
-        $('btnSim').className = 'btn stop';
+        setLive();
         netStatus('wait', 'Simulation – nichts wird gesendet');
         /* Lead-in: only from ~150 m of route axis are order and gaps
            reliable. Without it everybody would stand at "0 m" at the start. */
@@ -384,7 +391,7 @@
         syncSimBar();
         simTimer = setInterval(simTick, 1000);
         render();
-        showView('tacho');
+        showView('ride');
     }
 
     function simStop() {
@@ -396,9 +403,8 @@
         route = new Route(); an = new Analytics(route);
         seenEvents = 0; seenClimbs = 0;
         $('simbar').hidden = true;
-        $('btnSim').textContent = T('Simulation starten');
-        $('btnSim').className = 'btn';
-        netStatus('off', 'bereit – unter „Gruppe“ starten');
+        setLive();
+        netStatus('off', 'bereit zum Start');
         renderGhostUi();
         render();
     }
@@ -454,7 +460,7 @@
         var cof = LigaMetrics.countCoffee(coffeeStamps);
         var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null, x: cof ? { coffee: cof } : null });
         Rides.clearDraft();
-        setRideMsg(r.ok ? T('„{name}“ gespeichert – {d}, {t}. Unten als Ghost verwendbar.', { name: r.rec.name, d: UI.fmtDist(r.rec.dist), t: UI.fmtDur(r.rec.dur) })
+        setRideMsg(r.ok ? T('„{name}“ gespeichert – {d}, {t}. Unter „Fahrten“ als Ghost verwendbar.', { name: r.rec.name, d: UI.fmtDist(r.rec.dist), t: UI.fmtDur(r.rec.dur) })
                         : r.err);
         renderRides();
         if (r.ok) { analyseRide(r.rec); if (src === 'ride') LigaSync.rideSaved(r.rec); }
@@ -572,11 +578,14 @@
     }
 
     function renderGhostUi() {
-        var st = $('ghostState'), now = $('btnGhostNow'), off = $('btnGhostOff');
+        var st = $('ghostState'), off = $('btnGhostOff'), live = $('ghostLive'), now = $('btnGhostNow');
         $('ghostPace').disabled = !!ghost && ghost.state === 'running';
+        $('ghostPaceBox').hidden = !ghost;
+        $('btnGhostPick').textContent = ghost ? T('Andere Fahrt wählen …') : T('Fahrt als Ghost wählen …');
+        live.hidden = true;
         if (!ghost) {
-            st.innerHTML = T('Kein Ghost gewählt. Unter „Gespeicherte Ausfahrten“ eine Fahrt als Ghost wählen, dann fährt sie als grauer Mitfahrer mit – mit Rang, Lücke und Karte wie jeder andere.');
-            now.hidden = off.hidden = true;
+            st.innerHTML = T('Kein Ghost gewählt. Er fährt mit Rang, Lücke und Karte wie jeder andere mit – zum Beispiel deine Bestzeit von neulich.');
+            off.hidden = true;
             return;
         }
         off.hidden = false;
@@ -590,14 +599,12 @@
                 txt = T('wartet am Startpunkt – noch {d} entfernt. Er startet automatisch ab {m} m.', { d: UI.fmtDist(d), m: GHOST_START_M });
             } else { txt = T('wartet auf deine Position.'); }
             st.innerHTML = 'Ghost ' + nm + ' ' + txt;
-            now.hidden = !(running || sim);
+            if (running || sim) { live.hidden = false; $('ghostLiveTxt').innerHTML = 'Ghost ' + nm + ' ' + T('wartet am Start.'); }
         } else if (ghost.state === 'running') {
             var t = ((sim ? sim.t * 1000 : Date.now()) - ghost.t0) / 1000;
             st.innerHTML = 'Ghost ' + nm + ' ' + T('fährt: {a} von {b}.', { a: UI.fmtDur(t * 1000), b: UI.fmtDur(ghost.g.dur * 1000) });
-            now.hidden = true;
         } else {
             st.innerHTML = 'Ghost ' + nm + ' ' + T('ist nach {t} im Ziel.', { t: UI.fmtDur(ghost.doneAt * 1000) });
-            now.hidden = true;
         }
     }
 
@@ -605,11 +612,13 @@
     function relang() {
         renderLinkNote(); renderNetNote();
         if (lastNet) UI.renderNet(lastNet.s, T(lastNet.k, lastNet.v));
-        $('btnStart').textContent = running ? T('Ausfahrt beenden') : T('Ausfahrt starten');
-        $('btnSim').textContent = sim ? T('Simulation beenden') : T('Simulation starten');
-        renderRides(); renderGhostUi(); syncSimBar(); renderProfiles();
+        $('btnSim').textContent = T('Simulation starten');
+        $('btnStop').textContent = sim ? T('Simulation beenden') : T('Ausfahrt beenden');
+        renderRides(); renderGhostUi(); renderRouteUi(); syncMeChip(); syncSimBar(); renderProfiles();
         Msg.render(); liveMap.relabel(); SegUI.refresh(); LigaUI.relang(); ReplayUI.relang();
         if (!$('sumOverlay').hidden && sumData) $('sumBody').innerHTML = Summary.html(sumData);
+        if (!$('rideOverlay').hidden && detailId) openRide(detailId);
+        if (!$('pickOverlay').hidden && pickMode) openPick(pickMode);
         render();
     }
 
@@ -633,9 +642,21 @@
         };
         store('plan', id);
         planHint = {};
-        syncProfMode();
+        syncProfMode(); renderRouteUi();
     }
-    function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); }
+    function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); renderRouteUi(); }
+
+    function renderRouteUi() {
+        var st = $('routeState');
+        if (!plan) {
+            st.innerHTML = T('Keine Route gewählt. Eine gespeicherte Fahrt, ein GPX-Track oder ein Plan wird als Linie auf der Karte gezeigt; das Höhenprofil kennt dann auch das Stück vor dem Führenden.');
+            $('btnRouteOff').hidden = true;
+        } else {
+            st.innerHTML = T('Route') + ' <b>' + UI.escapeHtml(plan.name) + '</b> · ' + UI.fmtDist(plan.route.length()) + ' · +' + Math.round(plan.gain) + ' ' + T('Hm');
+            $('btnRouteOff').hidden = false;
+        }
+        $('btnRoutePick').textContent = plan ? T('Andere Route wählen …') : T('Route wählen …');
+    }
 
     /* ---------------- Elevation profile ----------------
        With a route: the profile of the whole route, the riders projected onto it (also ahead of
@@ -664,8 +685,8 @@
     }
 
     function renderProfiles() {
-        var onClimbs = isActive('climbs') && !$('sub-now').hidden;
-        var onMap = isActive('map') && !$('mapProf').hidden;
+        var onClimbs = isPane('prof');
+        var onMap = isPane('map') && !$('mapProf').hidden;
         if (!onClimbs && !onMap) return;
         var inp = profileInput();
         inp.mode = profMode || (plan ? 'ahead' : 'all');
@@ -685,58 +706,121 @@
         document.querySelectorAll('[data-pm]').forEach(function (b) { b.classList.toggle('on', b.dataset.pm === m); });
     }
 
-    function onSubShown(name) { if (name === 'seg' || name === 'rec') SegUI.refresh(); }
-
+    /* Sub-tabs of "Rides": rides / segments / records */
     function showSub(name) {
-        ['now', 'seg', 'rec'].forEach(function (x) { $('sub-' + x).hidden = x !== name; });
+        ['rides', 'seg', 'rec'].forEach(function (x) { $('sub-' + x).hidden = x !== name; });
         document.querySelectorAll('[data-sub]').forEach(function (b) { b.classList.toggle('on', b.dataset.sub === name); });
-        if (name === 'now') renderProfiles();
-        if (typeof onSubShown === 'function') onSubShown(name);
+        if (name === 'seg' || name === 'rec') SegUI.refresh();
+    }
+
+    /* Panes of the live screen: compass / map / profile / events */
+    var PANES = ['compass', 'map', 'prof', 'log'];
+    function showPane(name) {
+        if (PANES.indexOf(name) < 0) name = 'compass';
+        PANES.forEach(function (x) { $('lv-' + x).classList.toggle('active', x === name); });
+        document.querySelectorAll('[data-lv]').forEach(function (b) { b.classList.toggle('on', b.dataset.lv === name); });
+        store('lpane', name);
+        if (name === 'map')  { render(); liveMap.ensureLoop(); }
+        if (name === 'prof') { renderProfiles(); seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
+        if (name === 'compass') ensureCompassLoop();
+        if (name === 'log')  { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
+    }
+
+    /* Ready state vs. live screen of the ride tab */
+    function setLive() {
+        $('v-ride').classList.toggle('is-live', isLive());
+        document.querySelector('nav [data-v="ride"]').classList.toggle('riding', isLive());     // dot: a ride is running, also visible on the other tabs
+        $('btnStop').textContent = sim ? T('Simulation beenden') : T('Ausfahrt beenden');
+        var cur = PANES.filter(function (x) { return $('lv-' + x).classList.contains('active'); })[0] || 'compass';
+        if (isLive()) showPane(cur);
+        renderGhostUi();
     }
 
     /* ---------------- Saved rides ---------------- */
     var SRC = { ride: 'gefahren', sim: 'Simulation', gpx: 'GPX', plan: 'Plan' };
+    var detailId = null, pickMode = null;
+
+    function upChip(r) {
+        if (!LigaSync.eligible(r) || !LigaApi.account()) return '';
+        var s = LigaSync.status(r.id);
+        if (!s) return '';
+        if (s.state === 'ok') return '<span class="rchip ok">' + T('Liga ✓') + '</span>';
+        if (s.state === 'wait') return '<span class="rchip">' + T('Liga wartet') + '</span>';
+        return '<span class="rchip bad">' + T('Liga abgelehnt') + '</span>';
+    }
 
     function renderRides() {
         var l = Rides.list();
         $('rideList').innerHTML = l.map(function (r) {
-            var on = ghost && ghost.rec.id === r.id;
-            return '<div class="ride" data-id="' + r.id + '">' +
+            var isG = ghost && ghost.rec.id === r.id, isR = plan && plan.id === r.id;
+            return '<div class="ride" data-id="' + r.id + '" role="button" tabindex="0">' +
                 '<div class="rt"><b>' + UI.escapeHtml(r.name) + '</b>' +
                 '<span class="rm">' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' +
                 T(SRC[r.src] || r.src) + '</span></div>' +
-                '<div class="rb">' + (r.src === 'plan' ? '' : '<button data-act="replay">' + T('Replay') + '</button><button data-act="sum">' + T('Bilanz') + '</button>') +
-                '<button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? T('Ghost') + ' ✓' : T('Ghost')) + '</button>' +
-                '<button data-act="route" class="' + (plan && plan.id === r.id ? 'on' : '') + '">' + (plan && plan.id === r.id ? T('Route') + ' ✓' : T('Route')) + '</button>' +
-                '<button data-act="gpx">GPX</button><button data-act="del" aria-label="' + T('Löschen') + '">✕</button></div></div>';
+                '<div class="rb">' + (isG ? '<span class="rchip on">' + T('Ghost') + '</span>' : '') + (isR ? '<span class="rchip on">' + T('Route') + '</span>' : '') +
+                upChip(r) + '<span class="rgo" aria-hidden="true">›</span></div></div>';
         }).join('') || '<div class="empty">' + T('Noch nichts gespeichert. Jede beendete Ausfahrt und Simulation wird automatisch hier abgelegt.') + '</div>';
         if (l.length) {
             $('rideList').insertAdjacentHTML('beforeend', '<div class="note">' +
                 (l.length === 1 ? T('1 Ausfahrt, rund {kb} KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.', { kb: Rides.usage() })
                                 : T('{n} Ausfahrten, rund {kb} KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.', { n: l.length, kb: Rides.usage() })) + '</div>');
         }
-        $('rideList').querySelectorAll('button').forEach(function (b) {
-            b.addEventListener('click', function () {
-                var id = b.closest('.ride').dataset.id, act = b.dataset.act;
-                if (act === 'ghost') { if (ghost && ghost.rec.id === id) dropGhost(); else armGhost(id); }
-                else if (act === 'route') {
-                    if (plan && plan.id === id) clearPlan(); else setPlan(id);
-                    renderRides(); liveMap.sync(); liveMap.draw();
-                }
-                else if (act === 'replay') ReplayUI.open(id);
-                else if (act === 'sum') openSummary(id);
-                else if (act === 'gpx') exportRide(id);
-                else if (act === 'del') {
-                    if (!confirm(T('Diese Ausfahrt löschen?'))) return;
-                    if (ghost && ghost.rec.id === id) dropGhost();
-                    if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
-                    var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
-                    Rides.remove(id);
-                    if (gone) Segments.forgetRide(id, gone.src);
-                    SegUI.refresh(); renderRides();
-                }
-            });
-        });
+    }
+
+    /* Details of one ride: every action in one place */
+    function openRide(id) {
+        var r = Rides.list().filter(function (x) { return x.id === id; })[0];
+        if (!r) { $('rideOverlay').hidden = true; detailId = null; return; }
+        detailId = id;
+        var isG = ghost && ghost.rec.id === id, isR = plan && plan.id === id, real = r.src !== 'plan';
+        $('rideTitle').textContent = r.name;
+        $('rideMeta').textContent = UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' + T(SRC[r.src] || r.src);
+        var acts = [];
+        if (real) acts.push('<button class="btn go wide" data-act="sum">' + T('Bilanz ansehen') + '</button><button class="btn wide" data-act="replay">' + T('Replay der Gruppe') + '</button>');
+        acts.push('<button class="btn' + (isG ? ' on' : '') + '" data-act="ghost">' + (isG ? T('Ghost entfernen') : T('Als Ghost fahren')) + '</button>' +
+                  '<button class="btn' + (isR ? ' on' : '') + '" data-act="route">' + (isR ? T('Route entfernen') : T('Als Route zeigen')) + '</button>');
+        acts.push('<button class="btn" data-act="gpx">' + T('Als GPX sichern') + '</button>');
+        if (LigaSync.eligible(r) && LigaApi.account()) {
+            var s = LigaSync.status(id);
+            acts.push('<button class="btn" data-act="liga">' + (s && s.state === 'ok' ? T('In der Liga teilen …') : T('Liga-Upload …')) + '</button>');
+        }
+        acts.push('<button class="btn danger wide" data-act="del">' + T('Löschen') + '</button>');
+        $('rideActs').innerHTML = '<div class="actgrid">' + acts.join('') + '</div>';
+        $('rideOverlay').hidden = false;
+    }
+
+    function rideAct(act) {
+        var id = detailId; if (!id) return;
+        var close = function () { $('rideOverlay').hidden = true; detailId = null; };
+        if (act === 'ghost') { if (ghost && ghost.rec.id === id) dropGhost(); else armGhost(id); close(); }
+        else if (act === 'route') {
+            if (plan && plan.id === id) clearPlan(); else setPlan(id);
+            renderRides(); liveMap.sync(); liveMap.draw(); close();
+        }
+        else if (act === 'replay') { close(); ReplayUI.open(id); }
+        else if (act === 'sum') { close(); openSummary(id); }
+        else if (act === 'gpx') { exportRide(id); close(); }
+        else if (act === 'liga') { close(); LigaUI.showRide(id); showView('liga'); }
+        else if (act === 'del') {
+            if (!confirm(T('Diese Ausfahrt löschen?'))) return;
+            if (ghost && ghost.rec.id === id) dropGhost();
+            if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
+            var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
+            Rides.remove(id);
+            if (gone) Segments.forgetRide(id, gone.src);
+            SegUI.refresh(); renderRides(); close();
+        }
+    }
+
+    /* Choose a ride for the ghost or the route (from the ride tab) */
+    function openPick(mode) {
+        pickMode = mode;
+        $('pickTitle').textContent = mode === 'ghost' ? T('Ghost wählen') : T('Route wählen');
+        var l = Rides.list();
+        $('pickList').innerHTML = l.map(function (r) {
+            return '<button class="pickrow" data-id="' + r.id + '">' + UI.escapeHtml(r.name) + '<span>' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' + T(SRC[r.src] || r.src) + '</span></button>';
+        }).join('') || '<div class="empty">' + T('Noch keine Fahrt gespeichert. Unter „Fahrten“ lässt sich eine GPX-Datei oder ein Trainingsplan importieren.') + '</div>';
+        $('pickOverlay').hidden = false;
     }
 
     function exportRide(id) {
@@ -781,21 +865,23 @@
     }
 
     /* ---------------- Tabs ---------------- */
-    function isActive(v) { return $('v-' + v).classList.contains('active'); }
+    var VIEWS = ['ride', 'rides', 'liga', 'more'];
+    function isView(v) { return $('v-' + v).classList.contains('active'); }
+    /* Is this pane of the live screen visible right now? (the drawing loops depend on it) */
+    function isPane(p) { return isView('ride') && isLive() && $('lv-' + p).classList.contains('active'); }
 
     function showView(v) {
-        ['tacho', 'map', 'log', 'climbs', 'liga', 'group'].forEach(function (x) {
-            $('v-' + x).classList.toggle('active', x === v);
-        });
+        VIEWS.forEach(function (x) { $('v-' + x).classList.toggle('active', x === v); });
         document.querySelectorAll('nav button').forEach(function (b) {
             b.classList.toggle('on', b.dataset.v === v);
         });
-        if (v === 'map')    { render(); liveMap.ensureLoop(); }
-        if (v === 'climbs') { renderProfiles(); }
-        if (v === 'tacho')  { ensureCompassLoop(); LigaUI.tachoTick(); }
-        if (v === 'liga')   { LigaUI.opened(); }
-        if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
-        if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
+        if (v === 'ride')  {
+            if (isLive()) showPane(PANES.filter(function (x) { return $('lv-' + x).classList.contains('active'); })[0]);
+            LigaUI.tachoTick();
+        }
+        if (v === 'rides') { renderRides(); SegUI.refresh(); }
+        if (v === 'liga')  { LigaUI.opened(); }
+        if (v === 'more')  { LigaUI.accountOpened(); }
     }
 
     /* ---------------- Download ---------------- */
@@ -819,6 +905,7 @@
             this.value = me.name;
             store('rname', me.name);
             if (an.riders[me.id]) an.riders[me.id].name = me.name;
+            syncMeChip();
             sendMine();
             LigaUI.profileChanged();
         });
@@ -844,7 +931,7 @@
             me.emoji = i < 0 ? null : UI.validEmoji(i);
             store('remoji', me.emoji === null ? '' : String(me.emoji));
             if (an.riders[me.id]) an.riders[me.id].emoji = me.emoji;
-            drawEmojiPick();
+            drawEmojiPick(); syncMeChip();
             sendMine();                                   // the others see it at the next beat
             LigaUI.profileChanged();
         });
@@ -869,24 +956,14 @@
         /* Start MUST come from a user gesture: iOS only releases the
            compass that way, and Wake Lock as well. */
         $('btnStart').addEventListener('click', async function () {
-            if (running) {
-                running = false;
-                Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
-                finishRecording('ride');
-                SegUI.stopLive();
-                armGhostAgain();          // ghost waits at the start again
-                this.textContent = T('Ausfahrt starten');
-                this.className = 'btn go';
-                netStatus('off', 'gestoppt');
-                return;
-            }
+            if (running) return;
             if (sim) simStop();
             myTrack = []; coffeeStamps = []; Recorder.reset(me.id);      // every ride is recorded individually
             SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
-            this.textContent = T('Ausfahrt beenden');
-            this.className = 'btn stop';
+            setLive();
+            showView('ride');
 
             await Sensors.startCompass();
             Sensors.keepAwake(true);
@@ -895,10 +972,27 @@
             });
             if (!ok) netStatus('off', 'Kein GPS verfügbar');
             startNet();
-            showView('tacho');
         });
 
-        $('btnShare').addEventListener('click', async function () {
+        /* Ending is a tap plus a confirmation: a stray touch on the bike must not close the ride. */
+        function stopRide() {
+            running = false;
+            Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
+            finishRecording('ride');
+            SegUI.stopLive();
+            armGhostAgain();          // ghost waits at the start again
+            setLive();
+            netStatus('off', 'gestoppt');
+            showView('ride');
+        }
+        $('btnStop').addEventListener('click', function () {
+            if (sim) { simStop(); return; }
+            if (!confirm(T('Ausfahrt beenden? Sie wird gespeichert.'))) return;
+            stopRide();
+        });
+
+        /* Invite: the same two actions on the ready screen and below the rider list */
+        async function shareInvite(btn) {
             var url = shareLink();
             try {
                 if (navigator.share) {
@@ -908,15 +1002,20 @@
             } catch (e) { /* cancelled */ }
             try {
                 await navigator.clipboard.writeText(url);
-                this.textContent = T('Link kopiert');
-                var b = this;
-                setTimeout(function () { b.textContent = T('Link zum Mitfahren teilen'); }, 1800);
+                var old = btn.textContent;
+                btn.textContent = T('Link kopiert');
+                setTimeout(function () { btn.textContent = old; }, 1800);
             } catch (e) {
                 prompt(T('Diesen Link weitergeben:'), url);
             }
+        }
+        $('btnShare').addEventListener('click', function () { shareInvite(this); });
+        $('riderList').addEventListener('click', function (e) {
+            var b = e.target.closest('[data-share]'); if (!b) return;
+            if (b.dataset.share === 'qr') showQr(); else shareInvite(b);
         });
 
-        $('btnSim').addEventListener('click', function () { if (sim) simStop(); else simStart(); });
+        $('btnSim').addEventListener('click', function () { if (!sim) simStart(); });
         $('btnSimAttack').addEventListener('click', function () { if (sim) { sim.attack(); syncSimBar(); } });
         $('simLess').addEventListener('click', function () {
             if (sim) { sim.effort = Math.max(0.5, Math.round((sim.effort - 0.1) * 10) / 10); syncSimBar(); } });
@@ -930,6 +1029,7 @@
         LigaUI.init({
             me: function () { return { name: me.name, emoji: me.emoji, color: myColor() }; },
             live: function () { return running && !sim && myTrack.length > 1 ? { dist: Rides.distanceOf(myTrack), moving: Track.movingMs(myTrack) } : null; },
+            showView: showView,
             ridesChanged: function () { renderRides(); }
         });
         Msg.init({
@@ -951,6 +1051,31 @@
         document.querySelectorAll('[data-sub]').forEach(function (b) {
             b.addEventListener('click', function () { showSub(b.dataset.sub); });
         });
+        document.querySelectorAll('[data-lv]').forEach(function (b) {
+            b.addEventListener('click', function () { showPane(b.dataset.lv); });
+        });
+        $('meChip').addEventListener('click', function () { showView('more'); });
+        $('rideList').addEventListener('click', function (e) {
+            var r = e.target.closest('.ride'); if (r) openRide(r.dataset.id);
+        });
+        $('rideList').addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            var r = e.target.closest('.ride'); if (r) { e.preventDefault(); openRide(r.dataset.id); }
+        });
+        $('rideActs').addEventListener('click', function (e) { var b = e.target.closest('[data-act]'); if (b) rideAct(b.dataset.act); });
+        function closeOverlay(id) { $(id).hidden = true; }
+        $('rideClose').addEventListener('click', function () { closeOverlay('rideOverlay'); detailId = null; });
+        $('rideOverlay').addEventListener('click', function (e) { if (e.target === this) { this.hidden = true; detailId = null; } });
+        $('pickClose').addEventListener('click', function () { closeOverlay('pickOverlay'); pickMode = null; });
+        $('pickOverlay').addEventListener('click', function (e) { if (e.target === this) { this.hidden = true; pickMode = null; } });
+        $('pickList').addEventListener('click', function (e) {
+            var b = e.target.closest('.pickrow'); if (!b) return;
+            if (pickMode === 'ghost') armGhost(b.dataset.id); else { setPlan(b.dataset.id); renderRides(); liveMap.sync(); liveMap.draw(); }
+            $('pickOverlay').hidden = true; pickMode = null;
+        });
+        $('btnGhostPick').addEventListener('click', function () { openPick('ghost'); });
+        $('btnRoutePick').addEventListener('click', function () { openPick('route'); });
+        $('btnRouteOff').addEventListener('click', function () { clearPlan(); renderRides(); liveMap.sync(); liveMap.draw(); });
         document.querySelectorAll('[data-pm]').forEach(function (b) {
             b.addEventListener('click', function () { profMode = b.dataset.pm; store('profmode', profMode); syncProfMode(); renderProfiles(); });
         });
@@ -1032,7 +1157,7 @@
         initIdentity();
         liveMap = MapCtl.mount($('liveMap'), {
             prefix: 'map', persist: true, extras: [{ id: 'ProfBtn', label: 'Profil' }],
-            isActive: function () { return isActive('map'); },
+            isActive: function () { return isPane('map'); },
             hasRoute: function () { return !!plan; },
             getData: function () {
                 if (!lastMap) return null;
@@ -1046,7 +1171,7 @@
         } catch (e) {
             netStatus('off', 'Verschlüsselung nicht verfügbar – ist die Seite über https:// geladen?');
         }
-        netStatus('off', 'bereit – unter „Gruppe“ starten');
+        netStatus('off', 'bereit zum Start');
         var gp = store('gpace');
         if (gp) $('ghostPace').value = gp;
         recoverDraft();
@@ -1055,14 +1180,16 @@
         profMode = store('profmode') || null;
         if (store('mapprof') === '1') { $('mapProf').hidden = false; $('mapProfBtn').classList.add('on'); $('mapProfBtn').setAttribute('aria-pressed', 'true'); }
         syncProfMode();
-        renderRides(); renderGhostUi(); liveMap.sync();
+        renderRides(); renderGhostUi(); renderRouteUi(); syncMeChip(); liveMap.sync();
         setInterval(function () {                        // ghost in real time (the simulation drives it itself)
             if (running && !sim) ghostStep(Date.now(), Date.now());
             renderGhostUi();
         }, 1000);
         setInterval(saveDraftNow, 60000);
         window.addEventListener('pagehide', saveDraftNow);
-        showView(LigaUI.hasInvite() ? 'liga' : 'group');
+        showSub('rides');
+        showPane(store('lpane'));
+        showView(LigaUI.hasInvite() ? 'liga' : 'ride');
         setInterval(render, RENDER_MS);
         render();
         if (new URLSearchParams(location.search).has('sim')) simStart();

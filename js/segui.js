@@ -31,7 +31,7 @@ var SegUI = (function () {
     function setWorld(w) { state.world = (w === 'sim') ? 'sim' : 'real'; refresh(); }
     function worldSwitch() {
         return '<div class="worldsw"><div class="seg" role="group" aria-label="' + esc(T('Fahrten oder Simulation')) + '">' +
-            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>' + T('Fahrten') + '</button>' +
+            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>' + T('Echte Fahrten') + '</button>' +
             '<button data-w="sim"' + (state.world === 'sim' ? ' class="on"' : '') + '>' + T('Simulation') + '</button></div></div>';
     }
 
@@ -99,7 +99,7 @@ var SegUI = (function () {
                      '</span><span class="rv num">' + val + '</span><span class="rd">' + (sub ? sub + ' · ' : '') + esc(rec.rname) + ' · ' + fmtDate(rec.t) + '</span></div>');
         });
         if (!any) out.push('<div class="empty">' + T('Noch keine Rekorde.') + '<br>' +
-                           T('Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Gruppe → Gespeicherte Ausfahrten). Kürzere Fahrten als 1 km zählen nicht.') + '</div>');
+                           T('Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Fahrten → Importieren). Kürzere Fahrten als 1 km zählen nicht.') + '</div>');
         $('recPane').innerHTML = out.join('');
     }
 

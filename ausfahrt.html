@@ -95,6 +95,9 @@ header .grow { flex: 1; min-width: 0; overflow: hidden;
                text-overflow: ellipsis; white-space: nowrap; }
 header b { color: var(--ink); font-weight: 600; }
 
+/* [hidden] must win over our own display rules (.btn, .card, ...) */
+[hidden] { display: none !important; }
+
 /* ---------------- Views ---------------- */
 main { flex: 1; position: relative; min-height: 0; }
 .view {
@@ -241,8 +244,10 @@ nav {
 nav button {
     flex: 1; border: none; background: none; color: var(--ink3);
     font-family: inherit; font-size: 10.5px; letter-spacing: .4px;
-    padding: 9px 2px 8px; text-transform: uppercase;
+    padding: 7px 2px 6px; text-transform: uppercase;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
+nav .ni { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 nav button.on { color: var(--ink); box-shadow: inset 0 2px 0 var(--ink); }
 /* [hidden] is only a UA rule (display:none) -- a display
    declaration of our own beats it. Without the next line there are
@@ -646,6 +651,63 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
 .lg-cat input, .lg-check input { accent-color: var(--good); }
 .lg-pts { font-size: 12px !important; }
 
+/* ============================================================
+ * Structure: four tabs (Ride / Rides / League / More)
+ * ============================================================ */
+.scroll, .ready { -webkit-overflow-scrolling: touch; }
+.btnrow { display: flex; gap: 8px; }
+.btnrow .btn { flex: 1; min-width: 0; padding: 12px 6px; }
+.card { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px 12px; margin-top: 12px; }
+.card .note:first-of-type { margin-top: 2px; }
+.ctitle { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink2); font-weight: 600; }
+.ctitle .hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink3); font-size: 11px; }
+.fold { margin-top: 10px; }
+.fold summary { font-size: 12px; color: var(--ink2); padding: 6px 0; cursor: pointer; }
+
+/* Ride tab: ready state and live screen */
+.ready { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 16px; }
+.live { flex: 1; min-height: 0; display: none; flex-direction: column; }
+#v-ride.is-live .ready { display: none; }
+#v-ride.is-live .live { display: flex; }
+.bigstart { margin-top: 14px; padding: 22px 12px; font-size: 22px; letter-spacing: .3px; }
+.mechip {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px;
+    background: none; border: 1px dashed var(--line); border-radius: 8px; padding: 8px; color: var(--ink2);
+    font-family: inherit; font-size: 13px;
+}
+.mechip .emo { width: 18px; height: 18px; }
+.mechip b { color: var(--ink); font-weight: 600; }
+.switcher { flex: none; margin: 8px 0 6px; width: 100%; }
+.switcher button { flex: 1; padding: 9px 2px; font-size: 13px; }
+.switcher .bdg { display: inline-block; min-width: 15px; margin-left: 3px; background: var(--warn); color: #241400; border-radius: 8px; font-size: 9px; padding: 0 4px; }
+.lpane { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.lpane.active { display: flex; }
+.lpane.scroll { overflow-y: auto; }
+#compass { width: min(70vw, 270px, 31vh); height: min(70vw, 270px, 31vh); }
+.btn.stop.endbtn, .endbtn { flex: none; margin: 6px 0 8px; padding: 10px; font-size: 14px; background: none; color: var(--bad); border: 1px solid var(--bad); font-weight: 600; }
+.ghostrow { flex: none; display: flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 6px 10px; background: var(--bg3); border-radius: 8px; font-size: 12px; color: var(--ink2); }
+.ghostrow span { flex: 1; min-width: 0; }
+.ghostrow button { flex: none; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); border-radius: 6px; padding: 6px 10px; font-family: inherit; font-size: 12px; }
+
+/* History */
+.ride { cursor: pointer; }
+.ride .rb { display: flex; gap: 5px; flex: none; align-items: center; }
+.ride .rchip { font-size: 10px; letter-spacing: .4px; padding: 2px 6px; border-radius: 4px; background: var(--bg3); color: var(--ink2); }
+.ride .rchip.on { background: var(--ink); color: var(--bg); font-weight: 600; }
+.ride .rchip.ok { background: color-mix(in srgb, var(--good) 30%, var(--bg3)); color: var(--ink); }
+.ride .rchip.bad { background: var(--bad); color: #fff; }
+.ride .rgo { color: var(--ink3); font-size: 18px; }
+.actgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.actgrid .btn { margin-top: 0; }
+.actgrid .wide { grid-column: 1 / -1; }
+.pickrow { display: block; width: 100%; text-align: left; padding: 10px 4px; background: none; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-family: inherit; font-size: 14px; }
+.pickrow span { display: block; font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.pickrow:active { background: var(--bg3); }
+.invite { display: flex; gap: 8px; padding: 10px 0 4px; }
+.invite button { flex: 1; border: 1px solid var(--line); background: var(--bg2); color: var(--ink2); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 13px; }
+nav button { position: relative; }
+nav button.riding::after { content: ''; position: absolute; top: 6px; left: calc(50% + 9px); width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 2px var(--bg2); }
+
 </style>
 </head>
 <body>
@@ -658,92 +720,168 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
 
 <main>
 
-    <!-- ============ Speedometer ============ -->
-    <section class="view active" id="v-tacho">
-        <div class="speedrow">
-            <div style="display:flex;align-items:flex-end;gap:7px">
-                <span class="speedbig num" id="mySpeed">--</span>
-                <span class="speedunit">km/h</span>
+    <!-- ============ Ride: ready state, then the live screen ============ -->
+    <section class="view active" id="v-ride">
+
+        <!-- Ready: everything you do BEFORE the start -->
+        <div class="ready scroll" id="rideReady">
+            <button class="btn go bigstart" id="btnStart">Ausfahrt starten</button>
+            <button class="ligarow" id="ligaRowReady" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
+            <button class="mechip" id="meChip" aria-label="Name und Symbol ändern"></button>
+
+            <div class="card">
+                <div class="ctitle">Gruppe</div>
+                <div class="note">Wer den Link öffnet oder den Code scannt, fährt mit – ohne Installation, ohne Konto.</div>
+                <div class="btnrow">
+                    <button class="btn" id="btnShare">Link teilen</button>
+                    <button class="btn" id="btnQr">QR-Code zeigen</button>
+                </div>
+                <details class="fold">
+                    <summary>Link anzeigen · neue Gruppe</summary>
+                    <div class="note" id="linkNote"></div>
+                    <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
+                </details>
             </div>
-            <div class="rankbox">
-                <div class="rankbig num" id="myRank">–</div>
-                <div class="ranklbl" id="myRankLbl">Position</div>
+
+            <div class="card">
+                <div class="ctitle">Ghost <span class="hint">– eine gespeicherte Fahrt fährt als grauer Mitfahrer mit</span></div>
+                <div class="note" id="ghostState"></div>
+                <div class="btnrow">
+                    <button class="btn" id="btnGhostOff" hidden>Ghost entfernen</button>
+                </div>
+                <div id="ghostPaceBox" hidden>
+                    <label for="ghostPace">Ghost-Tempo</label>
+                    <select id="ghostPace">
+                        <option value="0.9">90 % – gemütlicher als damals</option>
+                        <option value="0.95">95 %</option>
+                        <option value="1" selected>100 % – wie damals</option>
+                        <option value="1.02">102 %</option>
+                        <option value="1.05">105 %</option>
+                        <option value="1.1">110 % – schneller als damals</option>
+                    </select>
+                </div>
+                <button class="btn" id="btnGhostPick">Fahrt als Ghost wählen …</button>
+            </div>
+
+            <div class="card">
+                <div class="ctitle">Route <span class="hint">– als Linie auf der Karte und im Höhenprofil</span></div>
+                <div class="note" id="routeState"></div>
+                <div class="btnrow">
+                    <button class="btn" id="btnRouteOff" hidden>Route entfernen</button>
+                    <button class="btn" id="btnRoutePick">Route wählen …</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="ctitle">Ausprobieren</div>
+                <div class="note">Vier virtuelle Mitfahrer auf einer Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet.
+                    Leistung und Antritt regelst du in der Leiste unten.</div>
+                <button class="btn" id="btnSim">Simulation starten</button>
             </div>
         </div>
 
-        <div class="segbanner" id="segBanner" hidden></div>
-        <button class="ligarow" id="ligaRow" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
+        <!-- Live: what you need WHILE riding -->
+        <div class="live" id="rideLive">
+            <div class="speedrow">
+                <div style="display:flex;align-items:flex-end;gap:7px">
+                    <span class="speedbig num" id="mySpeed">--</span>
+                    <span class="speedunit">km/h</span>
+                </div>
+                <div class="rankbox">
+                    <div class="rankbig num" id="myRank">–</div>
+                    <div class="ranklbl" id="myRankLbl">Position</div>
+                </div>
+            </div>
 
-        <div class="compasswrap">
-            <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
-                <circle class="cring faint" cx="0" cy="0" r="30"></circle>
-                <circle class="cring faint" cx="0" cy="0" r="62"></circle>
-                <circle class="cring" cx="0" cy="0" r="92"></circle>
-                <!-- labelled at the bottom: the direction-of-travel marker sits at the top -->
-                <text class="clbl" x="3" y="34">30 m</text>
-                <text class="clbl" x="3" y="66">150 m</text>
-                <text class="clbl" x="3" y="96">500 m</text>
-                <!-- own direction of travel: always up (track-up) -->
-                <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
-                <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
-                <g id="cPeers"></g>
-            </svg>
+            <div class="segbanner" id="segBanner" hidden></div>
+            <button class="ligarow" id="ligaRow" hidden aria-label="Liga-Stand, tippen wechselt die Kategorie"></button>
+            <div class="ghostrow" id="ghostLive" hidden><span id="ghostLiveTxt"></span><button id="btnGhostNow">Jetzt starten</button></div>
+
+            <div class="seg switcher" role="tablist" aria-label="Ansicht">
+                <button data-lv="compass" class="on">Kompass</button>
+                <button data-lv="map">Karte</button>
+                <button data-lv="prof">Profil<span class="bdg" id="bdgClimbs" hidden>0</span></button>
+                <button data-lv="log">Ereignisse<span class="bdg" id="bdgLog" hidden>0</span></button>
+            </div>
+
+            <div class="lpane active" id="lv-compass">
+                <div class="compasswrap">
+                    <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
+                        <circle class="cring faint" cx="0" cy="0" r="30"></circle>
+                        <circle class="cring faint" cx="0" cy="0" r="62"></circle>
+                        <circle class="cring" cx="0" cy="0" r="92"></circle>
+                        <!-- labelled at the bottom: the direction-of-travel marker sits at the top -->
+                        <text class="clbl" x="3" y="34">30 m</text>
+                        <text class="clbl" x="3" y="66">150 m</text>
+                        <text class="clbl" x="3" y="96">500 m</text>
+                        <!-- own direction of travel: always up (track-up) -->
+                        <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
+                        <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
+                        <g id="cPeers"></g>
+                    </svg>
+                </div>
+                <div class="riders" id="riderList"></div>
+            </div>
+
+            <div class="lpane" id="lv-map">
+                <div class="mapmount" id="liveMap"></div>
+                <div class="profstrip" id="mapProf" hidden>
+                    <svg id="mapProfSvg" aria-label="Höhenprofil"></svg>
+                    <div class="profinfo" id="mapProfInfo"></div>
+                </div>
+            </div>
+
+            <div class="lpane scroll" id="lv-prof">
+                <div class="profcard">
+                    <svg id="climbProfSvg" aria-label="Höhenprofil"></svg>
+                    <div class="profinfo" id="climbProfInfo"></div>
+                </div>
+                <div class="seg profmode" role="group" aria-label="Ausschnitt des Profils">
+                    <button data-pm="all">Alles</button>
+                    <button data-pm="ahead">Voraus</button>
+                </div>
+                <h2>Bergsprints</h2>
+                <div id="climbList"></div>
+            </div>
+
+            <div class="lpane scroll" id="lv-log">
+                <h2>Führungsarbeit</h2>
+                <div id="frontWork"></div>
+                <h2>Was passiert ist</h2>
+                <div id="eventList"></div>
+            </div>
+
+            <div class="quickrow" id="quickRow" aria-label="Schnellnachrichten an die Gruppe"></div>
+            <button class="btn stop endbtn" id="btnStop">Ausfahrt beenden</button>
         </div>
-
-        <div class="riders" id="riderList"></div>
-        <div class="quickrow" id="quickRow" aria-label="Schnellnachrichten an die Gruppe"></div>
     </section>
 
-    <!-- ============ Map ============ -->
-    <section class="view" id="v-map">
-        <div class="mapmount" id="liveMap"></div>
-        <div class="profstrip" id="mapProf" hidden>
-            <svg id="mapProfSvg" aria-label="Höhenprofil"></svg>
-            <div class="profinfo" id="mapProfInfo"></div>
-        </div>
-    </section>
-
-    <!-- ============ Log ============ -->
-    <section class="view scroll" id="v-log">
-        <h2>Führungsarbeit</h2>
-        <div id="frontWork"></div>
-        <h2>Was passiert ist</h2>
-        <div id="eventList"></div>
-    </section>
-
-    <!-- ============ Climbs ============ -->
-    <section class="view scroll" id="v-climbs">
+    <!-- ============ Rides: history ============ -->
+    <section class="view scroll" id="v-rides">
         <div class="subtabs">
-            <div class="seg" role="tablist" aria-label="Berge und Rekorde">
-                <button data-sub="now" class="on">Jetzt</button>
+            <div class="seg" role="tablist" aria-label="Fahrten, Segmente und Rekorde">
+                <button data-sub="rides" class="on">Fahrten</button>
                 <button data-sub="seg">Segmente</button>
                 <button data-sub="rec">Rekorde</button>
             </div>
         </div>
-
-        <div class="sub" id="sub-now">
-            <h2>Höhenprofil</h2>
-            <div class="profcard">
-                <svg id="climbProfSvg" aria-label="Höhenprofil"></svg>
-                <div class="profinfo" id="climbProfInfo"></div>
-            </div>
-            <div class="seg profmode" role="group" aria-label="Ausschnitt des Profils">
-                <button data-pm="all">Alles</button>
-                <button data-pm="ahead">Voraus</button>
-            </div>
-            <h2>Bergsprints</h2>
-            <div id="climbList"></div>
+        <div class="sub" id="sub-rides">
+            <button class="btn" id="btnImport">GPX oder Trainingsplan importieren</button>
+            <input type="file" id="fileImport" accept=".gpx,.json,application/json,application/gpx+xml,text/xml" hidden>
+            <div class="note" id="rideMsg"></div>
+            <div id="rideList"></div>
         </div>
         <div class="sub" id="sub-seg" hidden><div id="segPane"></div></div>
         <div class="sub" id="sub-rec" hidden><div id="recPane"></div></div>
     </section>
 
-    <!-- ============ Group ============ -->
+    <!-- ============ League ============ -->
     <section class="view scroll" id="v-liga">
         <div class="ligaroot" id="ligaRoot"></div>
     </section>
 
-    <section class="view scroll" id="v-group">
+    <!-- ============ More: settings ============ -->
+    <section class="view scroll" id="v-more">
         <h2>Ich</h2>
         <label for="inName">Name</label>
         <input type="text" id="inName" maxlength="14" placeholder="Dein Name" autocomplete="off">
@@ -751,56 +889,35 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
         <div class="swatches" id="swatches"></div>
         <label>Symbol</label>
         <div class="emojis" id="emojiPick" role="group" aria-label="Symbol wählen"></div>
-        <div class="note">Emoji-Grafiken: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a>, © Twitter, Inc. und Mitwirkende, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY 4.0</a>.</div>
-
-        <h2>Gruppe</h2>
-        <button class="btn go" id="btnStart">Ausfahrt starten</button>
-        <button class="btn" id="btnShare">Link zum Mitfahren teilen</button>
-        <button class="btn" id="btnQr">QR-Code zum Einscannen zeigen</button>
-        <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
-        <div class="note" id="linkNote"></div>
-
-        <h2>Simulation</h2>
-        <button class="btn" id="btnSim">Simulation starten</button>
-        <div class="note">Zum Ausprobieren ohne Fahrrad: vier virtuelle Mitfahrer auf einer
-            Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet.
-            Leistung und Antritt regelst du in der Leiste unten.</div>
-
-        <h2>Ghost</h2>
-        <div class="note" id="ghostState"></div>
-        <button class="btn" id="btnGhostNow" hidden>Ghost jetzt starten</button>
-        <button class="btn" id="btnGhostOff" hidden>Ghost entfernen</button>
-        <label for="ghostPace">Ghost-Tempo</label>
-        <select id="ghostPace">
-            <option value="0.9">90 % – gemütlicher als damals</option>
-            <option value="0.95">95 %</option>
-            <option value="1" selected>100 % – wie damals</option>
-            <option value="1.02">102 %</option>
-            <option value="1.05">105 %</option>
-            <option value="1.1">110 % – schneller als damals</option>
-        </select>
-
-        <h2>Gespeicherte Ausfahrten</h2>
-        <div id="rideList"></div>
-        <button class="btn" id="btnImport">GPX oder Trainingsplan importieren</button>
-        <input type="file" id="fileImport" accept=".gpx,.json,application/json,application/gpx+xml,text/xml" hidden>
-        <div class="note" id="rideMsg"></div>
 
         <h2>Anzeige</h2>
-        <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
-        <button class="btn" id="btnLang"></button>
+        <div class="btnrow">
+            <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
+            <button class="btn" id="btnLang"></button>
+        </div>
 
-        <h2>Auswertung</h2>
-        <button class="btn" id="btnExport">Ausfahrt als JSON sichern</button>
-        <button class="btn" id="btnGpx">Eigene Spur als GPX</button>
+        <h2>Liga-Konto</h2>
+        <div id="accountRoot"></div>
 
-        <h2>Verbindung</h2>
+        <h2>Daten sichern</h2>
+        <div class="btnrow">
+            <button class="btn" id="btnGpx">Eigene Spur als GPX</button>
+            <button class="btn" id="btnExport">Ausfahrt als JSON</button>
+        </div>
+        <div class="note">Gespeicherte Fahrten liegen nur in diesem Browser. Jede Fahrt lässt sich unter „Fahrten“ als GPX sichern.</div>
+
+        <h2>Verbindung und Datenschutz</h2>
         <div class="note" id="netNote"></div>
-        <label for="inRelay">Eigener Relay (optional)</label>
-        <input type="url" id="inRelay" placeholder="wss://dein-worker.workers.dev" autocomplete="off">
-        <button class="btn" id="btnRelay">Relay übernehmen und neu laden</button>
-
+        <details class="fold">
+            <summary>Erweitert: eigener Relay</summary>
+            <label for="inRelay">Eigener Relay (optional)</label>
+            <input type="url" id="inRelay" placeholder="wss://dein-worker.workers.dev" autocomplete="off">
+            <button class="btn" id="btnRelay">Relay übernehmen und neu laden</button>
+        </details>
         <div class="warnbox" id="privacyNote"></div>
+
+        <h2>Info</h2>
+        <div class="note">Emoji-Grafiken: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a>, © Twitter, Inc. und Mitwirkende, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY 4.0</a>.</div>
         <div style="height:24px"></div>
     </section>
 
@@ -824,12 +941,10 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
 </div>
 
 <nav>
-    <button class="on" data-v="tacho">Tacho</button>
-    <button data-v="map">Karte</button>
-    <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
-    <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
-    <button data-v="liga">Liga</button>
-    <button data-v="group">Gruppe</button>
+    <button class="on" data-v="ride"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-6"/></svg>Ausfahrt</button>
+    <button data-v="rides"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Fahrten</button>
+    <button data-v="liga"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg>Liga</button>
+    <button data-v="more"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Mehr</button>
 </nav>
 
 <!-- Messages: incoming banners and the selection of all short messages -->
@@ -839,6 +954,25 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
         <div class="qrttl">Nachricht an die Gruppe</div>
         <div class="msggrid" id="msgGrid"></div>
         <button class="btn" id="msgClose">Schließen</button>
+    </div>
+</div>
+
+<!-- Picker: choose a saved ride as ghost or route -->
+<div id="pickOverlay" class="overlay" hidden>
+    <div class="qrcard" role="dialog" aria-modal="true" aria-label="Fahrt wählen">
+        <div class="qrttl" id="pickTitle">Fahrt wählen</div>
+        <div id="pickList"></div>
+        <button class="btn" id="pickClose">Schließen</button>
+    </div>
+</div>
+
+<!-- Details of a saved ride: all actions in one place -->
+<div id="rideOverlay" class="overlay" hidden>
+    <div class="qrcard" role="dialog" aria-modal="true" aria-label="Fahrt">
+        <div class="qrttl" id="rideTitle"></div>
+        <div class="note" id="rideMeta"></div>
+        <div id="rideActs"></div>
+        <button class="btn" id="rideClose">Schließen</button>
     </div>
 </div>
 
@@ -1178,7 +1312,6 @@ I18n.add('en', {
 "Umbenennen": "Rename",
 "NEU": "NEW",
 "Noch keine Rekorde.": "No records yet.",
-"Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Gruppe → Gespeicherte Ausfahrten). Kürzere Fahrten als 1 km zählen nicht.": "They arise automatically from every finished ride – also from imported GPX files (Group → Saved rides). Rides shorter than 1 km do not count.",
 "Es gibt noch keine gespeicherte Simulationsfahrt.": "There is no saved simulation ride yet.",
 "Es gibt noch keine gespeicherte Fahrt. Segmente werden aus einer Fahrt herausgeschnitten.": "There is no saved ride yet. Segments are cut out of a ride.",
 "Anfang muss vor dem Ende liegen.": "The start must be before the end.",
@@ -1228,7 +1361,6 @@ I18n.add('en', {
 "KEIN SIGNAL": "NO SIGNAL",
 "ohne Bezug": "no reference",
 "Noch niemand verbunden.": "Nobody connected yet.",
-"Teile den Link unter „Gruppe“ – wer ihn öffnet, erscheint hier.": "Share the link under “Group” – whoever opens it appears here.",
 "Sobald gefahren wird, zählt hier mit, wer vorne war.": "As soon as you ride, this counts who was in front.",
 "Überholvorgänge, Antritte und Abrisse erscheinen hier, sobald die Streckenachse steht (etwa 150 m nach dem Start).": "Overtakes, attacks and drops appear here once the route axis is established (about 150 m after the start).",
 "Noch kein Anstieg erkannt.": "No climb detected yet.",
@@ -1258,7 +1390,6 @@ I18n.add('en', {
 "Simulation starten": "Start simulation",
 "Ziel erreicht – Simulation zu Ende. Beenden und neu starten zum Wiederholen.": "Finish reached – simulation over. Stop and restart to repeat.",
 "Du: km {a} von {b} · Zeit {t}": "You: km {a} of {b} · time {t}",
-"„{name}“ gespeichert – {d}, {t}. Unten als Ghost verwendbar.": "“{name}” saved – {d}, {t}. Usable as a ghost below.",
 "„{name}“ gespeichert. Auswertung läuft …": "“{name}” saved. Analysis running …",
 "„{name}“ gespeichert": "“{name}” saved",
 "{n} neue Bestzeiten": "{n} new best times",
@@ -1274,7 +1405,6 @@ I18n.add('en', {
 "Eine nicht beendete Fahrt wurde wiederhergestellt.": "A ride that was not finished has been recovered.",
 "Diese Ausfahrt ist nicht mehr gespeichert.": "This ride is no longer saved.",
 "Erst eine Ausfahrt oder die Simulation starten.": "Start a ride or the simulation first.",
-"Kein Ghost gewählt. Unter „Gespeicherte Ausfahrten“ eine Fahrt als Ghost wählen, dann fährt sie als grauer Mitfahrer mit – mit Rang, Lücke und Karte wie jeder andere.": "No ghost chosen. Pick a ride as a ghost under “Saved rides”, then it rides along as a grey fellow rider – with rank, gap and map like everybody else.",
 "wartet. Er startet, sobald du die Ausfahrt startest und am Startpunkt bist ({m} m).": "is waiting. It starts as soon as you start the ride and are at the start point ({m} m).",
 "wartet am Startpunkt – noch {d} entfernt. Er startet automatisch ab {m} m.": "is waiting at the start point – {d} away. It starts automatically from {m} m.",
 "wartet auf deine Position.": "is waiting for your position.",
@@ -1300,7 +1430,6 @@ I18n.add('en', {
 "Kein Symbol": "No symbol",
 "Symbol {n}": "Symbol {n}",
 "Link kopiert": "Link copied",
-"Link zum Mitfahren teilen": "Share link to ride along",
 "Diesen Link weitergeben:": "Pass on this link:",
 "Bild wird erzeugt …": "Creating image …",
 "Teilen nicht möglich: {e}": "Sharing not possible: {e}",
@@ -1313,7 +1442,6 @@ I18n.add('en', {
 "nächster Broker …": "next broker …",
 "kein Netz – nur eigene Daten": "no network – own data only",
 "Simulation – nichts wird gesendet": "Simulation – nothing is sent",
-"bereit – unter „Gruppe“ starten": "ready – start under “Group”",
 "gestoppt": "stopped",
 "Kein GPS verfügbar": "No GPS available",
 "Verschlüsselung nicht verfügbar – ist die Seite über https:// geladen?": "Encryption not available – is the page loaded via https://?",
@@ -1323,8 +1451,6 @@ I18n.add('en', {
 "Liga-Stand, tippen wechselt die Kategorie": "League standing, tapping switches the category",
 "Schnellnachrichten an die Gruppe": "Quick messages to the group",
 "Was passiert ist": "What happened",
-"Berge und Rekorde": "Climbs and records",
-"Jetzt": "Now",
 "Segmente": "Segments",
 "Rekorde": "Records",
 "Höhenprofil": "Elevation profile",
@@ -1338,23 +1464,16 @@ I18n.add('en', {
 "Symbol": "Symbol",
 "Symbol wählen": "Choose a symbol",
 "Emoji-Grafiken: <a href=\"https://github.com/jdecked/twemoji\" target=\"_blank\" rel=\"noopener\">Twemoji</a>, © Twitter, Inc. und Mitwirkende, <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener\">CC-BY 4.0</a>.": "Emoji graphics: <a href=\"https://github.com/jdecked/twemoji\" target=\"_blank\" rel=\"noopener\">Twemoji</a>, © Twitter, Inc. and contributors, <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener\">CC-BY 4.0</a>.",
-"QR-Code zum Einscannen zeigen": "Show QR code to scan",
 "Neue Gruppe öffnen": "Open a new group",
-"Zum Ausprobieren ohne Fahrrad: vier virtuelle Mitfahrer auf einer Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet. Leistung und Antritt regelst du in der Leiste unten.": "For trying things out without a bike: four virtual fellow riders on a test lap, you are the fifth. No GPS, no network, nothing is sent. You control power and attack in the bar below.",
-"Ghost jetzt starten": "Start ghost now",
 "Ghost entfernen": "Remove ghost",
 "Ghost-Tempo": "Ghost speed",
 "90 % – gemütlicher als damals": "90 % – more relaxed than back then",
 "100 % – wie damals": "100 % – like back then",
 "110 % – schneller als damals": "110 % – faster than back then",
-"Gespeicherte Ausfahrten": "Saved rides",
 "GPX oder Trainingsplan importieren": "Import GPX or training plan",
 "Anzeige": "Display",
 "Sonnenmodus umschalten": "Toggle sun mode",
-"Auswertung": "Analysis",
-"Ausfahrt als JSON sichern": "Save ride as JSON",
 "Eigene Spur als GPX": "Own track as GPX",
-"Verbindung": "Connection",
 "Eigener Relay (optional)": "Own relay (optional)",
 "wss://dein-worker.workers.dev": "wss://your-worker.workers.dev",
 "Relay übernehmen und neu laden": "Apply relay and reload",
@@ -1364,9 +1483,6 @@ I18n.add('en', {
 "Weniger Leistung": "Less power",
 "Mehr Leistung": "More power",
 "Antritt!": "Attack!",
-"Tacho": "Speed",
-"Verlauf": "Log",
-"Berge": "Climbs",
 "Liga": "League",
 "Gruppe": "Group",
 "Nachricht an die Gruppe": "Message to the group",
@@ -1440,7 +1556,6 @@ I18n.add('en', {
 "<input type=\"email\" id=\"lgEmail\" autocomplete=\"email\" inputmode=\"email\" placeholder=\"du@beispiel.de\" value=\"": "<input type=\"email\" id=\"lgEmail\" autocomplete=\"email\" inputmode=\"email\" placeholder=\"you@example.com\" value=\"",
 "Code per E-Mail senden": "Send code by e-mail",
 "<div class=\"note\">Die Adresse dient nur dazu, dir einen Code zu schicken und dich auf einem neuen Gerät wiederzuerkennen. ": "<div class=\"note\">The address is only used to send you a code and to recognise you on a new device. ",
-"Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus dem Reiter „Gruppe“.</div>": "Only a check value is stored, not the address. Your name, symbol and colour come from the “Group” tab.</div>",
 "<div class=\"note\">Ein 6-stelliger Code wurde an <b>": "<div class=\"note\">A 6-digit code has been sent to <b>",
 "</b> geschickt (10 Minuten gültig).</div>": "</b> (valid for 10 minutes).</div>",
 "<div class=\"note lg-ok\">Entwicklungsmodus: Code ": "<div class=\"note lg-ok\">Development mode: code ",
@@ -1455,9 +1570,6 @@ I18n.add('en', {
 "Admin": "Admin",
 "Neue Liga anlegen": "Create a new league",
 "<label for=\"lgInvite\">Einladungslink einfügen</label><input type=\"text\" id=\"lgInvite\" placeholder=\"https://…#l=…\" autocomplete=\"off\">": "<label for=\"lgInvite\">Paste invitation link</label><input type=\"text\" id=\"lgInvite\" placeholder=\"https://…#l=…\" autocomplete=\"off\">",
-"<h2>Meine Fahrten</h2>": "<h2>My rides</h2>",
-"<h2>Konto</h2><div class=\"lg-card\"><div class=\"lg-me\">": "<h2>Account</h2><div class=\"lg-card\"><div class=\"lg-me\">",
-"<div class=\"note\">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du unter „Gruppe“.</div>": "<div class=\"note\">Logged in on this device. You change name, symbol and colour under “Group”.</div>",
 "Geräte anzeigen": "Show devices",
 "Auf diesem Gerät abmelden": "Log out on this device",
 "Konto und alle Daten löschen": "Delete account and all data",
@@ -1485,9 +1597,7 @@ I18n.add('en', {
 "zurücknehmen": "withdraw",
 "teilen": "share",
 "Stand": "Standing",
-"Ziele": "Goals",
 "Halle": "Hall",
-"Geteilt": "Shared",
 "Mehr": "More",
 "<button class=\"lg-back\" data-act=\"home\">‹ Ligen</button>": "<button class=\"lg-back\" data-act=\"home\">‹ Leagues</button>",
 "<div class=\"note\">Lade …</div>": "<div class=\"note\">Loading …</div>",
@@ -1503,19 +1613,12 @@ I18n.add('en', {
 "☆ Tacho": "☆ Speedometer",
 "<div class=\"note\">Der Admin hat noch keine Kategorien gewählt.</div>": "<div class=\"note\">The admin has not chosen any categories yet.</div>",
 "<div class=\"note\">Für abgeschlossene Zeiträume werden Ziele nicht mehr angezeigt.</div>": "<div class=\"note\">Goals are no longer shown for closed periods.</div>",
-"<div class=\"lg-card\"><div class=\"lg-ct\">Team-Ziele</div>": "<div class=\"lg-card\"><div class=\"lg-ct\">Team goals</div>",
-"<div class=\"lg-none\">Kein Team-Ziel. Der Admin kann eins unter „Mehr“ festlegen.</div>": "<div class=\"lg-none\">No team goal. The admin can set one under “More”.</div>",
-"</div><div class=\"lg-card\"><div class=\"lg-ct\">Persönliche Ziele</div>": "</div><div class=\"lg-card\"><div class=\"lg-ct\">Personal goals</div>",
-"<div class=\"lg-none\">Noch niemand hat ein persönliches Ziel gesetzt.</div>": "<div class=\"lg-none\">Nobody has set a personal goal yet.</div>",
-"</div><div class=\"lg-card\"><div class=\"lg-ct\">Mein Ziel setzen</div>": "</div><div class=\"lg-card\"><div class=\"lg-ct\">Set my goal</div>",
 "Meine Ziele speichern": "Save my goals",
 "<div class=\"note\">Die Ruhmeshalle füllt sich, sobald ein Zeitraum abgeschlossen ist.</div>": "<div class=\"note\">The hall of fame fills up as soon as a period is closed.</div>",
 "<div class=\"lg-card\"><div class=\"lg-ct\">Titel</div>": "<div class=\"lg-card\"><div class=\"lg-ct\">Titles</div>",
 "{a}× Gesamt · {b}× Kategorie": "{a}× overall · {b}× category",
 "<div class=\"lg-gl\">Gesamt</div>": "<div class=\"lg-gl\">Overall</div>",
-"<div class=\"note\">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Ligen → Meine Fahrten“.</div>": "<div class=\"note\">Nobody has shared a ride yet. Sharing works under “Leagues → My rides”.</div>",
 "Als Ghost speichern": "Save as ghost",
-"<div class=\"note\">Der Ghost liegt danach unter „Gruppe → Gespeicherte Ausfahrten“ und lässt sich dort als Gegner wählen.</div>": "<div class=\"note\">The ghost is afterwards under “Group → Saved rides” and can be chosen there as an opponent.</div>",
 "<div class=\"note\">Liga-Segmente sind Strecken, auf denen sich alle messen (z. B. ein Anstieg). Sobald eins angelegt ist, gleicht jedes Mitglied seine Fahrten damit ab. ": "<div class=\"note\">League segments are stretches on which everybody competes (e.g. a climb). As soon as one is created, every member matches their rides against it. ",
 "Anstiegs-Segmente zählen für den Kletterkönig; jedes Segment kann außerdem eine eigene Rangliste bekommen.</div>": "Climb segments count towards the king of the mountains; every segment can also get its own ranking.</div>",
 "Anstieg": "Climb",
@@ -1525,7 +1628,6 @@ I18n.add('en', {
 "Rangliste anlegen": "Create ranking",
 "\">löschen</button>": "\">delete</button>",
 "<div class=\"lg-card\"><div class=\"lg-ct\">Aus meinen Segmenten übernehmen</div>": "<div class=\"lg-card\"><div class=\"lg-ct\">Take over from my segments</div>",
-"<div class=\"lg-none\">Du hast noch keine Segmente. Lege welche unter „Berge → Segmente“ an.</div>": "<div class=\"lg-none\">You have no segments yet. Create some under “Climbs → Segments”.</div>",
 "\">hinzufügen</button></div>": "\">add</button></div>",
 "Mitglieder ({n})": "Members ({n})",
 "\">entfernen</button>": "\">remove</button>",
@@ -1679,7 +1781,78 @@ I18n.add('en', {
 "Die Kopie liegt außerhalb der Fahrt.": "The copy lies outside the ride.",
 "Nicht geteilt.": "Not shared.",
 "Nicht erlaubt.": "Not allowed.",
-"Nicht gefunden.": "Not found."
+"Nicht gefunden.": "Not found.",
+// ---- Layout: four tabs (ride / rides / league / more)
+"<div class=\"lg-card\"><div class=\"lg-ct\">Ziele</div>": "<div class=\"lg-card\"><div class=\"lg-ct\">Goals</div>",
+"<div class=\"lg-card\"><div class=\"lg-me\">": "<div class=\"lg-card\"><div class=\"lg-me\">",
+"<div class=\"lg-gl\">Mein Ziel setzen</div>": "<div class=\"lg-gl\">Set my goal</div>",
+"<div class=\"lg-none\">Du hast noch keine Segmente. Lege welche unter „Fahrten → Segmente“ an.</div>": "<div class=\"lg-none\">You have no segments yet. Create some under “Rides → Segments”.</div>",
+"<div class=\"note\">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du oben unter „Ich“.</div>": "<div class=\"note\">Logged in on this device. You change name, symbol and colour under “Me” above.</div>",
+"<div class=\"note\">Der Ghost liegt danach unter „Fahrten“ und lässt sich auf dem Ausfahrt-Bildschirm als Gegner wählen.</div>": "<div class=\"note\">The ghost is then under “Rides” and can be chosen as an opponent on the Ride screen.</div>",
+"<div class=\"note\">Nicht angemeldet. Die Liga ist freiwillig – die Live-Gruppe funktioniert ohne Konto.</div>": "<div class=\"note\">Not logged in. The league is optional – the live group works without an account.</div>",
+"<div class=\"note\">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Fahrten“ → Fahrt öffnen → „In der Liga teilen“.</div>": "<div class=\"note\">Nobody has shared a ride yet. You share under “Rides” → open a ride → “Share in the league”.</div>",
+"<h2>Geteilte Fahrten</h2>": "<h2>Shared rides</h2>",
+"<h2>Uploads</h2>": "<h2>Uploads</h2>",
+"Als GPX sichern": "Save as GPX",
+"Als Ghost fahren": "Ride against it (ghost)",
+"Als Route zeigen": "Show as route",
+"Andere Fahrt wählen …": "Choose another ride …",
+"Andere Route wählen …": "Choose another route …",
+"Ansicht": "View",
+"Ausfahrt als JSON": "Ride as JSON",
+"Ausfahrt beenden? Sie wird gespeichert.": "End the ride? It will be saved.",
+"Ausprobieren": "Try it out",
+"Bilanz ansehen": "View summary",
+"Daten sichern": "Back up data",
+"Du fährst als": "You ride as",
+"Echte Fahrten": "Real rides",
+"Einladen": "Invite",
+"Ereignisse": "Events",
+"Erweitert: eigener Relay": "Advanced: own relay",
+"Fahrt": "Ride",
+"Fahrt als Ghost wählen …": "Choose a ride as ghost …",
+"Fahrt wählen": "Choose a ride",
+"Fahrten, Segmente und Rekorde": "Rides, segments and records",
+"Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus „Mehr“.</div>": "Only a check value is stored, not the address. Your name, symbol and colour come from “More”.</div>",
+"Gespeicherte Fahrten liegen nur in diesem Browser. Jede Fahrt lässt sich unter „Fahrten“ als GPX sichern.": "Saved rides only live in this browser. Every ride can be saved as GPX under “Rides”.",
+"Ghost wählen": "Choose ghost",
+"In der Liga teilen …": "Share in the league …",
+"Info": "Info",
+"Jetzt starten": "Start now",
+"Kein Ghost gewählt. Er fährt mit Rang, Lücke und Karte wie jeder andere mit – zum Beispiel deine Bestzeit von neulich.": "No ghost chosen. It rides along with rank, gap and map like everybody else – for example your best time from last time.",
+"Keine Route gewählt. Eine gespeicherte Fahrt, ein GPX-Track oder ein Plan wird als Linie auf der Karte gezeigt; das Höhenprofil kennt dann auch das Stück vor dem Führenden.": "No route chosen. A saved ride, a GPX track or a plan is shown as a line on the map; the elevation profile then also knows the stretch ahead of the leader.",
+"Lade andere ein – wer den Link öffnet, erscheint hier.": "Invite others – whoever opens the link appears here.",
+"Liga abgelehnt": "League rejected",
+"Liga wartet": "League waiting",
+"Liga ✓": "League ✓",
+"Liga-Konto": "League account",
+"Liga-Upload …": "League upload …",
+"Link anzeigen · neue Gruppe": "Show link · new group",
+"Mein Ziel setzen": "Set my goal",
+"Name und Symbol ändern": "Change name and symbol",
+"Noch keine Fahrt gespeichert. Unter „Fahrten“ lässt sich eine GPX-Datei oder ein Trainingsplan importieren.": "No ride saved yet. Under “Rides” you can import a GPX file or a training plan.",
+"Noch keine Positionen.": "No positions yet.",
+"QR-Code": "QR code",
+"QR-Code zeigen": "Show QR code",
+"Replay der Gruppe": "Replay the group",
+"Route entfernen": "Remove route",
+"Route wählen": "Choose route",
+"Route wählen …": "Choose route …",
+"Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Fahrten → Importieren). Kürzere Fahrten als 1 km zählen nicht.": "They arise automatically from every finished ride – also from imported GPX files (Rides → Import). Rides shorter than 1 km do not count.",
+"Sobald GPS und Mitfahrer da sind, erscheinen sie hier.": "As soon as GPS and riders are there, they appear here.",
+"Team": "Team",
+"Verbindung und Datenschutz": "Connection and privacy",
+"Vier virtuelle Mitfahrer auf einer Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet. Leistung und Antritt regelst du in der Leiste unten.": "Four virtual riders on a test loop, you are the fifth. No GPS, no network, nothing is sent. You control power and attack in the bar below.",
+"Wer den Link öffnet oder den Code scannt, fährt mit – ohne Installation, ohne Konto.": "Whoever opens the link or scans the code rides along – no installation, no account.",
+"Ziel setzen": "Set a goal",
+"Zur Liga …": "Go to the league …",
+"wartet am Start.": "is waiting at the start.",
+"– als Linie auf der Karte und im Höhenprofil": "– as a line on the map and in the elevation profile",
+"– eine gespeicherte Fahrt fährt als grauer Mitfahrer mit": "– a saved ride rides along as a grey rider",
+"„{name}“ gespeichert – {d}, {t}. Unter „Fahrten“ als Ghost verwendbar.": "“{name}” saved – {d}, {t}. Usable as a ghost under “Rides”.",
+"Strecken": "Routes",
+"Verwalten": "Manage",
+"bereit zum Start": "ready to start"
 });
 
 /* Server messages with a variable part */
@@ -3796,9 +3969,10 @@ var UI = (function () {
                   '<div class="rgap num">' + gap + '</div>' +
                 '</div>');
         }
-        $('riderList').innerHTML = out.join('') ||
+        $('riderList').innerHTML = (out.join('') ||
             '<div class="empty">' + T('Noch niemand verbunden.') + '<br>' +
-            T('Teile den Link unter „Gruppe“ – wer ihn öffnet, erscheint hier.') + '</div>';
+            T('Lade andere ein – wer den Link öffnet, erscheint hier.') + '</div>') +
+            '<div class="invite"><button data-share="link">' + T('Einladen') + '</button><button data-share="qr">' + T('QR-Code') + '</button></div>';
     }
 
     /* ---------------- Front work ---------------- */
@@ -4136,9 +4310,9 @@ var MapView = (function () {
         if (!placed.length && !ov) {
             clearTiles(d.tileSvg);
             svg.innerHTML = '<text class="mempty" x="' + (W / 2) + '" y="' + (H / 2) +
-                '" text-anchor="middle">Noch keine Positionen.</text>' +
+                '" text-anchor="middle">' + T('Noch keine Positionen.') + '</text>' +
                 '<text class="mempty" x="' + (W / 2) + '" y="' + (H / 2 + 20) +
-                '" text-anchor="middle">Unter „Gruppe“ die Ausfahrt starten.</text>';
+                '" text-anchor="middle">' + T('Sobald GPS und Mitfahrer da sind, erscheinen sie hier.') + '</text>';
             return { riders: 0, length: 0 };
         }
 
@@ -6233,7 +6407,7 @@ var SegUI = (function () {
     function setWorld(w) { state.world = (w === 'sim') ? 'sim' : 'real'; refresh(); }
     function worldSwitch() {
         return '<div class="worldsw"><div class="seg" role="group" aria-label="' + esc(T('Fahrten oder Simulation')) + '">' +
-            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>' + T('Fahrten') + '</button>' +
+            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>' + T('Echte Fahrten') + '</button>' +
             '<button data-w="sim"' + (state.world === 'sim' ? ' class="on"' : '') + '>' + T('Simulation') + '</button></div></div>';
     }
 
@@ -6301,7 +6475,7 @@ var SegUI = (function () {
                      '</span><span class="rv num">' + val + '</span><span class="rd">' + (sub ? sub + ' · ' : '') + esc(rec.rname) + ' · ' + fmtDate(rec.t) + '</span></div>');
         });
         if (!any) out.push('<div class="empty">' + T('Noch keine Rekorde.') + '<br>' +
-                           T('Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Gruppe → Gespeicherte Ausfahrten). Kürzere Fahrten als 1 km zählen nicht.') + '</div>');
+                           T('Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Fahrten → Importieren). Kürzere Fahrten als 1 km zählen nicht.') + '</div>');
         $('recPane').innerHTML = out.join('');
     }
 
@@ -7709,6 +7883,7 @@ var LigaUI = (function () {
         var keep = root.scrollTop;
         root.innerHTML = html;
         root.scrollTop = keep;
+        renderAccountBox();
     }
 
     /* ---- Login ---- */
@@ -7723,7 +7898,7 @@ var LigaUI = (function () {
                  T('<input type="email" id="lgEmail" autocomplete="email" inputmode="email" placeholder="du@beispiel.de" value="') + esc(l.email) + '">' +
                  btn('login-start', T('Code per E-Mail senden'), '', 'go') +
                  T('<div class="note">Die Adresse dient nur dazu, dir einen Code zu schicken und dich auf einem neuen Gerät wiederzuerkennen. ') +
-                 T('Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus dem Reiter „Gruppe“.</div>');
+                 T('Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus „Mehr“.</div>');
         } else {
             h += T('<div class="note">Ein 6-stelliger Code wurde an <b>') + esc(l.email) + T('</b> geschickt (10 Minuten gültig).</div>') +
                  (l.dev ? T('<div class="note lg-ok">Entwicklungsmodus: Code ') + esc(l.dev) + '</div>' : '') +
@@ -7752,14 +7927,20 @@ var LigaUI = (function () {
              T('<label for="lgInvite">Einladungslink einfügen</label><input type="text" id="lgInvite" placeholder="https://…#l=…" autocomplete="off">') +
              btn('paste-join', T('Beitreten'));
 
-        h += T('<h2>Meine Fahrten</h2>') + renderRides();
-
-        h += T('<h2>Konto</h2><div class="lg-card"><div class="lg-me">') + emo(a.emoji) + '<b>' + esc(a.name) + '</b></div>' +
-             T('<div class="note">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du unter „Gruppe“.</div>') +
-             btn('devices', T('Geräte anzeigen')) + (st.devices ? renderDevices() : '') +
-             btn('logout', T('Auf diesem Gerät abmelden')) + btn('delete-account', T('Konto und alle Daten löschen'), '', 'danger') + '</div>';
+        h += T('<h2>Uploads</h2>') + renderRides();
         return h;
     }
+
+    /* ---- Account: shown under "More" ---- */
+    function renderAccount() {
+        var a = LigaApi.account();
+        if (!a) return T('<div class="note">Nicht angemeldet. Die Liga ist freiwillig – die Live-Gruppe funktioniert ohne Konto.</div>') + btn('goto-liga', T('Zur Liga …'));
+        return T('<div class="lg-card"><div class="lg-me">') + emo(a.emoji) + '<b>' + esc(a.name) + '</b></div>' +
+               T('<div class="note">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du oben unter „Ich“.</div>') + msgBox() +
+               btn('devices', T('Geräte anzeigen')) + (st.devices ? renderDevices() : '') +
+               btn('logout', T('Auf diesem Gerät abmelden')) + btn('delete-account', T('Konto und alle Daten löschen'), '', 'danger') + '</div>';
+    }
+    function renderAccountBox() { var el = $('accountRoot'); if (el) el.innerHTML = renderAccount(); }
 
     function renderDevices() {
         return '<div class="lg-devs">' + st.devices.map(function (d) {
@@ -7802,7 +7983,7 @@ var LigaUI = (function () {
     }
 
     /* ---- League ---- */
-    var TABS = [['stand', 'Stand'], ['ziele', 'Ziele'], ['halle', 'Halle'], ['geteilt', 'Geteilt'], ['segmente', 'Segmente'], ['mehr', 'Mehr']];
+    var TABS = [['stand', 'Stand'], ['halle', 'Halle'], ['strecken', 'Strecken'], ['mehr', 'Verwalten']];
 
     function renderLeague() {
         var ov = st.ov, h = T('<button class="lg-back" data-act="home">‹ Ligen</button>');
@@ -7815,11 +7996,9 @@ var LigaUI = (function () {
         h += '<div class="seg lg-tabs" role="tablist">' + TABS.map(function (t) {
             return '<button data-act="tab" data-tab="' + t[0] + '" class="' + (st.tab === t[0] ? 'on' : '') + '">' + T(t[1]) + '</button>';
         }).join('') + '</div>' + msgBox();
-        if (st.tab === 'stand') h += tabStand(ov);
-        else if (st.tab === 'ziele') h += tabGoals(ov);
+        if (st.tab === 'stand') h += tabGoals(ov) + tabStand(ov);
         else if (st.tab === 'halle') h += tabHall();
-        else if (st.tab === 'geteilt') h += tabShared();
-        else if (st.tab === 'segmente') h += tabSegs(ov);
+        else if (st.tab === 'strecken') h += tabSegs(ov) + T('<h2>Geteilte Fahrten</h2>') + tabShared();
         else h += tabMore(ov);
         return h;
     }
@@ -7852,20 +8031,21 @@ var LigaUI = (function () {
 
     function tabGoals(ov) {
         var g = ov.goals || { team: [], personal: [] }, meId = LigaApi.account().id, h = '';
-        if (ov.period.frozen) return T('<div class="note">Für abgeschlossene Zeiträume werden Ziele nicht mehr angezeigt.</div>');
-        h += T('<div class="lg-card"><div class="lg-ct">Team-Ziele</div>');
-        if (!g.team.length) h += T('<div class="lg-none">Kein Team-Ziel. Der Admin kann eins unter „Mehr“ festlegen.</div>');
-        g.team.forEach(function (t) { h += '<div class="lg-gl">' + esc(catLabel(t.cat)) + '</div>' + bar(t.progress, t.target, t.cat); });
-        h += T('</div><div class="lg-card"><div class="lg-ct">Persönliche Ziele</div>');
-        var mem = ov.members.reduce(function (o, m) { o[m.id] = m; return o; }, {}), any = false;
+        if (ov.period.frozen) return '';
+        var mem = ov.members.reduce(function (o, m) { o[m.id] = m; return o; }, {});
+        var any = g.team.length || g.personal.length;
+        if (any) h += T('<div class="lg-card"><div class="lg-ct">Ziele</div>');
+        g.team.forEach(function (t) { h += '<div class="lg-gl">' + T('Team') + ' · ' + esc(catLabel(t.cat)) + '</div>' + bar(t.progress, t.target, t.cat); });
         g.personal.forEach(function (p) {
-            any = true;
             h += '<div class="lg-gl">' + emo(mem[p.id] && mem[p.id].emoji) + esc(mem[p.id] ? mem[p.id].name : '?') + (p.id === meId ? ' (' + T('du') + ')' : '') + '</div>';
             p.goals.forEach(function (x) { h += '<div class="lg-gsub">' + esc(catLabel(x.cat)) + '</div>' + bar(x.progress, x.target, x.cat); });
         });
-        if (!any) h += T('<div class="lg-none">Noch niemand hat ein persönliches Ziel gesetzt.</div>');
-        h += T('</div><div class="lg-card"><div class="lg-ct">Mein Ziel setzen</div>') + goalEditor(meGoals(ov), 'my', false) + btn('goals-save', T('Meine Ziele speichern')) + '</div>';
-        return h;
+        if (st.editGoals) {
+            h += (any ? '' : T('<div class="lg-card"><div class="lg-ct">Ziele</div>')) + T('<div class="lg-gl">Mein Ziel setzen</div>') + goalEditor(meGoals(ov), 'my', false) + btn('goals-save', T('Meine Ziele speichern')) + btn('goals-edit', T('Abbrechen'));
+            return h + '</div>';
+        }
+        if (any) return h + '<button class="lg-mini" data-act="goals-edit">' + T('Mein Ziel setzen') + '</button></div>';
+        return '<button class="lg-mini" data-act="goals-edit">' + T('Ziel setzen') + '</button>';
     }
     function meGoals(ov) {
         var meId = LigaApi.account().id, p = (ov.goals.personal || []).filter(function (x) { return x.id === meId; })[0];
@@ -7900,12 +8080,12 @@ var LigaUI = (function () {
 
     function tabShared() {
         if (!st.shared) return T('<div class="note">Lade …</div>');
-        if (!st.shared.length) return T('<div class="note">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Ligen → Meine Fahrten“.</div>');
+        if (!st.shared.length) return T('<div class="note">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Fahrten“ → Fahrt öffnen → „In der Liga teilen“.</div>');
         return st.shared.map(function (r) {
             return '<div class="lg-card"><div class="lg-me">' + emo(r.emoji) + '<b>' + esc(r.name) + '</b></div>' +
                    '<div class="note">' + esc(r.owner_name) + ' · ' + esc(UI.fmtDist(r.dist_m)) + ' · ' + esc(fmtDayY(r.start_ts)) + '</div>' +
                    btn('ghost', T('Als Ghost speichern'), 'data-ride="' + esc(r.id) + '" data-owner="' + esc(r.owner_name) + '" data-name="' + esc(r.name) + '"') + '</div>';
-        }).join('') + T('<div class="note">Der Ghost liegt danach unter „Gruppe → Gespeicherte Ausfahrten“ und lässt sich dort als Gegner wählen.</div>');
+        }).join('') + T('<div class="note">Der Ghost liegt danach unter „Fahrten“ und lässt sich auf dem Ausfahrt-Bildschirm als Gegner wählen.</div>');
     }
 
     function tabSegs(ov) {
@@ -7922,7 +8102,7 @@ var LigaUI = (function () {
         });
         var mine = (typeof Segments !== 'undefined' ? Segments.list() : []).filter(function (m) { return m.poly && m.poly.length > 1; });
         h += T('<div class="lg-card"><div class="lg-ct">Aus meinen Segmenten übernehmen</div>');
-        if (!mine.length) h += T('<div class="lg-none">Du hast noch keine Segmente. Lege welche unter „Berge → Segmente“ an.</div>');
+        if (!mine.length) h += T('<div class="lg-none">Du hast noch keine Segmente. Lege welche unter „Fahrten → Segmente“ an.</div>');
         mine.slice(0, 20).forEach(function (m) {
             h += '<div class="lg-row"><span class="lg-nm">' + esc(m.name) + '</span><span class="lg-v">' + esc(UI.fmtDist(m.len)) + '</span>' +
                  '<button class="lg-mini" data-act="seg-add" data-id="' + esc(m.id) + T('">hinzufügen</button></div>');
@@ -8055,16 +8235,18 @@ var LigaUI = (function () {
             if (r.status !== 200) { setMsg('', r.error); st.page = 'home'; render(); return; }
             st.ov = r; st.league = id; st.period = periodStart || null;
             render();
-            if (st.tab === 'halle') loadTab('halle'); if (st.tab === 'geteilt') loadTab('geteilt'); if (st.tab === 'segmente') loadTab('segmente');
+            if (st.tab === 'halle') loadTab('halle'); if (st.tab === 'strecken') loadTab('strecken');
         });
     }
     function loadTab(tab) {
         var id = st.league;
         if (tab === 'halle') return LigaApi.call('GET', '/api/leagues/' + id + '/hall').then(function (r) { if (r.status === 200) { st.hall = r; render(); } });
-        if (tab === 'geteilt') return LigaApi.call('GET', '/api/leagues/' + id + '/shared').then(function (r) { if (r.status === 200) { st.shared = r.rides; render(); } });
-        if (tab === 'segmente') return LigaApi.call('GET', '/api/leagues/' + id + '/segments').then(function (r) {
-            if (r.status === 200) { st.segs = r.segments; render(); LigaSync.syncSegments(id, r.segments); }
-        });
+        if (tab === 'strecken') {
+            LigaApi.call('GET', '/api/leagues/' + id + '/shared').then(function (r) { if (r.status === 200) { st.shared = r.rides; render(); } });
+            return LigaApi.call('GET', '/api/leagues/' + id + '/segments').then(function (r) {
+                if (r.status === 200) { st.segs = r.segments; render(); LigaSync.syncSegments(id, r.segments); }
+            });
+        }
     }
     function reload() { return loadLeague(st.league, st.period); }
 
@@ -8083,7 +8265,7 @@ var LigaUI = (function () {
             case 'login-verify': return loginVerify();
             case 'login-back': st.login = { step: 1, email: st.login.email, dev: '' }; return render();
             case 'home': st.page = 'home'; st.ov = null; st.invite_link = null; render(); return refreshHome();
-            case 'open': st.page = 'league'; st.tab = 'stand'; st.hall = st.shared = st.segs = null; st.invite_link = null; return loadLeague(d.id);
+            case 'open': st.page = 'league'; st.tab = 'stand'; st.editGoals = false; st.hall = st.shared = st.segs = null; st.invite_link = null; return loadLeague(d.id);
             case 'open-back': st.page = 'league'; render(); return;
             case 'prev': return loadLeague(st.league, st.ov.period.prev);
             case 'next': return loadLeague(st.league, st.ov.period.next);
@@ -8094,7 +8276,9 @@ var LigaUI = (function () {
             case 'form-save': return formSave();
             case 'goal-add': return goalAdd(d.scope);
             case 'goal-rm': return goalRm(d.scope, +d.i);
+            case 'goals-edit': st.editGoals = !st.editGoals; st.form = null; return render();
             case 'goals-save': return goalsSave();
+            case 'goto-liga': if (cfg && cfg.showView) cfg.showView('liga'); return;
             case 'join': return join(st.invite);
             case 'join-no': st.invite = null; try { sessionStorage.removeItem('liga:inv'); } catch (e) {} return render();
             case 'paste-join': return pasteJoin();
@@ -8154,7 +8338,7 @@ var LigaUI = (function () {
     function goalsSave() {
         var goals = readGoals('my', meGoals(st.ov)).filter(function (g) { return g.target > 0; });
         return LigaApi.call('PUT', '/api/leagues/' + st.league + '/goals', { goals: goals }).then(function (r) {
-            if (r.status === 200) { st.form = null; setMsg(T('Ziele gespeichert.')); return reload(); }
+            if (r.status === 200) { st.form = null; st.editGoals = false; setMsg(T('Ziele gespeichert.')); return reload(); }
             setMsg('', r.error); render();
         });
     }
@@ -8275,16 +8459,16 @@ var LigaUI = (function () {
         return LigaCodec.encode(pts).then(function (poly) {
             var kind = m.len > 0 && m.gain / m.len >= 0.03 ? 'climb' : 'other';
             return LigaApi.call('POST', '/api/leagues/' + st.league + '/segments', { name: m.name, kind: kind, len: m.len, gain: m.gain, poly: poly });
-        }).then(function (r) { if (r.status === 200) setMsg(T('Segment hinzugefügt. Deine Fahrten werden damit abgeglichen.')); else setMsg('', r.error); return loadTab('segmente'); });
+        }).then(function (r) { if (r.status === 200) setMsg(T('Segment hinzugefügt. Deine Fahrten werden damit abgeglichen.')); else setMsg('', r.error); return loadTab('strecken'); });
     }
     function segRemove(id) {
         if (!confirm(T('Segment für die ganze Liga löschen?'))) return;
-        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/segments/' + id).then(function (r) { if (r.status !== 200) setMsg('', r.error); return loadTab('segmente').then(reload); });
+        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/segments/' + id).then(function (r) { if (r.status !== 200) setMsg('', r.error); return loadTab('strecken').then(reload); });
     }
     function segBoard(id) {
         var lg = st.ov.league, key = 'seg:' + id, cats = lg.cats.slice(), i = cats.indexOf(key);
         if (i >= 0) cats.splice(i, 1); else cats.push(key);
-        return LigaApi.call('PATCH', '/api/leagues/' + st.league, { cats: cats }).then(function (r) { if (r.status !== 200) setMsg('', r.error); return reload().then(function () { return loadTab('segmente'); }); });
+        return LigaApi.call('PATCH', '/api/leagues/' + st.league, { cats: cats }).then(function (r) { if (r.status !== 200) setMsg('', r.error); return reload().then(function () { return loadTab('strecken'); }); });
     }
 
     /* ---------- Profile ---------- */
@@ -8297,12 +8481,13 @@ var LigaUI = (function () {
 
     /* ---------- Speedometer line ---------- */
     function tachoRender(liveOverride) {
-        var el = $('ligaRow'); if (!el) return;
+        var els = [$('ligaRow'), $('ligaRowReady')].filter(Boolean);
+        if (!els.length) return;
         var t = LigaSync.tacho(), a = LigaApi.account();
-        if (!t || !a) { el.hidden = true; return; }
+        function put(html, title) { els.forEach(function (el) { el.hidden = false; el.innerHTML = html; el.title = title || ''; }); }
+        if (!t || !a) { els.forEach(function (el) { el.hidden = true; }); return; }
         var s = LigaSync.standing(), c = LigaCats.get(t.cat), lg = LigaSync.leagues().filter(function (l) { return l.id === t.league; })[0];
-        el.hidden = false;
-        if (!s || s.cat !== t.cat || !s.standing) { el.innerHTML = '<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> <span class="lg-tm">' + T('lädt …') + '</span>'; return; }
+        if (!s || s.cat !== t.cat || !s.standing) { put('<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> <span class="lg-tm">' + T('lädt …') + '</span>', ''); return; }
         var sd = s.standing, live = liveOverride || (cfg.live ? cfg.live() : null), add = 0;
         if (live && c) { if (t.cat === 'dist') add = live.dist; else if (t.cat === 'time') add = live.moving; }
         var mine = sd.me && sd.me.v !== null && sd.me.v !== undefined ? sd.me.v : (c && c.agg === 'sum' ? 0 : null);
@@ -8315,8 +8500,7 @@ var LigaUI = (function () {
         }
         parts.push('<b>' + T('Du {v}', { v: esc(myV === null ? '–' : LigaCats.format(t.cat, myV)) }) + (sd.me && sd.me.rank && !add ? ' · ' + T('Platz {n}', { n: sd.me.rank }) : '') + '</b>');
         if (sd.below && myV !== null) parts.push('<span class="lg-dn">▼ ' + esc(sd.below.name) + ' −' + esc(LigaCats.format(t.cat, gap(sd.below)).replace(/ (P\.|pts)$/, '')) + '</span>');
-        el.innerHTML = '<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> ' + parts.join(' · ');
-        el.title = lg ? lg.name : '';
+        put('<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> ' + parts.join(' · '), lg ? lg.name : '');
     }
     function tachoCycle() {
         var t = LigaSync.tacho(); if (!t) return;
@@ -8345,17 +8529,19 @@ var LigaUI = (function () {
             frag.delete('l'); history.replaceState(null, '', location.pathname + location.search + (frag.toString() ? '#' + frag.toString() : ''));
         } else { try { st.invite = sessionStorage.getItem('liga:inv'); } catch (e) { st.invite = null; } }
 
-        root.addEventListener('click', function (e) {
+        function onClick(e) {
             var b = e.target.closest('[data-act]');
             if (b && !b.disabled) act(b.dataset.act, b);
-        });
+        }
+        root.addEventListener('click', onClick);
+        if ($('accountRoot')) $('accountRoot').addEventListener('click', onClick);
         root.addEventListener('change', function (e) {
             if (e.target.id === 'lgAuto') { LigaSync.setAuto(e.target.checked); if (e.target.checked) { LigaSync.backfill(); LigaSync.flush().then(refreshHome); } render(); return; }
             if (e.target.id === 'fPreset') { readForm(); render(); }
         });
-        var row = $('ligaRow'); if (row) row.addEventListener('click', tachoCycle);
+        ['ligaRow', 'ligaRowReady'].forEach(function (id) { var row = $(id); if (row) row.addEventListener('click', tachoCycle); });
 
-        LigaApi.onChange(function () { tachoRender(); if (isOpen()) render(); });
+        LigaApi.onChange(function () { tachoRender(); renderAccountBox(); if (isOpen()) render(); });
         LigaSync.onChange(function () { if (st.page === 'home' && isOpen()) render(); });
         window.addEventListener('online', function () { LigaSync.flush(); });
         setInterval(tachoTick, 5000);
@@ -8376,8 +8562,12 @@ var LigaUI = (function () {
         }
     }
     function hasInvite() { return !!st.invite; }
+    /* Opening the ride details from the history: jump to the upload / share panel of this ride */
+    function showRide(localId) { st.page = 'home'; st.ov = null; st.shareFor = localId; render(); refreshHome(); }
+    /* "More" tab was opened: refresh the account box */
+    function accountOpened() { renderAccountBox(); }
 
-    return { init: init, opened: opened, relang: relang, profileChanged: profileChanged, tachoTick: tachoTick, hasInvite: hasInvite,
+    return { init: init, opened: opened, relang: relang, showRide: showRide, accountOpened: accountOpened, profileChanged: profileChanged, tachoTick: tachoTick, hasInvite: hasInvite,
              _tachoRender: tachoRender, _st: function () { return st; } };
 })();
 
@@ -8439,6 +8629,7 @@ var LigaUI = (function () {
     var GHOST_COLOR = '#9aa7ad';  // mid grey: readable on dark and light backgrounds
 
     function $(id) { return document.getElementById(id); }
+    function isLive() { return running || !!sim; }
     function store(k, v) { try { if (v === undefined) return localStorage.getItem(k);
                                  localStorage.setItem(k, v); } catch (e) { return null; } }
 
@@ -8454,6 +8645,13 @@ var LigaUI = (function () {
     }
 
     function myColor() { return UI.COLORS[me.colorIdx]; }
+
+    /* "Riding as ..." on the ready screen: opens the profile under "More" */
+    function syncMeChip() {
+        var e = UI.emojiOf(me.emoji);
+        $('meChip').innerHTML = (e ? Emo.img(e) : '<span class="rdot" style="display:inline-block;background:' + myColor() + '"></span>') +
+                                '<span>' + T('Du fährst als') + ' <b>' + UI.escapeHtml(me.name) + '</b> ›</span>';
+    }
 
     /* ---------------- Room from the URL fragment ----------------
        The fragment (after the #) is NOT sent to servers by the browser.
@@ -8625,7 +8823,7 @@ var LigaUI = (function () {
         lastCompass = { ord: ord, heading: h.deg };
         ensureCompassLoop();
         lastMap = { ord: ord, heading: h.deg };
-        if (isActive('map')) liveMap.ensureLoop();
+        if (isPane('map')) liveMap.ensureLoop();
         renderProfiles();
 
         // --- List: gap always relative to ME, that is the number
@@ -8668,9 +8866,9 @@ var LigaUI = (function () {
                      }) };
         }));
 
-        if (an.events.length > seenEvents && !isActive('log'))
+        if (an.events.length > seenEvents && !isPane('log'))
             UI.badge('bdgLog', an.events.length - seenEvents);
-        if (an.climbs.length > seenClimbs && !isActive('climbs'))
+        if (an.climbs.length > seenClimbs && !isPane('prof'))
             UI.badge('bdgClimbs', an.climbs.length - seenClimbs);
 
         if (running && !Net.online()) netStatus('wait', 'kein Netz – nur eigene Daten');
@@ -8725,12 +8923,12 @@ var LigaUI = (function () {
     }
 
     function compassLoop(ts) {
-        if (!isActive('tacho') || document.hidden) { compassLoopOn = false; return; }
+        if (!isPane('compass') || document.hidden) { compassLoopOn = false; return; }
         if (ts - compassLoopT >= 33 && lastCompass) { compassLoopT = ts; drawCompass(lastCompass.ord, lastCompass.heading); }
         requestAnimationFrame(compassLoop);
     }
     function ensureCompassLoop() {
-        if (compassLoopOn || !isActive('tacho')) return;
+        if (compassLoopOn || !isPane('compass')) return;
         compassLoopOn = true;
         requestAnimationFrame(compassLoop);
     }
@@ -8761,8 +8959,7 @@ var LigaUI = (function () {
                                colors: others.slice(0, 4) });
         simWarp = 1;
         $('simbar').hidden = false;
-        $('btnSim').textContent = T('Simulation beenden');
-        $('btnSim').className = 'btn stop';
+        setLive();
         netStatus('wait', 'Simulation – nichts wird gesendet');
         /* Lead-in: only from ~150 m of route axis are order and gaps
            reliable. Without it everybody would stand at "0 m" at the start. */
@@ -8770,7 +8967,7 @@ var LigaUI = (function () {
         syncSimBar();
         simTimer = setInterval(simTick, 1000);
         render();
-        showView('tacho');
+        showView('ride');
     }
 
     function simStop() {
@@ -8782,9 +8979,8 @@ var LigaUI = (function () {
         route = new Route(); an = new Analytics(route);
         seenEvents = 0; seenClimbs = 0;
         $('simbar').hidden = true;
-        $('btnSim').textContent = T('Simulation starten');
-        $('btnSim').className = 'btn';
-        netStatus('off', 'bereit – unter „Gruppe“ starten');
+        setLive();
+        netStatus('off', 'bereit zum Start');
         renderGhostUi();
         render();
     }
@@ -8840,7 +9036,7 @@ var LigaUI = (function () {
         var cof = LigaMetrics.countCoffee(coffeeStamps);
         var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null, x: cof ? { coffee: cof } : null });
         Rides.clearDraft();
-        setRideMsg(r.ok ? T('„{name}“ gespeichert – {d}, {t}. Unten als Ghost verwendbar.', { name: r.rec.name, d: UI.fmtDist(r.rec.dist), t: UI.fmtDur(r.rec.dur) })
+        setRideMsg(r.ok ? T('„{name}“ gespeichert – {d}, {t}. Unter „Fahrten“ als Ghost verwendbar.', { name: r.rec.name, d: UI.fmtDist(r.rec.dist), t: UI.fmtDur(r.rec.dur) })
                         : r.err);
         renderRides();
         if (r.ok) { analyseRide(r.rec); if (src === 'ride') LigaSync.rideSaved(r.rec); }
@@ -8958,11 +9154,14 @@ var LigaUI = (function () {
     }
 
     function renderGhostUi() {
-        var st = $('ghostState'), now = $('btnGhostNow'), off = $('btnGhostOff');
+        var st = $('ghostState'), off = $('btnGhostOff'), live = $('ghostLive'), now = $('btnGhostNow');
         $('ghostPace').disabled = !!ghost && ghost.state === 'running';
+        $('ghostPaceBox').hidden = !ghost;
+        $('btnGhostPick').textContent = ghost ? T('Andere Fahrt wählen …') : T('Fahrt als Ghost wählen …');
+        live.hidden = true;
         if (!ghost) {
-            st.innerHTML = T('Kein Ghost gewählt. Unter „Gespeicherte Ausfahrten“ eine Fahrt als Ghost wählen, dann fährt sie als grauer Mitfahrer mit – mit Rang, Lücke und Karte wie jeder andere.');
-            now.hidden = off.hidden = true;
+            st.innerHTML = T('Kein Ghost gewählt. Er fährt mit Rang, Lücke und Karte wie jeder andere mit – zum Beispiel deine Bestzeit von neulich.');
+            off.hidden = true;
             return;
         }
         off.hidden = false;
@@ -8976,14 +9175,12 @@ var LigaUI = (function () {
                 txt = T('wartet am Startpunkt – noch {d} entfernt. Er startet automatisch ab {m} m.', { d: UI.fmtDist(d), m: GHOST_START_M });
             } else { txt = T('wartet auf deine Position.'); }
             st.innerHTML = 'Ghost ' + nm + ' ' + txt;
-            now.hidden = !(running || sim);
+            if (running || sim) { live.hidden = false; $('ghostLiveTxt').innerHTML = 'Ghost ' + nm + ' ' + T('wartet am Start.'); }
         } else if (ghost.state === 'running') {
             var t = ((sim ? sim.t * 1000 : Date.now()) - ghost.t0) / 1000;
             st.innerHTML = 'Ghost ' + nm + ' ' + T('fährt: {a} von {b}.', { a: UI.fmtDur(t * 1000), b: UI.fmtDur(ghost.g.dur * 1000) });
-            now.hidden = true;
         } else {
             st.innerHTML = 'Ghost ' + nm + ' ' + T('ist nach {t} im Ziel.', { t: UI.fmtDur(ghost.doneAt * 1000) });
-            now.hidden = true;
         }
     }
 
@@ -8991,11 +9188,13 @@ var LigaUI = (function () {
     function relang() {
         renderLinkNote(); renderNetNote();
         if (lastNet) UI.renderNet(lastNet.s, T(lastNet.k, lastNet.v));
-        $('btnStart').textContent = running ? T('Ausfahrt beenden') : T('Ausfahrt starten');
-        $('btnSim').textContent = sim ? T('Simulation beenden') : T('Simulation starten');
-        renderRides(); renderGhostUi(); syncSimBar(); renderProfiles();
+        $('btnSim').textContent = T('Simulation starten');
+        $('btnStop').textContent = sim ? T('Simulation beenden') : T('Ausfahrt beenden');
+        renderRides(); renderGhostUi(); renderRouteUi(); syncMeChip(); syncSimBar(); renderProfiles();
         Msg.render(); liveMap.relabel(); SegUI.refresh(); LigaUI.relang(); ReplayUI.relang();
         if (!$('sumOverlay').hidden && sumData) $('sumBody').innerHTML = Summary.html(sumData);
+        if (!$('rideOverlay').hidden && detailId) openRide(detailId);
+        if (!$('pickOverlay').hidden && pickMode) openPick(pickMode);
         render();
     }
 
@@ -9019,9 +9218,21 @@ var LigaUI = (function () {
         };
         store('plan', id);
         planHint = {};
-        syncProfMode();
+        syncProfMode(); renderRouteUi();
     }
-    function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); }
+    function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); renderRouteUi(); }
+
+    function renderRouteUi() {
+        var st = $('routeState');
+        if (!plan) {
+            st.innerHTML = T('Keine Route gewählt. Eine gespeicherte Fahrt, ein GPX-Track oder ein Plan wird als Linie auf der Karte gezeigt; das Höhenprofil kennt dann auch das Stück vor dem Führenden.');
+            $('btnRouteOff').hidden = true;
+        } else {
+            st.innerHTML = T('Route') + ' <b>' + UI.escapeHtml(plan.name) + '</b> · ' + UI.fmtDist(plan.route.length()) + ' · +' + Math.round(plan.gain) + ' ' + T('Hm');
+            $('btnRouteOff').hidden = false;
+        }
+        $('btnRoutePick').textContent = plan ? T('Andere Route wählen …') : T('Route wählen …');
+    }
 
     /* ---------------- Elevation profile ----------------
        With a route: the profile of the whole route, the riders projected onto it (also ahead of
@@ -9050,8 +9261,8 @@ var LigaUI = (function () {
     }
 
     function renderProfiles() {
-        var onClimbs = isActive('climbs') && !$('sub-now').hidden;
-        var onMap = isActive('map') && !$('mapProf').hidden;
+        var onClimbs = isPane('prof');
+        var onMap = isPane('map') && !$('mapProf').hidden;
         if (!onClimbs && !onMap) return;
         var inp = profileInput();
         inp.mode = profMode || (plan ? 'ahead' : 'all');
@@ -9071,58 +9282,121 @@ var LigaUI = (function () {
         document.querySelectorAll('[data-pm]').forEach(function (b) { b.classList.toggle('on', b.dataset.pm === m); });
     }
 
-    function onSubShown(name) { if (name === 'seg' || name === 'rec') SegUI.refresh(); }
-
+    /* Sub-tabs of "Rides": rides / segments / records */
     function showSub(name) {
-        ['now', 'seg', 'rec'].forEach(function (x) { $('sub-' + x).hidden = x !== name; });
+        ['rides', 'seg', 'rec'].forEach(function (x) { $('sub-' + x).hidden = x !== name; });
         document.querySelectorAll('[data-sub]').forEach(function (b) { b.classList.toggle('on', b.dataset.sub === name); });
-        if (name === 'now') renderProfiles();
-        if (typeof onSubShown === 'function') onSubShown(name);
+        if (name === 'seg' || name === 'rec') SegUI.refresh();
+    }
+
+    /* Panes of the live screen: compass / map / profile / events */
+    var PANES = ['compass', 'map', 'prof', 'log'];
+    function showPane(name) {
+        if (PANES.indexOf(name) < 0) name = 'compass';
+        PANES.forEach(function (x) { $('lv-' + x).classList.toggle('active', x === name); });
+        document.querySelectorAll('[data-lv]').forEach(function (b) { b.classList.toggle('on', b.dataset.lv === name); });
+        store('lpane', name);
+        if (name === 'map')  { render(); liveMap.ensureLoop(); }
+        if (name === 'prof') { renderProfiles(); seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
+        if (name === 'compass') ensureCompassLoop();
+        if (name === 'log')  { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
+    }
+
+    /* Ready state vs. live screen of the ride tab */
+    function setLive() {
+        $('v-ride').classList.toggle('is-live', isLive());
+        document.querySelector('nav [data-v="ride"]').classList.toggle('riding', isLive());     // dot: a ride is running, also visible on the other tabs
+        $('btnStop').textContent = sim ? T('Simulation beenden') : T('Ausfahrt beenden');
+        var cur = PANES.filter(function (x) { return $('lv-' + x).classList.contains('active'); })[0] || 'compass';
+        if (isLive()) showPane(cur);
+        renderGhostUi();
     }
 
     /* ---------------- Saved rides ---------------- */
     var SRC = { ride: 'gefahren', sim: 'Simulation', gpx: 'GPX', plan: 'Plan' };
+    var detailId = null, pickMode = null;
+
+    function upChip(r) {
+        if (!LigaSync.eligible(r) || !LigaApi.account()) return '';
+        var s = LigaSync.status(r.id);
+        if (!s) return '';
+        if (s.state === 'ok') return '<span class="rchip ok">' + T('Liga ✓') + '</span>';
+        if (s.state === 'wait') return '<span class="rchip">' + T('Liga wartet') + '</span>';
+        return '<span class="rchip bad">' + T('Liga abgelehnt') + '</span>';
+    }
 
     function renderRides() {
         var l = Rides.list();
         $('rideList').innerHTML = l.map(function (r) {
-            var on = ghost && ghost.rec.id === r.id;
-            return '<div class="ride" data-id="' + r.id + '">' +
+            var isG = ghost && ghost.rec.id === r.id, isR = plan && plan.id === r.id;
+            return '<div class="ride" data-id="' + r.id + '" role="button" tabindex="0">' +
                 '<div class="rt"><b>' + UI.escapeHtml(r.name) + '</b>' +
                 '<span class="rm">' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' +
                 T(SRC[r.src] || r.src) + '</span></div>' +
-                '<div class="rb">' + (r.src === 'plan' ? '' : '<button data-act="replay">' + T('Replay') + '</button><button data-act="sum">' + T('Bilanz') + '</button>') +
-                '<button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? T('Ghost') + ' ✓' : T('Ghost')) + '</button>' +
-                '<button data-act="route" class="' + (plan && plan.id === r.id ? 'on' : '') + '">' + (plan && plan.id === r.id ? T('Route') + ' ✓' : T('Route')) + '</button>' +
-                '<button data-act="gpx">GPX</button><button data-act="del" aria-label="' + T('Löschen') + '">✕</button></div></div>';
+                '<div class="rb">' + (isG ? '<span class="rchip on">' + T('Ghost') + '</span>' : '') + (isR ? '<span class="rchip on">' + T('Route') + '</span>' : '') +
+                upChip(r) + '<span class="rgo" aria-hidden="true">›</span></div></div>';
         }).join('') || '<div class="empty">' + T('Noch nichts gespeichert. Jede beendete Ausfahrt und Simulation wird automatisch hier abgelegt.') + '</div>';
         if (l.length) {
             $('rideList').insertAdjacentHTML('beforeend', '<div class="note">' +
                 (l.length === 1 ? T('1 Ausfahrt, rund {kb} KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.', { kb: Rides.usage() })
                                 : T('{n} Ausfahrten, rund {kb} KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.', { n: l.length, kb: Rides.usage() })) + '</div>');
         }
-        $('rideList').querySelectorAll('button').forEach(function (b) {
-            b.addEventListener('click', function () {
-                var id = b.closest('.ride').dataset.id, act = b.dataset.act;
-                if (act === 'ghost') { if (ghost && ghost.rec.id === id) dropGhost(); else armGhost(id); }
-                else if (act === 'route') {
-                    if (plan && plan.id === id) clearPlan(); else setPlan(id);
-                    renderRides(); liveMap.sync(); liveMap.draw();
-                }
-                else if (act === 'replay') ReplayUI.open(id);
-                else if (act === 'sum') openSummary(id);
-                else if (act === 'gpx') exportRide(id);
-                else if (act === 'del') {
-                    if (!confirm(T('Diese Ausfahrt löschen?'))) return;
-                    if (ghost && ghost.rec.id === id) dropGhost();
-                    if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
-                    var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
-                    Rides.remove(id);
-                    if (gone) Segments.forgetRide(id, gone.src);
-                    SegUI.refresh(); renderRides();
-                }
-            });
-        });
+    }
+
+    /* Details of one ride: every action in one place */
+    function openRide(id) {
+        var r = Rides.list().filter(function (x) { return x.id === id; })[0];
+        if (!r) { $('rideOverlay').hidden = true; detailId = null; return; }
+        detailId = id;
+        var isG = ghost && ghost.rec.id === id, isR = plan && plan.id === id, real = r.src !== 'plan';
+        $('rideTitle').textContent = r.name;
+        $('rideMeta').textContent = UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' + T(SRC[r.src] || r.src);
+        var acts = [];
+        if (real) acts.push('<button class="btn go wide" data-act="sum">' + T('Bilanz ansehen') + '</button><button class="btn wide" data-act="replay">' + T('Replay der Gruppe') + '</button>');
+        acts.push('<button class="btn' + (isG ? ' on' : '') + '" data-act="ghost">' + (isG ? T('Ghost entfernen') : T('Als Ghost fahren')) + '</button>' +
+                  '<button class="btn' + (isR ? ' on' : '') + '" data-act="route">' + (isR ? T('Route entfernen') : T('Als Route zeigen')) + '</button>');
+        acts.push('<button class="btn" data-act="gpx">' + T('Als GPX sichern') + '</button>');
+        if (LigaSync.eligible(r) && LigaApi.account()) {
+            var s = LigaSync.status(id);
+            acts.push('<button class="btn" data-act="liga">' + (s && s.state === 'ok' ? T('In der Liga teilen …') : T('Liga-Upload …')) + '</button>');
+        }
+        acts.push('<button class="btn danger wide" data-act="del">' + T('Löschen') + '</button>');
+        $('rideActs').innerHTML = '<div class="actgrid">' + acts.join('') + '</div>';
+        $('rideOverlay').hidden = false;
+    }
+
+    function rideAct(act) {
+        var id = detailId; if (!id) return;
+        var close = function () { $('rideOverlay').hidden = true; detailId = null; };
+        if (act === 'ghost') { if (ghost && ghost.rec.id === id) dropGhost(); else armGhost(id); close(); }
+        else if (act === 'route') {
+            if (plan && plan.id === id) clearPlan(); else setPlan(id);
+            renderRides(); liveMap.sync(); liveMap.draw(); close();
+        }
+        else if (act === 'replay') { close(); ReplayUI.open(id); }
+        else if (act === 'sum') { close(); openSummary(id); }
+        else if (act === 'gpx') { exportRide(id); close(); }
+        else if (act === 'liga') { close(); LigaUI.showRide(id); showView('liga'); }
+        else if (act === 'del') {
+            if (!confirm(T('Diese Ausfahrt löschen?'))) return;
+            if (ghost && ghost.rec.id === id) dropGhost();
+            if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
+            var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
+            Rides.remove(id);
+            if (gone) Segments.forgetRide(id, gone.src);
+            SegUI.refresh(); renderRides(); close();
+        }
+    }
+
+    /* Choose a ride for the ghost or the route (from the ride tab) */
+    function openPick(mode) {
+        pickMode = mode;
+        $('pickTitle').textContent = mode === 'ghost' ? T('Ghost wählen') : T('Route wählen');
+        var l = Rides.list();
+        $('pickList').innerHTML = l.map(function (r) {
+            return '<button class="pickrow" data-id="' + r.id + '">' + UI.escapeHtml(r.name) + '<span>' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' + T(SRC[r.src] || r.src) + '</span></button>';
+        }).join('') || '<div class="empty">' + T('Noch keine Fahrt gespeichert. Unter „Fahrten“ lässt sich eine GPX-Datei oder ein Trainingsplan importieren.') + '</div>';
+        $('pickOverlay').hidden = false;
     }
 
     function exportRide(id) {
@@ -9167,21 +9441,23 @@ var LigaUI = (function () {
     }
 
     /* ---------------- Tabs ---------------- */
-    function isActive(v) { return $('v-' + v).classList.contains('active'); }
+    var VIEWS = ['ride', 'rides', 'liga', 'more'];
+    function isView(v) { return $('v-' + v).classList.contains('active'); }
+    /* Is this pane of the live screen visible right now? (the drawing loops depend on it) */
+    function isPane(p) { return isView('ride') && isLive() && $('lv-' + p).classList.contains('active'); }
 
     function showView(v) {
-        ['tacho', 'map', 'log', 'climbs', 'liga', 'group'].forEach(function (x) {
-            $('v-' + x).classList.toggle('active', x === v);
-        });
+        VIEWS.forEach(function (x) { $('v-' + x).classList.toggle('active', x === v); });
         document.querySelectorAll('nav button').forEach(function (b) {
             b.classList.toggle('on', b.dataset.v === v);
         });
-        if (v === 'map')    { render(); liveMap.ensureLoop(); }
-        if (v === 'climbs') { renderProfiles(); }
-        if (v === 'tacho')  { ensureCompassLoop(); LigaUI.tachoTick(); }
-        if (v === 'liga')   { LigaUI.opened(); }
-        if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
-        if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
+        if (v === 'ride')  {
+            if (isLive()) showPane(PANES.filter(function (x) { return $('lv-' + x).classList.contains('active'); })[0]);
+            LigaUI.tachoTick();
+        }
+        if (v === 'rides') { renderRides(); SegUI.refresh(); }
+        if (v === 'liga')  { LigaUI.opened(); }
+        if (v === 'more')  { LigaUI.accountOpened(); }
     }
 
     /* ---------------- Download ---------------- */
@@ -9205,6 +9481,7 @@ var LigaUI = (function () {
             this.value = me.name;
             store('rname', me.name);
             if (an.riders[me.id]) an.riders[me.id].name = me.name;
+            syncMeChip();
             sendMine();
             LigaUI.profileChanged();
         });
@@ -9230,7 +9507,7 @@ var LigaUI = (function () {
             me.emoji = i < 0 ? null : UI.validEmoji(i);
             store('remoji', me.emoji === null ? '' : String(me.emoji));
             if (an.riders[me.id]) an.riders[me.id].emoji = me.emoji;
-            drawEmojiPick();
+            drawEmojiPick(); syncMeChip();
             sendMine();                                   // the others see it at the next beat
             LigaUI.profileChanged();
         });
@@ -9255,24 +9532,14 @@ var LigaUI = (function () {
         /* Start MUST come from a user gesture: iOS only releases the
            compass that way, and Wake Lock as well. */
         $('btnStart').addEventListener('click', async function () {
-            if (running) {
-                running = false;
-                Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
-                finishRecording('ride');
-                SegUI.stopLive();
-                armGhostAgain();          // ghost waits at the start again
-                this.textContent = T('Ausfahrt starten');
-                this.className = 'btn go';
-                netStatus('off', 'gestoppt');
-                return;
-            }
+            if (running) return;
             if (sim) simStop();
             myTrack = []; coffeeStamps = []; Recorder.reset(me.id);      // every ride is recorded individually
             SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
-            this.textContent = T('Ausfahrt beenden');
-            this.className = 'btn stop';
+            setLive();
+            showView('ride');
 
             await Sensors.startCompass();
             Sensors.keepAwake(true);
@@ -9281,10 +9548,27 @@ var LigaUI = (function () {
             });
             if (!ok) netStatus('off', 'Kein GPS verfügbar');
             startNet();
-            showView('tacho');
         });
 
-        $('btnShare').addEventListener('click', async function () {
+        /* Ending is a tap plus a confirmation: a stray touch on the bike must not close the ride. */
+        function stopRide() {
+            running = false;
+            Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
+            finishRecording('ride');
+            SegUI.stopLive();
+            armGhostAgain();          // ghost waits at the start again
+            setLive();
+            netStatus('off', 'gestoppt');
+            showView('ride');
+        }
+        $('btnStop').addEventListener('click', function () {
+            if (sim) { simStop(); return; }
+            if (!confirm(T('Ausfahrt beenden? Sie wird gespeichert.'))) return;
+            stopRide();
+        });
+
+        /* Invite: the same two actions on the ready screen and below the rider list */
+        async function shareInvite(btn) {
             var url = shareLink();
             try {
                 if (navigator.share) {
@@ -9294,15 +9578,20 @@ var LigaUI = (function () {
             } catch (e) { /* cancelled */ }
             try {
                 await navigator.clipboard.writeText(url);
-                this.textContent = T('Link kopiert');
-                var b = this;
-                setTimeout(function () { b.textContent = T('Link zum Mitfahren teilen'); }, 1800);
+                var old = btn.textContent;
+                btn.textContent = T('Link kopiert');
+                setTimeout(function () { btn.textContent = old; }, 1800);
             } catch (e) {
                 prompt(T('Diesen Link weitergeben:'), url);
             }
+        }
+        $('btnShare').addEventListener('click', function () { shareInvite(this); });
+        $('riderList').addEventListener('click', function (e) {
+            var b = e.target.closest('[data-share]'); if (!b) return;
+            if (b.dataset.share === 'qr') showQr(); else shareInvite(b);
         });
 
-        $('btnSim').addEventListener('click', function () { if (sim) simStop(); else simStart(); });
+        $('btnSim').addEventListener('click', function () { if (!sim) simStart(); });
         $('btnSimAttack').addEventListener('click', function () { if (sim) { sim.attack(); syncSimBar(); } });
         $('simLess').addEventListener('click', function () {
             if (sim) { sim.effort = Math.max(0.5, Math.round((sim.effort - 0.1) * 10) / 10); syncSimBar(); } });
@@ -9316,6 +9605,7 @@ var LigaUI = (function () {
         LigaUI.init({
             me: function () { return { name: me.name, emoji: me.emoji, color: myColor() }; },
             live: function () { return running && !sim && myTrack.length > 1 ? { dist: Rides.distanceOf(myTrack), moving: Track.movingMs(myTrack) } : null; },
+            showView: showView,
             ridesChanged: function () { renderRides(); }
         });
         Msg.init({
@@ -9337,6 +9627,31 @@ var LigaUI = (function () {
         document.querySelectorAll('[data-sub]').forEach(function (b) {
             b.addEventListener('click', function () { showSub(b.dataset.sub); });
         });
+        document.querySelectorAll('[data-lv]').forEach(function (b) {
+            b.addEventListener('click', function () { showPane(b.dataset.lv); });
+        });
+        $('meChip').addEventListener('click', function () { showView('more'); });
+        $('rideList').addEventListener('click', function (e) {
+            var r = e.target.closest('.ride'); if (r) openRide(r.dataset.id);
+        });
+        $('rideList').addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            var r = e.target.closest('.ride'); if (r) { e.preventDefault(); openRide(r.dataset.id); }
+        });
+        $('rideActs').addEventListener('click', function (e) { var b = e.target.closest('[data-act]'); if (b) rideAct(b.dataset.act); });
+        function closeOverlay(id) { $(id).hidden = true; }
+        $('rideClose').addEventListener('click', function () { closeOverlay('rideOverlay'); detailId = null; });
+        $('rideOverlay').addEventListener('click', function (e) { if (e.target === this) { this.hidden = true; detailId = null; } });
+        $('pickClose').addEventListener('click', function () { closeOverlay('pickOverlay'); pickMode = null; });
+        $('pickOverlay').addEventListener('click', function (e) { if (e.target === this) { this.hidden = true; pickMode = null; } });
+        $('pickList').addEventListener('click', function (e) {
+            var b = e.target.closest('.pickrow'); if (!b) return;
+            if (pickMode === 'ghost') armGhost(b.dataset.id); else { setPlan(b.dataset.id); renderRides(); liveMap.sync(); liveMap.draw(); }
+            $('pickOverlay').hidden = true; pickMode = null;
+        });
+        $('btnGhostPick').addEventListener('click', function () { openPick('ghost'); });
+        $('btnRoutePick').addEventListener('click', function () { openPick('route'); });
+        $('btnRouteOff').addEventListener('click', function () { clearPlan(); renderRides(); liveMap.sync(); liveMap.draw(); });
         document.querySelectorAll('[data-pm]').forEach(function (b) {
             b.addEventListener('click', function () { profMode = b.dataset.pm; store('profmode', profMode); syncProfMode(); renderProfiles(); });
         });
@@ -9418,7 +9733,7 @@ var LigaUI = (function () {
         initIdentity();
         liveMap = MapCtl.mount($('liveMap'), {
             prefix: 'map', persist: true, extras: [{ id: 'ProfBtn', label: 'Profil' }],
-            isActive: function () { return isActive('map'); },
+            isActive: function () { return isPane('map'); },
             hasRoute: function () { return !!plan; },
             getData: function () {
                 if (!lastMap) return null;
@@ -9432,7 +9747,7 @@ var LigaUI = (function () {
         } catch (e) {
             netStatus('off', 'Verschlüsselung nicht verfügbar – ist die Seite über https:// geladen?');
         }
-        netStatus('off', 'bereit – unter „Gruppe“ starten');
+        netStatus('off', 'bereit zum Start');
         var gp = store('gpace');
         if (gp) $('ghostPace').value = gp;
         recoverDraft();
@@ -9441,14 +9756,16 @@ var LigaUI = (function () {
         profMode = store('profmode') || null;
         if (store('mapprof') === '1') { $('mapProf').hidden = false; $('mapProfBtn').classList.add('on'); $('mapProfBtn').setAttribute('aria-pressed', 'true'); }
         syncProfMode();
-        renderRides(); renderGhostUi(); liveMap.sync();
+        renderRides(); renderGhostUi(); renderRouteUi(); syncMeChip(); liveMap.sync();
         setInterval(function () {                        // ghost in real time (the simulation drives it itself)
             if (running && !sim) ghostStep(Date.now(), Date.now());
             renderGhostUi();
         }, 1000);
         setInterval(saveDraftNow, 60000);
         window.addEventListener('pagehide', saveDraftNow);
-        showView(LigaUI.hasInvite() ? 'liga' : 'group');
+        showSub('rides');
+        showPane(store('lpane'));
+        showView(LigaUI.hasInvite() ? 'liga' : 'ride');
         setInterval(render, RENDER_MS);
         render();
         if (new URLSearchParams(location.search).has('sim')) simStart();

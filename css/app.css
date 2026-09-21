@@ -82,6 +82,9 @@ header .grow { flex: 1; min-width: 0; overflow: hidden;
                text-overflow: ellipsis; white-space: nowrap; }
 header b { color: var(--ink); font-weight: 600; }
 
+/* [hidden] must win over our own display rules (.btn, .card, ...) */
+[hidden] { display: none !important; }
+
 /* ---------------- Views ---------------- */
 main { flex: 1; position: relative; min-height: 0; }
 .view {
@@ -228,8 +231,10 @@ nav {
 nav button {
     flex: 1; border: none; background: none; color: var(--ink3);
     font-family: inherit; font-size: 10.5px; letter-spacing: .4px;
-    padding: 9px 2px 8px; text-transform: uppercase;
+    padding: 7px 2px 6px; text-transform: uppercase;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
+nav .ni { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 nav button.on { color: var(--ink); box-shadow: inset 0 2px 0 var(--ink); }
 /* [hidden] is only a UA rule (display:none) -- a display
    declaration of our own beats it. Without the next line there are
@@ -632,3 +637,60 @@ button[data-msg].armed { background: var(--bad); border-color: var(--bad); color
 .lg-cat label, .lg-check { text-transform: none; letter-spacing: 0; font-size: 14px; }
 .lg-cat input, .lg-check input { accent-color: var(--good); }
 .lg-pts { font-size: 12px !important; }
+
+/* ============================================================
+ * Structure: four tabs (Ride / Rides / League / More)
+ * ============================================================ */
+.scroll, .ready { -webkit-overflow-scrolling: touch; }
+.btnrow { display: flex; gap: 8px; }
+.btnrow .btn { flex: 1; min-width: 0; padding: 12px 6px; }
+.card { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px 12px; margin-top: 12px; }
+.card .note:first-of-type { margin-top: 2px; }
+.ctitle { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink2); font-weight: 600; }
+.ctitle .hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink3); font-size: 11px; }
+.fold { margin-top: 10px; }
+.fold summary { font-size: 12px; color: var(--ink2); padding: 6px 0; cursor: pointer; }
+
+/* Ride tab: ready state and live screen */
+.ready { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 16px; }
+.live { flex: 1; min-height: 0; display: none; flex-direction: column; }
+#v-ride.is-live .ready { display: none; }
+#v-ride.is-live .live { display: flex; }
+.bigstart { margin-top: 14px; padding: 22px 12px; font-size: 22px; letter-spacing: .3px; }
+.mechip {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px;
+    background: none; border: 1px dashed var(--line); border-radius: 8px; padding: 8px; color: var(--ink2);
+    font-family: inherit; font-size: 13px;
+}
+.mechip .emo { width: 18px; height: 18px; }
+.mechip b { color: var(--ink); font-weight: 600; }
+.switcher { flex: none; margin: 8px 0 6px; width: 100%; }
+.switcher button { flex: 1; padding: 9px 2px; font-size: 13px; }
+.switcher .bdg { display: inline-block; min-width: 15px; margin-left: 3px; background: var(--warn); color: #241400; border-radius: 8px; font-size: 9px; padding: 0 4px; }
+.lpane { display: none; flex: 1; min-height: 0; flex-direction: column; }
+.lpane.active { display: flex; }
+.lpane.scroll { overflow-y: auto; }
+#compass { width: min(70vw, 270px, 31vh); height: min(70vw, 270px, 31vh); }
+.btn.stop.endbtn, .endbtn { flex: none; margin: 6px 0 8px; padding: 10px; font-size: 14px; background: none; color: var(--bad); border: 1px solid var(--bad); font-weight: 600; }
+.ghostrow { flex: none; display: flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 6px 10px; background: var(--bg3); border-radius: 8px; font-size: 12px; color: var(--ink2); }
+.ghostrow span { flex: 1; min-width: 0; }
+.ghostrow button { flex: none; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); border-radius: 6px; padding: 6px 10px; font-family: inherit; font-size: 12px; }
+
+/* History */
+.ride { cursor: pointer; }
+.ride .rb { display: flex; gap: 5px; flex: none; align-items: center; }
+.ride .rchip { font-size: 10px; letter-spacing: .4px; padding: 2px 6px; border-radius: 4px; background: var(--bg3); color: var(--ink2); }
+.ride .rchip.on { background: var(--ink); color: var(--bg); font-weight: 600; }
+.ride .rchip.ok { background: color-mix(in srgb, var(--good) 30%, var(--bg3)); color: var(--ink); }
+.ride .rchip.bad { background: var(--bad); color: #fff; }
+.ride .rgo { color: var(--ink3); font-size: 18px; }
+.actgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.actgrid .btn { margin-top: 0; }
+.actgrid .wide { grid-column: 1 / -1; }
+.pickrow { display: block; width: 100%; text-align: left; padding: 10px 4px; background: none; border: none; border-bottom: 1px solid var(--line); color: var(--ink); font-family: inherit; font-size: 14px; }
+.pickrow span { display: block; font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.pickrow:active { background: var(--bg3); }
+.invite { display: flex; gap: 8px; padding: 10px 0 4px; }
+.invite button { flex: 1; border: 1px solid var(--line); background: var(--bg2); color: var(--ink2); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 13px; }
+nav button { position: relative; }
+nav button.riding::after { content: ''; position: absolute; top: 6px; left: calc(50% + 9px); width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 2px var(--bg2); }

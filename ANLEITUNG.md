@@ -4,15 +4,22 @@ Eine Seite, ein Link. Wer ihn öffnet, ist dabei: keine Installation, kein Konto
 
 ## Was sie zeigt
 
-**Tacho** — eigenes Tempo groß, eigene Position in der Gruppe, Kompass mit Richtung und Entfernung zu jedem, darunter alle Fahrer mit Tempo und Lücke in Metern *und* Sekunden. ▲/▼ sagt, wer vor und wer hinter dir ist.
+Unten vier Reiter – nach dem Moment geordnet, in dem du sie brauchst: **Ausfahrt · Fahrten · Liga · Mehr**.
 
-**Karte** — die Streckenachse als glatte Kurve, darauf jeder Fahrer mit Rang, Richtungsmarke und Lücke in Metern zu dir. Anstiege liegen farbig auf der Achse, unten steht der Maßstab. „Alle“ zeigt die ganze Gruppe, „Ich“ hält dich in der Mitte (± zoomt). „Nord“ oder „Kurs“ legt fest, ob Norden oder deine Fahrtrichtung oben liegt. Fahrer außerhalb des Bildes erscheinen als Pfeil am Rand.
+**Ausfahrt** – der Bildschirm für unterwegs, in zwei Zuständen:
 
-**Verlauf** — Führungsarbeit pro Fahrer (wer wie lange vorne war), Ablösungen, sowie Überholvorgänge, Antritte, Abrisse mit Uhrzeit.
+- *Bereit* (vor dem Start): ein großer **Ausfahrt starten**-Knopf, darunter die Gruppe (Link teilen, QR-Code, neue Gruppe), ein **Ghost** (eine gespeicherte Fahrt als grauer Mitfahrer), eine **Route** (als Linie auf Karte und Profil) und **Ausprobieren** (Simulation). Ein Streifen zeigt, als wer du fährst; ein Tipp öffnet das Profil.
+- *Unterwegs*: oben immer dein Tempo und dein Rang (und eine Zeile mit Segment bzw. Liga-Stand, wenn es etwas zu zeigen gibt), darunter ein Umschalter **Kompass · Karte · Profil · Ereignisse**, unten die Schnellnachrichten und **Ausfahrt beenden** (Tipp plus Rückfrage). Die Ansicht bleibt beim nächsten Start gewählt.
+  - **Kompass** – Richtung und Entfernung zu jedem, darunter alle Fahrer mit Tempo und Lücke in Metern *und* Sekunden. ▲/▼ sagt, wer vor und wer hinter dir ist. Unter der Liste: **Einladen** und **QR-Code**.
+  - **Karte** – die Streckenachse als glatte Kurve, darauf jeder Fahrer mit Rang, Richtungsmarke und Lücke. „Alle“ zeigt die ganze Gruppe, „Ich“ hält dich in der Mitte, „Nord“/„Kurs“ legt die Ausrichtung fest, optional mit Straßenkarte und Profilstreifen.
+  - **Profil** – Höhenprofil mit allen Fahrern und die Bergsprints (Zeit und Höhenmeter pro Stunde je Anstieg).
+  - **Ereignisse** – Führungsarbeit pro Fahrer, dazu Überholvorgänge, Antritte, Abrisse und Nachrichten mit Uhrzeit.
 
-**Berge** — automatisch erkannte Anstiege mit Rangliste: Zeit und Höhenmeter pro Stunde für jeden, der oben angekommen ist.
+**Fahrten** – alles, was du schon gefahren bist. Drei Unterseiten: **Fahrten** (Liste, Import von GPX oder Trainingsplan), **Segmente** (automatisch erkannte Anstiege und eigene) und **Rekorde**. Ein Tipp auf eine Fahrt öffnet ihre Karte mit allen Aktionen: Bilanz, Replay, als Ghost fahren, als Route zeigen, als GPX sichern, Liga-Upload und Löschen.
 
-**Gruppe** — Name, Farbe, Link teilen, QR-Code zum Einscannen, Simulation, Ghost und gespeicherte Ausfahrten, Sonnenmodus, Export.
+**Liga** – der optionale Wettbewerb mit Freunden (siehe unten).
+
+**Mehr** – **Ich** (Name, Farbe, Symbol), **Anzeige** (Sonnenmodus, Sprache), **Liga-Konto** (Geräte, Abmelden, Konto löschen), **Daten sichern** (GPX, JSON), **Verbindung und Datenschutz** (unter „Erweitert“ der eigene Relay).
 
 ---
 
@@ -30,8 +37,8 @@ Lade **eine** dieser Varianten auf deinen Webspace:
 ## Erste Ausfahrt
 
 1. Seite öffnen. Beim ersten Aufruf wird automatisch ein Gruppenschlüssel erzeugt und an die Adresse gehängt (hinter dem `#`).
-2. Unter **Gruppe** Namen und Farbe setzen.
-3. **Link zum Mitfahren teilen** — per WhatsApp, Signal, wie auch immer. Alle öffnen ihn. Steht jemand neben dir: **QR-Code zum Einscannen zeigen** und die Kamera des anderen Handys draufhalten.
+2. Unter **Mehr → Ich** Namen, Farbe und Symbol setzen.
+3. Auf **Ausfahrt** unter „Gruppe“ **Link teilen** — per WhatsApp, Signal, wie auch immer. Alle öffnen ihn. Steht jemand neben dir: **QR-Code zeigen** und die Kamera des anderen Handys draufhalten.
 4. Jeder tippt **Ausfahrt starten** und erlaubt Standort (iOS fragt zusätzlich nach Bewegungssensoren).
 5. Losfahren.
 
@@ -137,7 +144,7 @@ wrangler login
 wrangler deploy
 ```
 
-Danach die `wss://…`-Adresse in der App unter **Gruppe → Eigener Relay** eintragen. Der Worker ist absichtlich dumm — er verteilt Bytes und speichert nichts. Lesen kann er ohnehin nichts: Die Nutzlast ist schon auf dem Handy verschlüsselt. Selbst als Betreiber siehst du in den Logs nur Zufallsbytes.
+Danach die `wss://…`-Adresse in der App unter **Mehr → Verbindung → Erweitert** eintragen. Der Worker ist absichtlich dumm — er verteilt Bytes und speichert nichts. Lesen kann er ohnehin nichts: Die Nutzlast ist schon auf dem Handy verschlüsselt. Selbst als Betreiber siehst du in den Logs nur Zufallsbytes.
 
 ---
 
@@ -187,7 +194,7 @@ Die Kacheln werden passend zu Ausschnitt und Drehung auf den Bildschirm gelegt (
 
 **Ruckelfreie Bewegung.** Positionen kommen nur etwa einmal pro Sekunde, die der anderen Fahrer alle zwei; gezeichnet wird mit 30 Bildern pro Sekunde. Karte und Kompass rechnen deshalb zwischen den Meldungen weiter: Aus den letzten beiden Positionen wird ein Tempo geschätzt, der Punkt gleitet damit bis zur nächsten Meldung (höchstens 2,6 s, danach steht er), und trifft sie ein, nähert er sich der echten Position in etwa einer Viertelsekunde an, statt zu springen. Dasselbe gilt für Fahrtrichtung und die Drehung im Modus „Kurs“. In einer Messung mit der Simulation sank der größte Sprung eines Punktes von 4,0 auf 0,5 px (Karte) bzw. von 1,9 auf 0,5 px (Kompass).
 
-Das ist reine Darstellung. Rang, Lücken und Überholvorgänge rechnen weiter mit den gemeldeten Positionen. Der Preis: Die Anzeige hängt einen Sekundenbruchteil hinter der Wirklichkeit, und wer plötzlich stark bremst, rollt auf dem Bildschirm noch bis zu 2,6 s weiter, bis die nächste Meldung ihn einholt. Zum Vergleich lässt sich die Glättung in der Browser-Konsole mit `Smooth.enabled = false` abschalten. Die Zeichenschleifen laufen nur, solange Karte bzw. Tacho sichtbar sind und die Seite im Vordergrund ist.
+Das ist reine Darstellung. Rang, Lücken und Überholvorgänge rechnen weiter mit den gemeldeten Positionen. Der Preis: Die Anzeige hängt einen Sekundenbruchteil hinter der Wirklichkeit, und wer plötzlich stark bremst, rollt auf dem Bildschirm noch bis zu 2,6 s weiter, bis die nächste Meldung ihn einholt. Zum Vergleich lässt sich die Glättung in der Browser-Konsole mit `Smooth.enabled = false` abschalten. Die Zeichenschleifen laufen nur, solange Karte bzw. Kompass sichtbar sind und die Seite im Vordergrund ist.
 
 **Die Achse ist ein Spline.** Durch die Stützpunkte (alle 20 m) läuft eine Catmull-Rom-Kurve, ohne dass ein Punkt verschoben wird. Das Achsenende liegt meist ein Stück hinter dem Führenden; die gestrichelte Verbindung schließt diese Lücke.
 
@@ -201,9 +208,9 @@ Die Prüfbilder dazu liegen in `test/debug/` (`tiles-*.png` zeigen die Straßenk
 
 ## Simulation zum Ausprobieren
 
-Unter **Gruppe → Simulation starten** (oder direkt mit `…/index.html?sim`) fährst du mit vier virtuellen Mitfahrern – Anna, Ben, Carla und Dirk – eine 6-km-Testrunde mit Kurven, zwei Serpentinen und drei Anstiegen. Du bist der Fünfte. Es braucht weder GPS noch Netz, und es wird nichts gesendet.
+Unter **Ausfahrt → Ausprobieren → Simulation starten** (oder direkt mit `…/index.html?sim`) fährst du mit vier virtuellen Mitfahrern – Anna, Ben, Carla und Dirk – eine 6-km-Testrunde mit Kurven, zwei Serpentinen und drei Anstiegen. Du bist der Fünfte. Es braucht weder GPS noch Netz, und es wird nichts gesendet.
 
-Die Leiste unten bleibt in jeder Ansicht sichtbar:
+Die Leiste unten bleibt in jedem Reiter sichtbar:
 
 | | |
 |---|---|
@@ -211,7 +218,7 @@ Die Leiste unten bleibt in jeder Ansicht sichtbar:
 | **− / +** | Deine Leistung in 10-%-Schritten (50 bis 160 %). Damit hängst du dich an oder lässt dich abhängen. |
 | **Antritt!** | 15 Sekunden mit mindestens 150 %, um zu überholen oder eine Lücke aufzureißen. |
 
-Die Positionen laufen durch denselben Weg wie echte Meldungen, samt GPS-Rauschen von rund 4 m. Tacho, Karte, Verlauf und Berge zeigen deshalb, was sie auch bei einer echten Ausfahrt zeigen würden. Anna klettert am besten, Ben tritt vor dem ersten Berg an, Dirk baut nach etwa vier Minuten ein und wird abgerissen. Ist der Führende im Ziel, endet die Simulation; **Simulation beenden** setzt alles zurück.
+Die Positionen laufen durch denselben Weg wie echte Meldungen, samt GPS-Rauschen von rund 4 m. Kompass, Karte, Profil und Ereignisse zeigen deshalb, was sie auch bei einer echten Ausfahrt zeigen würden. Anna klettert am besten, Ben tritt vor dem ersten Berg an, Dirk baut nach etwa vier Minuten ein und wird abgerissen. Ist der Führende im Ziel, endet die Simulation; **Simulation beenden** (Knopf unten auf dem Ausfahrt-Bildschirm) setzt alles zurück.
 
 Die Bilder zur Simulation und das Prüfskript liegen in `test/debug/`.
 
@@ -223,7 +230,7 @@ Der Ghost ist ein grauer Mitfahrer, der eine gespeicherte Fahrt noch einmal abf�
 
 **Speichern.** Jede beendete Ausfahrt und jede Simulation wird automatisch abgelegt (ab 40 Punkten, also rund einer Minute). Alle 60 Sekunden entsteht außerdem ein Entwurf: Ist der Akku leer oder der Browser abgestürzt, wird die Fahrt beim nächsten Öffnen wiederhergestellt.
 
-**Losfahren.** Unter *Gruppe → Gespeicherte Ausfahrten* auf **Ghost** tippen, dann die Ausfahrt starten. Der Ghost wartet an seinem Startpunkt und fährt los, sobald du näher als 40 m bist. Wer nicht exakt am selben Ort startet, nimmt **Ghost jetzt starten**. Mit **Ghost-Tempo** läuft er schneller oder langsamer als damals (z. B. 102 % für einen kleinen Aufschlag auf die Bestzeit). Nach dem Beenden wartet er wieder am Start.
+**Losfahren.** Unter *Ausfahrt → Ghost → Fahrt als Ghost wählen* (oder in *Fahrten* eine Fahrt öffnen → **Als Ghost fahren**) wählen, dann die Ausfahrt starten. Der Ghost wartet an seinem Startpunkt und fährt los, sobald du näher als 40 m bist. Wer nicht exakt am selben Ort startet, nimmt **Jetzt starten** in der Ghost-Zeile auf dem Ausfahrt-Bildschirm. Mit **Ghost-Tempo** läuft er schneller oder langsamer als damals (z. B. 102 % für einen kleinen Aufschlag auf die Bestzeit). Nach dem Beenden wartet er wieder am Start.
 
 **Quellen für einen Ghost**
 
@@ -254,27 +261,27 @@ Die Prüfbilder und -skripte liegen in `test/debug/`.
 
 ## Höhenprofil, Route, Replay, Segmente, Rekorde, Bilanz
 
-### Höhenprofil (Berge → Jetzt, oder Karte → Profil)
+### Höhenprofil (Ausfahrt → Profil, oder Karte → Profil)
 Die Strecke „abgerollt“: waagerecht die Strecke, senkrecht die Höhe, Anstiege farbig hinterlegt, jeder Fahrer als Punkt mit Anfangsbuchstabe an seiner Stelle (grau „G“ = Ghost, Pfeil am Rand = außerhalb des Ausschnitts). Darunter steht in Worten, was als Nächstes kommt: *„Nächster Anstieg 1 in 410 m · 580 m · +33 Hm · 5,7 %“*. **Alles** zeigt die ganze Strecke, **Voraus** ein Fenster von 400 m zurück bis 4 km voraus.
 
 Ohne Route endet das Profil beim Führenden, denn die Live-Achse entsteht erst beim Fahren. Mit einer geladenen Route (nächster Abschnitt) kennt es auch das Stück *vor* dir – dann sind die Anstiege voraus sichtbar.
 
 ### Route auf der Karte
-Unter *Gruppe → Gespeicherte Ausfahrten* auf **Route** tippen: Die Strecke (eigene Fahrt, GPX-Import oder Plan) liegt dann als Linie unter der Karte, mit Start (Kreis) und Ziel (Quadrat). Ohne Positionen zeigt die Karte die Route; der Knopf **Route** in der Leiste passt den Ausschnitt an sie an. Es gibt bewusst keine Warnung bei Abweichung. Die Wahl bleibt gespeichert.
+Unter *Ausfahrt → Route → Route wählen* (oder in *Fahrten* eine Fahrt öffnen → **Als Route zeigen**): Die Strecke (eigene Fahrt, GPX-Import oder Plan) liegt dann als Linie unter der Karte, mit Start (Kreis) und Ziel (Quadrat). Ohne Positionen zeigt die Karte die Route; der Knopf **Route** in der Leiste passt den Ausschnitt an sie an. Es gibt bewusst keine Warnung bei Abweichung. Die Wahl bleibt gespeichert.
 
 ### Gruppen-Replay
-**Replay** in der Fahrtenliste spielt die Gruppenfahrt noch einmal ab: Karte, Profil, Rangliste mit Lücken und das jeweils letzte Ereignis. Die Fahrt läuft durch dieselbe Auswertung wie live – Rang, Überholen, Antritte und Abrisse sind also nicht nachgestellt, sondern zum jeweiligen Zeitpunkt berechnet. Tempo ×1/×10/×60/×300, Schieberegler zum Vor- und Zurückspulen (rückwärts wird von vorn neu gerechnet, das dauert bei langen Fahrten einen Moment; „berechne …“ zeigt es an).
+**Replay** (in der Karte einer Fahrt unter *Fahrten*) spielt die Gruppenfahrt noch einmal ab: Karte, Profil, Rangliste mit Lücken und das jeweils letzte Ereignis. Die Fahrt läuft durch dieselbe Auswertung wie live – Rang, Überholen, Antritte und Abrisse sind also nicht nachgestellt, sondern zum jeweiligen Zeitpunkt berechnet. Tempo ×1/×10/×60/×300, Schieberegler zum Vor- und Zurückspulen (rückwärts wird von vorn neu gerechnet, das dauert bei langen Fahrten einen Moment; „berechne …“ zeigt es an).
 
 Aufgezeichnet wird jeder Fahrer, dessen Meldungen ankommen, alle 2 s, kompakt (rund 12 Byte je Punkt, fünf Fahrer über drei Stunden ≈ 170 KB). Fährt man allein, gibt es nur die eigene Spur. Wer erst mitten in der Fahrt dazukam, erscheint ab dann. Ein Absturz während der Fahrt rettet die eigene Spur (Entwurf), nicht die der anderen.
 
-### Segmente und Rekorde (Berge → Segmente / Rekorde)
+### Segmente und Rekorde (Fahrten → Segmente / Rekorde)
 **Segmente.** Nach jeder Fahrt werden die Anstiege automatisch als Segment gespeichert; fährst du sie wieder, wird die Zeit verglichen (Bestzeit, letzte Zeit, Verlauf, Tempo, Hm/h). Eigene Segmente legst du mit **Segment aus einer Fahrt anlegen** an: Fahrt wählen, Anfang und Ende mit den Reglern setzen, Namen vergeben – die App sucht es dann in allen gespeicherten Fahrten. Auch aus alten GPX-Dateien (Strava, Garmin), die du importierst.
 
 *Wiedererkennen:* Die Fahrt muss in der Nähe (35 m) des Anfangs beginnen und des Endes ankommen, dazwischen dem Verlauf folgen (mittlere Abweichung ≤ 32 m) und die Länge muss ungefähr stimmen. Die Zeit wird aus dem Punkt kürzester Annäherung interpoliert; das ist auf etwa ±1–2 s genau. Die erkannten Grenzen eines Anstiegs schwanken von Fahrt zu Fahrt um einige Dutzend Meter – deshalb gilt Überlappung, nicht der Anfangspunkt, als „dasselbe Segment“.
 
 **Rekorde ohne Ort:** schnellste 1 / 5 / 10 / 20 / 40 km, beste 5 und 20 Minuten, Spitzentempo (5 s), meiste Höhenmeter, längste Fahrt.
 
-**Live im Tacho:** Kommst du an ein bekanntes Segment, erscheint ein Banner mit deiner Zeit und dem Vorsprung oder Rückstand auf die Bestzeit (verglichen an zehn Zwischenzeiten). Am Ende steht das Ergebnis, bei einer Bestzeit gibt es Vibration (Android). Der Live-Wert ist vorläufig (±1–3 s); maßgeblich ist die Auswertung nach der Fahrt.
+**Live auf dem Ausfahrt-Bildschirm:** Kommst du an ein bekanntes Segment, erscheint ein Banner mit deiner Zeit und dem Vorsprung oder Rückstand auf die Bestzeit (verglichen an zehn Zwischenzeiten). Am Ende steht das Ergebnis, bei einer Bestzeit gibt es Vibration (Android). Der Live-Wert ist vorläufig (±1–3 s); maßgeblich ist die Auswertung nach der Fahrt.
 
 **Warum die Spur vorher geglättet wird:** Ein GPS-Fix springt um ±4 m; bei 1 Hz addieren diese Zacken rund 20–25 % Weg dazu (eine 6-km-Runde „ist“ dann 7,4 km lang). Ohne Glättung wären Distanz-Rekorde und Segmentlängen zu groß und das Wiederfinden scheiterte an der Längenprüfung. Rohdaten und GPX-Export bleiben unverändert.
 
@@ -292,7 +299,7 @@ Strecke, Fahrzeit, Ø- und Spitzentempo, Höhenmeter; eine kleine Karte der gefa
 
 ## Kurznachrichten per Knopf (ohne Tippen)
 
-Im Tacho, unter der Fahrerliste, steht eine Reihe großer Knöpfe: 🛑 **Halt!**, ⏳ **Bitte warten**, 🔧 **Panne**, ⚠️ **Vorsicht!** und 💬 für das Panel mit allen neun (dazu 🚨 **Hilfe!**, 🐢 **Langsamer**, 🚀 **Schneller**, ☕ **Pause?**, 👍 **Alles klar**). Ein Tipp sendet die Nachricht an die Gruppe. Tippen muss niemand.
+Auf dem Ausfahrt-Bildschirm steht unter der Ansicht, in jeder der vier Ansichten, eine Reihe großer Knöpfe: 🛑 **Halt!**, ⏳ **Bitte warten**, 🔧 **Panne**, ⚠️ **Vorsicht!** und 💬 für das Panel mit allen neun (dazu 🚨 **Hilfe!**, 🐢 **Langsamer**, 🚀 **Schneller**, ☕ **Pause?**, 👍 **Alles klar**). Ein Tipp sendet die Nachricht an die Gruppe. Tippen muss niemand.
 
 **Beim Empfänger** erscheint oben ein Banner mit Emoji und Name („🔧 Anja – Panne“), dringende Nachrichten (Halt, Panne, Vorsicht, Hilfe) rot und 20 Sekunden lang, die anderen 8 Sekunden. Ein Tipp aufs Banner schließt es. Dazu gibt es Vibration (nur Android; iPhone-Browser können das nicht) und einen Eintrag im **Verlauf**.
 
@@ -313,16 +320,16 @@ Im Tacho, unter der Fahrerliste, steht eine Reihe großer Knöpfe: 🛑 **Halt!*
 
 ## Symbol (Emoji) als Icon
 
-Unter *Gruppe → Ich → Symbol* wählst du aus 24 festen Symbolen (🚴 🦊 🐻 🐼 🐯 🦁 🐸 🐵 🦄 🐺 🦅 🐝 🦉 🐧 🐢 🐇 🔥 ⚡ ⭐ 🍀 🚀 🍕 ☕ 🎸) oder „–“ für keins. Getippt wird nichts. Die Farbe bleibt; das Symbol kommt dazu.
+Unter *Mehr → Ich → Symbol* wählst du aus 24 festen Symbolen (🚴 🦊 🐻 🐼 🐯 🦁 🐸 🐵 🦄 🐺 🦅 🐝 🦉 🐧 🐢 🐇 🔥 ⚡ ⭐ 🍀 🚀 🍕 ☕ 🎸) oder „–“ für keins. Getippt wird nichts. Die Farbe bleibt; das Symbol kommt dazu.
 
 **Wo es erscheint**
 - **Karte:** das Symbol steht im (etwas größeren) Punkt, der Rang wandert vor den Namen („2 Anna“) – die Rangfolge geht nicht verloren.
 - **Kompass:** das Symbol im Punkt, ▲/▼ (vorne/hinten) als kleines Dreieck daneben.
-- **Fahrerliste** im Tacho, **Höhenprofil** (statt des Anfangsbuchstabens), **Replay**, **Nachrichten-Banner** („🐢 Dirk – Bitte warten“) und **Bilanz** (Anzeige und Bild).
+- **Fahrerliste** im Kompass, **Höhenprofil** (statt des Anfangsbuchstabens), **Replay**, **Nachrichten-Banner** („🐢 Dirk – Bitte warten“) und **Bilanz** (Anzeige und Bild).
 
 **Die Emoji sind Bilder, keine Schrift.** Ob ein Emoji als Zeichen erscheint, hängt von einer Schrift des Geräts ab. Fehlt sie (manche Linux-Systeme, Browser in WSL), bleiben Kästchen oder Lücken. Deshalb liefert die App die benötigten 33 Symbole (die 24 zur Auswahl plus die der Nachrichten und der Bestzeiten) selbst mit, als kleine SVG-Grafiken in `js/emoji.js`, zusammen rund 45 KB. Sie sehen überall gleich aus, funktionieren auch in Karte, Kompass und Profil (SVG) und im Bild der Bilanz. Sie brauchen kein Netz.
 
-**Lizenz:** Die Grafiken sind [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc. und Mitwirkende, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) – unverändert übernommen, nur Leerraum entfernt. Die Quellenangabe steht in der App unter dem Symbol-Feld und im Kopf von `js/emoji.js`. Wer die App weitergibt, muss sie beibehalten.
+**Lizenz:** Die Grafiken sind [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc. und Mitwirkende, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) – unverändert übernommen, nur Leerraum entfernt. Die Quellenangabe steht in der App unter „Mehr → Info“ und im Kopf von `js/emoji.js`. Wer die App weitergibt, muss sie beibehalten.
 
 **Was über die Leitung geht:** nur die **Nummer** aus der Liste (`"j": 5`), kein Text und kein Emoji. Wer kein Symbol gewählt hat, sendet nichts Zusätzliches – die Meldung bleibt wie bisher. Beim Empfänger wird die Nummer geprüft: Eine Zahl außerhalb der Liste, ein Bruch, ein Text oder ein Objekt gelten als „kein Symbol“. Damit lässt sich nichts einschleusen (getestet mit `<img src=x onerror=…>` als „Symbol“; jedes Bild im Dokument ist ein mitgeliefertes Symbol). Die Liste darf nur hinten wachsen, sonst zeigen ältere Apps ein falsches Symbol.
 
@@ -356,12 +363,12 @@ Steigrate, Kletterkönig (Punkte aus Liga-Segmenten) · Wasserträger (Führungs
 gemeinsam gefahrene Kilometer, Kaffeepausen · Entdecken (neue Kartenkacheln von ca. 0,8 km).
 Dazu eine **Gesamtwertung** nach Platzpunkten, **Team-Ziele** („zusammen 3000 km") und **persönliche Ziele**.
 
-**Liga-Stand im Tacho:** Unter dem Tempo steht eine Zeile, z. B. „▲ Anna +12,4 km · Du 314 km · ▼ Ben −8,1 km".
+**Liga-Stand auf dem Ausfahrt-Bildschirm:** Unter dem Tempo (und auf dem Bereit-Bildschirm unter dem Startknopf) steht eine Zeile, z. B. „▲ Anna +12,4 km · Du 314 km · ▼ Ben −8,1 km".
 Tippen wechselt die Kategorie. Kilometer und Fahrzeit laufen während der Fahrt live mit; die anderen zeigen
 den Stand vom letzten Abruf.
 
 **Datenschutz:** Deine Strecken sieht **nur du**. Die anderen sehen Zahlen und Fahrtnamen. Willst du eine
-Fahrt zeigen, teilst du sie ausdrücklich („Meine Fahrten → Teilen"); dann fehlen die ersten und letzten
+Fahrt zeigen, teilst du sie ausdrücklich („Fahrten → Fahrt öffnen → In der Liga teilen"); dann fehlen die ersten und letzten
 300 m, damit dein Zuhause nicht auftaucht, und die anderen können sie als Ghost laden. Gruppenaufzeichnungen
 (mit Positionen anderer) werden nie hochgeladen. Alles ist jederzeit löschbar (Fahrt, Liga verlassen, Konto).
 Die Daten liegen bei Cloudflare, nicht Ende-zu-Ende verschlüsselt.
@@ -373,7 +380,7 @@ Die Daten liegen bei Cloudflare, nicht Ende-zu-Ende verschlüsselt.
 
 ## Sprache: Deutsch / English
 
-Unter **Gruppe → Anzeige** schaltet der Knopf „Sprache“ zwischen Deutsch und Englisch um. Die Wahl wird auf dem
+Unter **Mehr → Anzeige** schaltet der Knopf „Sprache“ zwischen Deutsch und Englisch um. Die Wahl wird auf dem
 Gerät gemerkt; der Startzustand ist Deutsch. Mit `?lang=en` (oder `?lang=de`) im Link geht es auch direkt.
 Der Gruppenlink zum Teilen enthält die Sprache absichtlich nicht – jeder wählt selbst.
 

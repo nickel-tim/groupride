@@ -149,9 +149,10 @@ var UI = (function () {
                   '<div class="rgap num">' + gap + '</div>' +
                 '</div>');
         }
-        $('riderList').innerHTML = out.join('') ||
+        $('riderList').innerHTML = (out.join('') ||
             '<div class="empty">' + T('Noch niemand verbunden.') + '<br>' +
-            T('Teile den Link unter „Gruppe“ – wer ihn öffnet, erscheint hier.') + '</div>';
+            T('Lade andere ein – wer den Link öffnet, erscheint hier.') + '</div>') +
+            '<div class="invite"><button data-share="link">' + T('Einladen') + '</button><button data-share="qr">' + T('QR-Code') + '</button></div>';
     }
 
     /* ---------------- Front work ---------------- */

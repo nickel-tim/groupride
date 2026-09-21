@@ -81,6 +81,7 @@ var LigaUI = (function () {
         var keep = root.scrollTop;
         root.innerHTML = html;
         root.scrollTop = keep;
+        renderAccountBox();
     }
 
     /* ---- Login ---- */
@@ -95,7 +96,7 @@ var LigaUI = (function () {
                  T('<input type="email" id="lgEmail" autocomplete="email" inputmode="email" placeholder="du@beispiel.de" value="') + esc(l.email) + '">' +
                  btn('login-start', T('Code per E-Mail senden'), '', 'go') +
                  T('<div class="note">Die Adresse dient nur dazu, dir einen Code zu schicken und dich auf einem neuen Gerät wiederzuerkennen. ') +
-                 T('Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus dem Reiter „Gruppe“.</div>');
+                 T('Gespeichert wird nur ein Prüfwert, nicht die Adresse. Dein Name, dein Symbol und deine Farbe kommen aus „Mehr“.</div>');
         } else {
             h += T('<div class="note">Ein 6-stelliger Code wurde an <b>') + esc(l.email) + T('</b> geschickt (10 Minuten gültig).</div>') +
                  (l.dev ? T('<div class="note lg-ok">Entwicklungsmodus: Code ') + esc(l.dev) + '</div>' : '') +
@@ -124,14 +125,20 @@ var LigaUI = (function () {
              T('<label for="lgInvite">Einladungslink einfügen</label><input type="text" id="lgInvite" placeholder="https://…#l=…" autocomplete="off">') +
              btn('paste-join', T('Beitreten'));
 
-        h += T('<h2>Meine Fahrten</h2>') + renderRides();
-
-        h += T('<h2>Konto</h2><div class="lg-card"><div class="lg-me">') + emo(a.emoji) + '<b>' + esc(a.name) + '</b></div>' +
-             T('<div class="note">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du unter „Gruppe“.</div>') +
-             btn('devices', T('Geräte anzeigen')) + (st.devices ? renderDevices() : '') +
-             btn('logout', T('Auf diesem Gerät abmelden')) + btn('delete-account', T('Konto und alle Daten löschen'), '', 'danger') + '</div>';
+        h += T('<h2>Uploads</h2>') + renderRides();
         return h;
     }
+
+    /* ---- Account: shown under "More" ---- */
+    function renderAccount() {
+        var a = LigaApi.account();
+        if (!a) return T('<div class="note">Nicht angemeldet. Die Liga ist freiwillig – die Live-Gruppe funktioniert ohne Konto.</div>') + btn('goto-liga', T('Zur Liga …'));
+        return T('<div class="lg-card"><div class="lg-me">') + emo(a.emoji) + '<b>' + esc(a.name) + '</b></div>' +
+               T('<div class="note">Angemeldet auf diesem Gerät. Name, Symbol und Farbe änderst du oben unter „Ich“.</div>') + msgBox() +
+               btn('devices', T('Geräte anzeigen')) + (st.devices ? renderDevices() : '') +
+               btn('logout', T('Auf diesem Gerät abmelden')) + btn('delete-account', T('Konto und alle Daten löschen'), '', 'danger') + '</div>';
+    }
+    function renderAccountBox() { var el = $('accountRoot'); if (el) el.innerHTML = renderAccount(); }
 
     function renderDevices() {
         return '<div class="lg-devs">' + st.devices.map(function (d) {
@@ -174,7 +181,7 @@ var LigaUI = (function () {
     }
 
     /* ---- League ---- */
-    var TABS = [['stand', 'Stand'], ['ziele', 'Ziele'], ['halle', 'Halle'], ['geteilt', 'Geteilt'], ['segmente', 'Segmente'], ['mehr', 'Mehr']];
+    var TABS = [['stand', 'Stand'], ['halle', 'Halle'], ['strecken', 'Strecken'], ['mehr', 'Verwalten']];
 
     function renderLeague() {
         var ov = st.ov, h = T('<button class="lg-back" data-act="home">‹ Ligen</button>');
@@ -187,11 +194,9 @@ var LigaUI = (function () {
         h += '<div class="seg lg-tabs" role="tablist">' + TABS.map(function (t) {
             return '<button data-act="tab" data-tab="' + t[0] + '" class="' + (st.tab === t[0] ? 'on' : '') + '">' + T(t[1]) + '</button>';
         }).join('') + '</div>' + msgBox();
-        if (st.tab === 'stand') h += tabStand(ov);
-        else if (st.tab === 'ziele') h += tabGoals(ov);
+        if (st.tab === 'stand') h += tabGoals(ov) + tabStand(ov);
         else if (st.tab === 'halle') h += tabHall();
-        else if (st.tab === 'geteilt') h += tabShared();
-        else if (st.tab === 'segmente') h += tabSegs(ov);
+        else if (st.tab === 'strecken') h += tabSegs(ov) + T('<h2>Geteilte Fahrten</h2>') + tabShared();
         else h += tabMore(ov);
         return h;
     }
@@ -224,20 +229,21 @@ var LigaUI = (function () {
 
     function tabGoals(ov) {
         var g = ov.goals || { team: [], personal: [] }, meId = LigaApi.account().id, h = '';
-        if (ov.period.frozen) return T('<div class="note">Für abgeschlossene Zeiträume werden Ziele nicht mehr angezeigt.</div>');
-        h += T('<div class="lg-card"><div class="lg-ct">Team-Ziele</div>');
-        if (!g.team.length) h += T('<div class="lg-none">Kein Team-Ziel. Der Admin kann eins unter „Mehr“ festlegen.</div>');
-        g.team.forEach(function (t) { h += '<div class="lg-gl">' + esc(catLabel(t.cat)) + '</div>' + bar(t.progress, t.target, t.cat); });
-        h += T('</div><div class="lg-card"><div class="lg-ct">Persönliche Ziele</div>');
-        var mem = ov.members.reduce(function (o, m) { o[m.id] = m; return o; }, {}), any = false;
+        if (ov.period.frozen) return '';
+        var mem = ov.members.reduce(function (o, m) { o[m.id] = m; return o; }, {});
+        var any = g.team.length || g.personal.length;
+        if (any) h += T('<div class="lg-card"><div class="lg-ct">Ziele</div>');
+        g.team.forEach(function (t) { h += '<div class="lg-gl">' + T('Team') + ' · ' + esc(catLabel(t.cat)) + '</div>' + bar(t.progress, t.target, t.cat); });
         g.personal.forEach(function (p) {
-            any = true;
             h += '<div class="lg-gl">' + emo(mem[p.id] && mem[p.id].emoji) + esc(mem[p.id] ? mem[p.id].name : '?') + (p.id === meId ? ' (' + T('du') + ')' : '') + '</div>';
             p.goals.forEach(function (x) { h += '<div class="lg-gsub">' + esc(catLabel(x.cat)) + '</div>' + bar(x.progress, x.target, x.cat); });
         });
-        if (!any) h += T('<div class="lg-none">Noch niemand hat ein persönliches Ziel gesetzt.</div>');
-        h += T('</div><div class="lg-card"><div class="lg-ct">Mein Ziel setzen</div>') + goalEditor(meGoals(ov), 'my', false) + btn('goals-save', T('Meine Ziele speichern')) + '</div>';
-        return h;
+        if (st.editGoals) {
+            h += (any ? '' : T('<div class="lg-card"><div class="lg-ct">Ziele</div>')) + T('<div class="lg-gl">Mein Ziel setzen</div>') + goalEditor(meGoals(ov), 'my', false) + btn('goals-save', T('Meine Ziele speichern')) + btn('goals-edit', T('Abbrechen'));
+            return h + '</div>';
+        }
+        if (any) return h + '<button class="lg-mini" data-act="goals-edit">' + T('Mein Ziel setzen') + '</button></div>';
+        return '<button class="lg-mini" data-act="goals-edit">' + T('Ziel setzen') + '</button>';
     }
     function meGoals(ov) {
         var meId = LigaApi.account().id, p = (ov.goals.personal || []).filter(function (x) { return x.id === meId; })[0];
@@ -272,12 +278,12 @@ var LigaUI = (function () {
 
     function tabShared() {
         if (!st.shared) return T('<div class="note">Lade …</div>');
-        if (!st.shared.length) return T('<div class="note">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Ligen → Meine Fahrten“.</div>');
+        if (!st.shared.length) return T('<div class="note">Noch hat niemand eine Fahrt geteilt. Teilen geht unter „Fahrten“ → Fahrt öffnen → „In der Liga teilen“.</div>');
         return st.shared.map(function (r) {
             return '<div class="lg-card"><div class="lg-me">' + emo(r.emoji) + '<b>' + esc(r.name) + '</b></div>' +
                    '<div class="note">' + esc(r.owner_name) + ' · ' + esc(UI.fmtDist(r.dist_m)) + ' · ' + esc(fmtDayY(r.start_ts)) + '</div>' +
                    btn('ghost', T('Als Ghost speichern'), 'data-ride="' + esc(r.id) + '" data-owner="' + esc(r.owner_name) + '" data-name="' + esc(r.name) + '"') + '</div>';
-        }).join('') + T('<div class="note">Der Ghost liegt danach unter „Gruppe → Gespeicherte Ausfahrten“ und lässt sich dort als Gegner wählen.</div>');
+        }).join('') + T('<div class="note">Der Ghost liegt danach unter „Fahrten“ und lässt sich auf dem Ausfahrt-Bildschirm als Gegner wählen.</div>');
     }
 
     function tabSegs(ov) {
@@ -294,7 +300,7 @@ var LigaUI = (function () {
         });
         var mine = (typeof Segments !== 'undefined' ? Segments.list() : []).filter(function (m) { return m.poly && m.poly.length > 1; });
         h += T('<div class="lg-card"><div class="lg-ct">Aus meinen Segmenten übernehmen</div>');
-        if (!mine.length) h += T('<div class="lg-none">Du hast noch keine Segmente. Lege welche unter „Berge → Segmente“ an.</div>');
+        if (!mine.length) h += T('<div class="lg-none">Du hast noch keine Segmente. Lege welche unter „Fahrten → Segmente“ an.</div>');
         mine.slice(0, 20).forEach(function (m) {
             h += '<div class="lg-row"><span class="lg-nm">' + esc(m.name) + '</span><span class="lg-v">' + esc(UI.fmtDist(m.len)) + '</span>' +
                  '<button class="lg-mini" data-act="seg-add" data-id="' + esc(m.id) + T('">hinzufügen</button></div>');
@@ -427,16 +433,18 @@ var LigaUI = (function () {
             if (r.status !== 200) { setMsg('', r.error); st.page = 'home'; render(); return; }
             st.ov = r; st.league = id; st.period = periodStart || null;
             render();
-            if (st.tab === 'halle') loadTab('halle'); if (st.tab === 'geteilt') loadTab('geteilt'); if (st.tab === 'segmente') loadTab('segmente');
+            if (st.tab === 'halle') loadTab('halle'); if (st.tab === 'strecken') loadTab('strecken');
         });
     }
     function loadTab(tab) {
         var id = st.league;
         if (tab === 'halle') return LigaApi.call('GET', '/api/leagues/' + id + '/hall').then(function (r) { if (r.status === 200) { st.hall = r; render(); } });
-        if (tab === 'geteilt') return LigaApi.call('GET', '/api/leagues/' + id + '/shared').then(function (r) { if (r.status === 200) { st.shared = r.rides; render(); } });
-        if (tab === 'segmente') return LigaApi.call('GET', '/api/leagues/' + id + '/segments').then(function (r) {
-            if (r.status === 200) { st.segs = r.segments; render(); LigaSync.syncSegments(id, r.segments); }
-        });
+        if (tab === 'strecken') {
+            LigaApi.call('GET', '/api/leagues/' + id + '/shared').then(function (r) { if (r.status === 200) { st.shared = r.rides; render(); } });
+            return LigaApi.call('GET', '/api/leagues/' + id + '/segments').then(function (r) {
+                if (r.status === 200) { st.segs = r.segments; render(); LigaSync.syncSegments(id, r.segments); }
+            });
+        }
     }
     function reload() { return loadLeague(st.league, st.period); }
 
@@ -455,7 +463,7 @@ var LigaUI = (function () {
             case 'login-verify': return loginVerify();
             case 'login-back': st.login = { step: 1, email: st.login.email, dev: '' }; return render();
             case 'home': st.page = 'home'; st.ov = null; st.invite_link = null; render(); return refreshHome();
-            case 'open': st.page = 'league'; st.tab = 'stand'; st.hall = st.shared = st.segs = null; st.invite_link = null; return loadLeague(d.id);
+            case 'open': st.page = 'league'; st.tab = 'stand'; st.editGoals = false; st.hall = st.shared = st.segs = null; st.invite_link = null; return loadLeague(d.id);
             case 'open-back': st.page = 'league'; render(); return;
             case 'prev': return loadLeague(st.league, st.ov.period.prev);
             case 'next': return loadLeague(st.league, st.ov.period.next);
@@ -466,7 +474,9 @@ var LigaUI = (function () {
             case 'form-save': return formSave();
             case 'goal-add': return goalAdd(d.scope);
             case 'goal-rm': return goalRm(d.scope, +d.i);
+            case 'goals-edit': st.editGoals = !st.editGoals; st.form = null; return render();
             case 'goals-save': return goalsSave();
+            case 'goto-liga': if (cfg && cfg.showView) cfg.showView('liga'); return;
             case 'join': return join(st.invite);
             case 'join-no': st.invite = null; try { sessionStorage.removeItem('liga:inv'); } catch (e) {} return render();
             case 'paste-join': return pasteJoin();
@@ -526,7 +536,7 @@ var LigaUI = (function () {
     function goalsSave() {
         var goals = readGoals('my', meGoals(st.ov)).filter(function (g) { return g.target > 0; });
         return LigaApi.call('PUT', '/api/leagues/' + st.league + '/goals', { goals: goals }).then(function (r) {
-            if (r.status === 200) { st.form = null; setMsg(T('Ziele gespeichert.')); return reload(); }
+            if (r.status === 200) { st.form = null; st.editGoals = false; setMsg(T('Ziele gespeichert.')); return reload(); }
             setMsg('', r.error); render();
         });
     }
@@ -647,16 +657,16 @@ var LigaUI = (function () {
         return LigaCodec.encode(pts).then(function (poly) {
             var kind = m.len > 0 && m.gain / m.len >= 0.03 ? 'climb' : 'other';
             return LigaApi.call('POST', '/api/leagues/' + st.league + '/segments', { name: m.name, kind: kind, len: m.len, gain: m.gain, poly: poly });
-        }).then(function (r) { if (r.status === 200) setMsg(T('Segment hinzugefügt. Deine Fahrten werden damit abgeglichen.')); else setMsg('', r.error); return loadTab('segmente'); });
+        }).then(function (r) { if (r.status === 200) setMsg(T('Segment hinzugefügt. Deine Fahrten werden damit abgeglichen.')); else setMsg('', r.error); return loadTab('strecken'); });
     }
     function segRemove(id) {
         if (!confirm(T('Segment für die ganze Liga löschen?'))) return;
-        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/segments/' + id).then(function (r) { if (r.status !== 200) setMsg('', r.error); return loadTab('segmente').then(reload); });
+        return LigaApi.call('DELETE', '/api/leagues/' + st.league + '/segments/' + id).then(function (r) { if (r.status !== 200) setMsg('', r.error); return loadTab('strecken').then(reload); });
     }
     function segBoard(id) {
         var lg = st.ov.league, key = 'seg:' + id, cats = lg.cats.slice(), i = cats.indexOf(key);
         if (i >= 0) cats.splice(i, 1); else cats.push(key);
-        return LigaApi.call('PATCH', '/api/leagues/' + st.league, { cats: cats }).then(function (r) { if (r.status !== 200) setMsg('', r.error); return reload().then(function () { return loadTab('segmente'); }); });
+        return LigaApi.call('PATCH', '/api/leagues/' + st.league, { cats: cats }).then(function (r) { if (r.status !== 200) setMsg('', r.error); return reload().then(function () { return loadTab('strecken'); }); });
     }
 
     /* ---------- Profile ---------- */
@@ -669,12 +679,13 @@ var LigaUI = (function () {
 
     /* ---------- Speedometer line ---------- */
     function tachoRender(liveOverride) {
-        var el = $('ligaRow'); if (!el) return;
+        var els = [$('ligaRow'), $('ligaRowReady')].filter(Boolean);
+        if (!els.length) return;
         var t = LigaSync.tacho(), a = LigaApi.account();
-        if (!t || !a) { el.hidden = true; return; }
+        function put(html, title) { els.forEach(function (el) { el.hidden = false; el.innerHTML = html; el.title = title || ''; }); }
+        if (!t || !a) { els.forEach(function (el) { el.hidden = true; }); return; }
         var s = LigaSync.standing(), c = LigaCats.get(t.cat), lg = LigaSync.leagues().filter(function (l) { return l.id === t.league; })[0];
-        el.hidden = false;
-        if (!s || s.cat !== t.cat || !s.standing) { el.innerHTML = '<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> <span class="lg-tm">' + T('lädt …') + '</span>'; return; }
+        if (!s || s.cat !== t.cat || !s.standing) { put('<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> <span class="lg-tm">' + T('lädt …') + '</span>', ''); return; }
         var sd = s.standing, live = liveOverride || (cfg.live ? cfg.live() : null), add = 0;
         if (live && c) { if (t.cat === 'dist') add = live.dist; else if (t.cat === 'time') add = live.moving; }
         var mine = sd.me && sd.me.v !== null && sd.me.v !== undefined ? sd.me.v : (c && c.agg === 'sum' ? 0 : null);
@@ -687,8 +698,7 @@ var LigaUI = (function () {
         }
         parts.push('<b>' + T('Du {v}', { v: esc(myV === null ? '–' : LigaCats.format(t.cat, myV)) }) + (sd.me && sd.me.rank && !add ? ' · ' + T('Platz {n}', { n: sd.me.rank }) : '') + '</b>');
         if (sd.below && myV !== null) parts.push('<span class="lg-dn">▼ ' + esc(sd.below.name) + ' −' + esc(LigaCats.format(t.cat, gap(sd.below)).replace(/ (P\.|pts)$/, '')) + '</span>');
-        el.innerHTML = '<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> ' + parts.join(' · ');
-        el.title = lg ? lg.name : '';
+        put('<span class="lg-tl">' + esc(catLabel(t.cat)) + '</span> ' + parts.join(' · '), lg ? lg.name : '');
     }
     function tachoCycle() {
         var t = LigaSync.tacho(); if (!t) return;
@@ -717,17 +727,19 @@ var LigaUI = (function () {
             frag.delete('l'); history.replaceState(null, '', location.pathname + location.search + (frag.toString() ? '#' + frag.toString() : ''));
         } else { try { st.invite = sessionStorage.getItem('liga:inv'); } catch (e) { st.invite = null; } }
 
-        root.addEventListener('click', function (e) {
+        function onClick(e) {
             var b = e.target.closest('[data-act]');
             if (b && !b.disabled) act(b.dataset.act, b);
-        });
+        }
+        root.addEventListener('click', onClick);
+        if ($('accountRoot')) $('accountRoot').addEventListener('click', onClick);
         root.addEventListener('change', function (e) {
             if (e.target.id === 'lgAuto') { LigaSync.setAuto(e.target.checked); if (e.target.checked) { LigaSync.backfill(); LigaSync.flush().then(refreshHome); } render(); return; }
             if (e.target.id === 'fPreset') { readForm(); render(); }
         });
-        var row = $('ligaRow'); if (row) row.addEventListener('click', tachoCycle);
+        ['ligaRow', 'ligaRowReady'].forEach(function (id) { var row = $(id); if (row) row.addEventListener('click', tachoCycle); });
 
-        LigaApi.onChange(function () { tachoRender(); if (isOpen()) render(); });
+        LigaApi.onChange(function () { tachoRender(); renderAccountBox(); if (isOpen()) render(); });
         LigaSync.onChange(function () { if (st.page === 'home' && isOpen()) render(); });
         window.addEventListener('online', function () { LigaSync.flush(); });
         setInterval(tachoTick, 5000);
@@ -748,7 +760,11 @@ var LigaUI = (function () {
         }
     }
     function hasInvite() { return !!st.invite; }
+    /* Opening the ride details from the history: jump to the upload / share panel of this ride */
+    function showRide(localId) { st.page = 'home'; st.ov = null; st.shareFor = localId; render(); refreshHome(); }
+    /* "More" tab was opened: refresh the account box */
+    function accountOpened() { renderAccountBox(); }
 
-    return { init: init, opened: opened, relang: relang, profileChanged: profileChanged, tachoTick: tachoTick, hasInvite: hasInvite,
+    return { init: init, opened: opened, relang: relang, showRide: showRide, accountOpened: accountOpened, profileChanged: profileChanged, tachoTick: tachoTick, hasInvite: hasInvite,
              _tachoRender: tachoRender, _st: function () { return st; } };
 })();
