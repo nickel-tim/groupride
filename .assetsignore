@@ -1,0 +1,10 @@
+.git
+.gitignore
+.assetsignore
+.wrangler
+node_modules
+wrangler.jsonc
+worker
+test
+build.py
+ANLEITUNG.md

@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "groupride",
+  "compatibility_date": "2026-01-01",
+  // Static site only, no Worker code. The repo root is the asset directory;
+  // .assetsignore keeps the relay, tests and docs out of the upload.
+  "assets": { "directory": "." }
+}
