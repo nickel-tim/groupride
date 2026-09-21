@@ -98,12 +98,12 @@ var SimMode = (function () {
         if (!center) buildCenter();
         var colors = opts.colors;
         var riders = [
-            { key: 'me',   id: opts.meId, name: opts.meName, color: opts.meColor,
+            { key: 'me',   id: opts.meId, name: opts.meName, color: opts.meColor, emoji: opts.meEmoji === undefined ? null : opts.meEmoji,
               flat: 9.4,  climb: 1.02, s: 25, me: true },
-            { key: 'anna', id: 'sim-anna',  name: 'Anna',  color: colors[0], flat: 9.2,  climb: 1.35, s: 40 },
-            { key: 'ben',  id: 'sim-ben',   name: 'Ben',   color: colors[1], flat: 10.4, climb: 0.78, s: 20 },
-            { key: 'carla',id: 'sim-carla', name: 'Carla', color: colors[2], flat: 9.4,  climb: 1.02, s: 30 },
-            { key: 'dirk', id: 'sim-dirk',  name: 'Dirk',  color: colors[3], flat: 8.2,  climb: 0.70, s: 10 }
+            { key: 'anna', id: 'sim-anna',  name: 'Anna',  color: colors[0], emoji: 1,  flat: 9.2,  climb: 1.35, s: 40 },
+            { key: 'ben',  id: 'sim-ben',   name: 'Ben',   color: colors[1], emoji: 2,  flat: 10.4, climb: 0.78, s: 20 },
+            { key: 'carla',id: 'sim-carla', name: 'Carla', color: colors[2], emoji: 12, flat: 9.4,  climb: 1.02, s: 30 },
+            { key: 'dirk', id: 'sim-dirk',  name: 'Dirk',  color: colors[3], emoji: 14, flat: 8.2,  climb: 0.70, s: 10 }
         ];
         var sim = {
             t: 0,                 // simulierte Sekunden
@@ -117,17 +117,17 @@ var SimMode = (function () {
         sim.now = function () { return sim.t0 + sim.t * 1000; };
 
         /* Ein paar Kurznachrichten der Mitfahrer, damit man die Anzeige ausprobieren kann. */
-        var script = [ { at: 40,  who: 'sim-ben',   n: 'Ben',   q: 'ok' },
-                       { at: 110, who: 'sim-dirk',  n: 'Dirk',  q: 'wait' },
-                       { at: 190, who: 'sim-anna',  n: 'Anna',  q: 'coffee' },
-                       { at: 270, who: 'sim-carla', n: 'Carla', q: 'danger' } ];
+        var script = [ { at: 40,  who: 'sim-ben',   n: 'Ben',   j: 2,  q: 'ok' },
+                       { at: 110, who: 'sim-dirk',  n: 'Dirk',  j: 14, q: 'wait' },
+                       { at: 190, who: 'sim-anna',  n: 'Anna',  j: 1,  q: 'coffee' },
+                       { at: 270, who: 'sim-carla', n: 'Carla', j: 12, q: 'danger' } ];
         var sentIdx = 0;
         /* Nachrichten, die seit dem letzten Aufruf faellig wurden (Zeitraffer springt ueber mehrere). */
         sim.dueMessages = function () {
             var out = [];
             while (sentIdx < script.length && script[sentIdx].at <= sim.t) {
                 var m = script[sentIdx++];
-                out.push({ i: m.who, n: m.n, q: m.q, mid: 'sim' + m.at + '-' + sim.t0, t: Date.now() });
+                out.push({ i: m.who, n: m.n, q: m.q, j: m.j, mid: 'sim' + m.at + '-' + sim.t0, t: Date.now() });
             }
             return out;
         };
@@ -150,7 +150,7 @@ var SimMode = (function () {
                 var h = hd * Geo.D2R;
                 var along = gauss(4), cross = gauss(4);      // GPS-Rauschen
                 out.push({
-                    id: r.id, name: r.name, color: r.color, me: !!r.me,
+                    id: r.id, name: r.name, color: r.color, emoji: r.emoji, me: !!r.me,
                     lat: c.lat + (along * Math.cos(h) - cross * Math.sin(h)) / Geo.metersPerDegLat(c.lat),
                     lon: c.lon + (along * Math.sin(h) + cross * Math.cos(h)) / Geo.metersPerDegLon(c.lat),
                     ele: c.ele + gauss(6),

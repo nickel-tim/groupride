@@ -379,12 +379,16 @@ var MapView = (function () {
                     g += '<polygon class="mhead" fill="' + color + '" points="0,-17 -6,-9 6,-9" ' +
                          'transform="rotate(' + f(p.hd - hDeg) + ')"/>';
                 }
+                /* Mit Symbol: das Symbol steht im (etwas groesseren) Punkt, der Rang wandert vor den
+                   Namen ("2 Anna") -- die Rangfolge soll man nicht verlieren. */
+                var emo = r.ghost ? '' : UI.emojiOf(r.emoji), rr = emo ? 12 : 9;
                 g += '<circle class="mdot' + (isMe ? ' me' : '') + (r.dropped ? ' drop' : '') + (r.ghost ? ' ghost' : '') +
-                     '" r="9" fill="' + color + '"/>' +
-                     '<text class="mrank" y="3.4" text-anchor="middle">' + (r.ghost ? 'G' : rankOf[r.id]) + '</text></g>';
+                     '" r="' + rr + '" fill="' + color + '"/>' +
+                     (emo ? Emo.svg(emo, 0, 0, 18)
+                          : '<text class="mrank" y="3.4" text-anchor="middle">' + (r.ghost ? 'G' : rankOf[r.id]) + '</text>') + '</g>';
                 parts.push(g);
-                boxes.push({ x: x - 11, y: y - 11, w: 22, h: 22 });     // Punkt selbst ist Hindernis
-                labels.push({ x: x, y: y, r: r, color: color, op: op, gap: gap, isMe: isMe });
+                boxes.push({ x: x - rr - 2, y: y - rr - 2, w: 2 * rr + 4, h: 2 * rr + 4 });     // Punkt selbst ist Hindernis
+                labels.push({ x: x, y: y, r: r, color: color, op: op, gap: gap, isMe: isMe, emo: !!emo, rr: rr });
             } else if (me && !isMe) {
                 // ausserhalb des Bildes: Pfeil am Rand in Richtung des Fahrers
                 var dx = x - W / 2, dy = y - (H / 2 + oy);
@@ -425,14 +429,15 @@ var MapView = (function () {
         });
         labels.forEach(function (l) {
             var name = UI.escapeHtml((l.r.name || l.r.id).slice(0, 9));
+            if (l.emo) name = rankOf[l.r.id] + ' ' + name;
             var gtxt = l.gap !== null ? gapText(l.gap) : null;
             var w = Math.max(name.length * 6.2, gtxt ? gtxt.length * 5.6 : 0) + 6;
             var h = gtxt ? 23 : 12;
             var cands = [
-                { x: l.x - w / 2, y: l.y + 13,     a: 'middle', tx: l.x },
-                { x: l.x - w / 2, y: l.y - 13 - h, a: 'middle', tx: l.x },
-                { x: l.x + 12,    y: l.y - h / 2,  a: 'start',  tx: l.x + 13 },
-                { x: l.x - 12 - w, y: l.y - h / 2, a: 'end',    tx: l.x - 13 }
+                { x: l.x - w / 2, y: l.y + l.rr + 4,     a: 'middle', tx: l.x },
+                { x: l.x - w / 2, y: l.y - l.rr - 4 - h, a: 'middle', tx: l.x },
+                { x: l.x + l.rr + 3,    y: l.y - h / 2,  a: 'start',  tx: l.x + l.rr + 4 },
+                { x: l.x - l.rr - 3 - w, y: l.y - h / 2, a: 'end',    tx: l.x - l.rr - 4 }
             ];
             for (var i = 0; i < cands.length; i++) {
                 var c = cands[i], box = { x: c.x, y: c.y, w: w, h: h };

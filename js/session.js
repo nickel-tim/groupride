@@ -24,7 +24,8 @@ var Session = (function () {
         this.list = [];
         for (var id in data.riders) {
             var r = data.riders[id];
-            if (r.pts && r.pts.length >= 2) this.list.push({ id: id, name: r.name || id, color: r.color || null, pts: r.pts });
+            if (r.pts && r.pts.length >= 2) this.list.push({ id: id, name: r.name || id, color: r.color || null,
+                                                            emoji: r.emoji === undefined ? null : r.emoji, pts: r.pts });
         }
         var t0 = Infinity, t1 = -Infinity;
         this.list.forEach(function (r) {
@@ -74,7 +75,7 @@ var Session = (function () {
             var rd = this.list[i], s = this.sample(rd, t);
             if (!s) continue;
             an.ingest(rd.id, { lat: s.lat, lon: s.lon, ele: s.ele, speed: s.speed, heading: s.heading,
-                               acc: 5, t: t, name: rd.name, color: rd.color });
+                               acc: 5, t: t, name: rd.name, color: rd.color, emoji: rd.emoji });
             if (rd.id === this.meId) an.riders[rd.id].self = true;
         }
         an.tick(t);

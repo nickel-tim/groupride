@@ -137,11 +137,14 @@ var Profile = (function () {
                      .sort(function (a, b) { return (a.self ? 1 : 0) - (b.self ? 1 : 0); });
         riders.forEach(function (r) {
             var col = r.color || '#93a7af', op = r.stale ? 0.4 : 1, ini = esc(((r.name || r.id) + '').charAt(0).toUpperCase());
+            var emo = (r.emoji && !r.ghost) ? r.emoji : '';    // Symbol statt Anfangsbuchstabe
             if (r.s < from || r.s > to) {                     // ausserhalb: Pfeil am Rand
                 var left = r.s < from, ex = left ? PAD_L + 6 : W - PAD_R - 6, ey = PAD_T + ph / 2;
                 parts.push('<g opacity="' + op + '"><polygon points="' + (left ? '0,-6 -7,0 0,6' : '0,-6 7,0 0,6') +
-                           '" fill="' + col + '" transform="translate(' + f(ex) + ' ' + f(ey) + ')"/><text class="pini" x="' +
-                           f(ex + (left ? 9 : -9)) + '" y="' + f(ey + 3) + '" text-anchor="middle" fill="' + col + '">' + ini + '</text></g>');
+                           '" fill="' + col + '" transform="translate(' + f(ex) + ' ' + f(ey) + ')"/>' +
+                           (emo ? Emo.svg(emo, ex + (left ? 14 : -14), ey, 12)
+                                : '<text class="pini" x="' + f(ex + (left ? 9 : -9)) + '" y="' + f(ey + 3) + '" text-anchor="middle" fill="' + col + '">' + ini + '</text>') +
+                           '</g>');
                 return;
             }
             var e = route.eleAt(r.s);
@@ -150,7 +153,8 @@ var Profile = (function () {
             parts.push('<g opacity="' + op + '">' +
                 '<line class="prl" x1="' + f(x) + '" x2="' + f(x) + '" y1="' + f(y) + '" y2="' + (H - PAD_B) + '" stroke="' + col + '"/>' +
                 '<circle class="pdot' + (r.self ? ' me' : '') + (r.ghost ? ' ghost' : '') + '" cx="' + f(x) + '" cy="' + f(y) + '" r="' + (r.self ? 6 : 4.5) + '" fill="' + col + '"/>' +
-                '<text class="pini" x="' + f(x) + '" y="' + f(y - 9) + '" text-anchor="middle" fill="' + col + '">' + (r.ghost ? 'G' : ini) + '</text></g>');
+                (emo ? Emo.svg(emo, x, y - 14, 13)
+                     : '<text class="pini" x="' + f(x) + '" y="' + f(y - 9) + '" text-anchor="middle" fill="' + col + '">' + (r.ghost ? 'G' : ini) + '</text>') + '</g>');
         });
 
         svg.innerHTML = parts.join('');

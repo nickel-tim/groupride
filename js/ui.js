@@ -14,6 +14,15 @@ var UI = (function () {
     var COLORS = ['#f2b01e', '#3fa9f5', '#ff6b52', '#8bc34a',
                   '#b48ce8', '#26c6da', '#ec87b9', '#c9a227'];
 
+    /* Symbole zur Auswahl. Auf der Leitung geht nur die NUMMER aus dieser Liste (kein Text):
+       so kann niemand beliebigen Inhalt einschleusen, und die Meldung bleibt winzig. Die Liste
+       darf nur hinten wachsen -- sonst zeigen aeltere Apps ein falsches Symbol. Alles einzelne
+       Emoji-Zeichen (keine Folgen mit Zero-Width-Joiner), die ueberall gleich dargestellt werden. */
+    var EMOJIS = ['🚴', '🦊', '🐻', '🐼', '🐯', '🦁', '🐸', '🐵', '🦄', '🐺', '🦅', '🐝',
+                  '🦉', '🐧', '🐢', '🐇', '🔥', '⚡', '⭐', '🍀', '🚀', '🍕', '☕', '🎸'];
+    function emojiOf(i) { return (typeof i === 'number' && i >= 0 && i < EMOJIS.length && i % 1 === 0) ? EMOJIS[i] : ''; }
+    function validEmoji(i) { return emojiOf(i) ? i : null; }
+
     function $(id) { return document.getElementById(id); }
     function kmh(ms) { return ms * 3.6; }
 
@@ -80,10 +89,19 @@ var UI = (function () {
 
             var op = p.stale ? 0.4 : 1;
             parts.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
-                       '" r="7" fill="' + p.color + '" opacity="' + op + '"></circle>');
+                       '" r="' + (p.emoji ? 8.5 : 7) + '" fill="' + p.color + '" opacity="' + op + '"></circle>');
+            if (p.emoji) {
+                // Symbol im Punkt; vorne/hinten als kleines Dreieck daneben, damit es nicht verloren geht
+                parts.push('<g opacity="' + op + '">' + Emo.svg(p.emoji, x, y, 13) + '</g>');
+                if (p.ahead !== null) {
+                    parts.push('<text x="' + (x + 11.5).toFixed(1) + '" y="' + (y + 2.6).toFixed(1) +
+                               '" text-anchor="middle" font-size="7" font-weight="700" fill="' + p.color +
+                               '" opacity="' + op + '">' + (p.ahead ? '▲' : '▼') + '</text>');
+                }
+            }
             // Vorne/hinten kommt aus der Bogenlaenge, nicht aus der Peilung --
             // in einer Kurve liegt jemand seitlich und ist doch vorne.
-            if (p.ahead !== null) {
+            else if (p.ahead !== null) {
                 parts.push('<text x="' + x.toFixed(1) + '" y="' + (y + 2.6).toFixed(1) +
                            '" text-anchor="middle" font-size="8" font-weight="700" ' +
                            'fill="rgba(0,0,0,.72)">' + (p.ahead ? '▲' : '▼') +
@@ -122,7 +140,8 @@ var UI = (function () {
             out.push(
                 '<div class="rrow' + (r.me ? ' me' : '') + (r.stale ? ' gone' : '') + '">' +
                   '<div class="rbar"></div>' +
-                  '<div class="rdot" style="background:' + r.color + '"></div>' +
+                  (r.emoji ? '<div class="rdot em" style="background:' + r.color + '">' + Emo.img(r.emoji) + '</div>'
+                           : '<div class="rdot" style="background:' + r.color + '"></div>') +
                   '<div class="rname">' + escapeHtml(r.name) + tags + '</div>' +
                   '<div class="rspd num">' + (r.speed === null ? '--' :
                         (kmh(r.speed) < 10 ? kmh(r.speed).toFixed(1)
@@ -159,7 +178,7 @@ var UI = (function () {
     }
 
     /* ---------------- Ereignisse ---------------- */
-    var ICONS = { pass: '⇄', attack: '⚡', drop: '✂',
+    var ICONS = { pass: '⇄', attack: Emo.img('⚡'), drop: '✂',
                   rejoin: '↻', lead: '⚑', msg: '✉' };
 
     function renderEvents(evs) {
@@ -231,7 +250,7 @@ var UI = (function () {
                                   (e.gap ? ' – ' + fmtDist(e.gap) + ' zurück' : '');
             case 'rejoin': return nm(e.id) + ' ist wieder dran';
             case 'lead':   return nm(e.id) + ' übernimmt die Führung' + (e.from ? ' von ' + nm(e.from) : '');
-            case 'msg':    return escapeHtml(e.name || nm(e.id)) + ': ' + escapeHtml(Msg.text(e.q));
+            case 'msg':    return escapeHtml(e.name || nm(e.id)) + ': ' + Msg.html(e.q);
             default:       return e.type;
         }
     }
@@ -243,7 +262,7 @@ var UI = (function () {
     }
 
     return {
-        COLORS: COLORS,
+        COLORS: COLORS, EMOJIS: EMOJIS, emojiOf: emojiOf, validEmoji: validEmoji,
         renderSpeed: renderSpeed, renderRank: renderRank,
         renderCompass: renderCompass, renderRiders: renderRiders,
         renderFrontWork: renderFrontWork, renderEvents: renderEvents,

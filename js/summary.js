@@ -43,7 +43,7 @@ var Summary = (function () {
             var total = 0;
             ord.forEach(function (r) { total += r.frontMs; });
             var riders = ord.map(function (r, i) {
-                return { id: r.id, name: r.name || r.id, color: r.color || '#93a7af', me: r.id === meId, rank: i + 1,
+                return { id: r.id, name: r.name || r.id, color: r.color || '#93a7af', emoji: UI.emojiOf(r.emoji), me: r.id === meId, rank: i + 1,
                          frontMs: r.frontMs, share: total ? r.frontMs / total : 0, max: r.maxSpeed || 0 };
             });
 
@@ -106,7 +106,8 @@ var Summary = (function () {
             out.push('<h2>Führungsarbeit</h2>');
             var max = Math.max.apply(null, d.riders.map(function (r) { return r.frontMs; })) || 1;
             d.riders.filter(function (r) { return r.frontMs > 0; }).sort(function (a, b) { return b.frontMs - a.frontMs; }).forEach(function (r) {
-                out.push('<div class="sumbar"><span class="rdot" style="background:' + r.color + '"></span><span class="nm">' + esc(r.name) +
+                out.push('<div class="sumbar">' + (r.emoji ? '<span class="rdot em" style="background:' + r.color + '">' + Emo.img(r.emoji) + '</span>'
+                                                              : '<span class="rdot" style="background:' + r.color + '"></span>') + '<span class="nm">' + esc(r.name) +
                          (r.me ? ' (du)' : '') + '</span><span class="num">' + UI.fmtDur(r.frontMs) + ' · ' + Math.round(r.share * 100) +
                          ' %</span><i style="width:' + Math.round(100 * r.frontMs / max) + '%;background:' + r.color + '"></i></div>');
             });
@@ -137,10 +138,10 @@ var Summary = (function () {
         if (d.efforts.length || d.records.length) {
             out.push('<h2>Bestzeiten &amp; Rekorde</h2>');
             d.efforts.forEach(function (e) {
-                out.push('<div class="sumhl">' + (e.isPB ? '🏆 ' : '') + '<b>' + esc(e.name) + '</b> · ' + UI.fmtDur(e.ms) +
+                out.push('<div class="sumhl">' + (e.isPB ? Emo.img('🏆') + ' ' : '') + '<b>' + esc(e.name) + '</b> · ' + UI.fmtDur(e.ms) +
                          (e.isPB ? ' – neue Bestzeit' : ' – Platz ' + e.rank + ' von ' + e.of) + '</div>');
             });
-            d.records.forEach(function (r) { out.push('<div class="sumhl">🏆 Rekord: <b>' + esc(r) + '</b></div>'); });
+            d.records.forEach(function (r) { out.push('<div class="sumhl">' + Emo.img('🏆') + ' Rekord: <b>' + esc(r) + '</b></div>'); });
         }
         return out.join('');
     }
@@ -193,8 +194,9 @@ var Summary = (function () {
             var max = Math.max.apply(null, d.riders.map(function (r) { return r.frontMs; })) || 1;
             d.riders.filter(function (r) { return r.frontMs > 0; }).sort(function (a, b) { return b.frontMs - a.frontMs; }).slice(0, 5).forEach(function (r) {
                 y += 34;
-                p.push('<circle cx="52" cy="' + (y - 8) + '" r="7" fill="' + r.color + '"/>');
-                p.push(T(70, y, r.name + (r.me ? ' (du)' : ''), 22, '#e8f0f2'));
+                p.push('<circle cx="52" cy="' + (y - 8) + '" r="' + (r.emoji ? 11 : 7) + '" fill="' + r.color + '"/>');
+                if (r.emoji) p.push(Emo.svg(r.emoji, 52, y - 8, 17));      // Data-URI im SVG: geht auch im Bild-Export
+                p.push(T(r.emoji ? 74 : 70, y, r.name + (r.me ? ' (du)' : ''), 22, '#e8f0f2'));
                 p.push(T(680, y, Math.round(r.share * 100) + ' %', 22, '#93a7af', 400, 'end'));
                 p.push('<rect x="70" y="' + (y + 6) + '" width="' + (610 * r.frontMs / max) + '" height="6" rx="3" fill="' + r.color + '"/>');
                 y += 12;

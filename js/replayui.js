@@ -128,7 +128,8 @@ var ReplayUI = (function () {
             var gap = (lead && r !== lead) ? lead.s - r.s : null;
             return '<div class="rprow' + (r.id === sess.meId ? ' me' : '') + '">' +
                 '<span class="rk num">' + (i + 1) + '</span>' +
-                '<span class="rdot" style="background:' + (r.color || '#93a7af') + '"></span>' +
+                (UI.emojiOf(r.emoji) ? '<span class="rdot em" style="background:' + (r.color || '#93a7af') + '">' + Emo.img(UI.emojiOf(r.emoji)) + '</span>'
+                                     : '<span class="rdot" style="background:' + (r.color || '#93a7af') + '"></span>') +
                 '<span class="rn">' + UI.escapeHtml(r.name || r.id) + (r.dropped ? ' <i class="tag drop">ABGERISSEN</i>' : '') + '</span>' +
                 '<span class="rs num">' + (r.speed > 0.3 ? Math.round(UI.kmh(r.speed)) : '–') + '</span>' +
                 '<span class="rg num">' + (gap === null ? '' : '−' + UI.fmtDist(gap)) + '</span></div>';
@@ -141,7 +142,7 @@ var ReplayUI = (function () {
 
         // Profil (Live-Achse der Session)
         var riders = ord.map(function (r) {
-            return { id: r.id, name: r.name, color: r.color, s: r.s, self: r.id === sess.meId, stale: an.isStale(r) };
+            return { id: r.id, name: r.name, color: r.color, emoji: UI.emojiOf(r.emoji), s: r.s, self: r.id === sess.meId, stale: an.isStale(r) };
         });
         var pi = Profile.render($('rpProfSvg'), { route: sess.route, riders: riders, climbs: an.climbs,
                                                    meS: mine ? mine.s : null, mode: 'all' });

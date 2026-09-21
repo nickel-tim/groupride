@@ -48,6 +48,8 @@ var Msg = (function () {
     function known(code) { return Object.prototype.hasOwnProperty.call(CODES, code); }
     function label(code) { return known(code) ? CODES[code] : null; }
     function text(code) { return known(code) ? CODES[code].e + ' ' + CODES[code].t : code; }
+    // dasselbe als HTML mit mitgeliefertem Bild (Verlauf)
+    function html(code) { return known(code) ? Emo.img(CODES[code].e) + ' ' + esc(CODES[code].t) : esc(code); }
 
     /* ---------------- Banner ---------------- */
     function banner(o) {
@@ -56,7 +58,7 @@ var Msg = (function () {
         var el = document.createElement('div');
         el.className = 'msgi' + (o.urgent ? ' urgent' : '') + (o.warn ? ' warn' : '') + (o.mine ? ' mine' : '');
         el.setAttribute('role', 'alert');
-        el.innerHTML = '<span class="me">' + o.e + '</span><span class="mt"><b>' + esc(o.who) + '</b>' +
+        el.innerHTML = '<span class="me">' + Emo.img(o.e) + '</span><span class="mt"><b>' + (o.whoHtml || esc(o.who)) + '</b>' +
                        '<span>' + esc(o.t) + '</span></span>';
         function close() { if (el.parentNode) el.parentNode.removeChild(el); }
         el.addEventListener('click', close);
@@ -80,7 +82,8 @@ var Msg = (function () {
         if (keys.length > 200) keys.slice(0, 100).forEach(function (x) { delete seen[x]; });
 
         var c = CODES[m.q], name = (typeof m.n === 'string' && m.n) ? m.n.slice(0, 14) : 'Mitfahrer';
-        banner({ e: c.e, who: name, t: c.t, urgent: !!c.urgent });
+        var emo = UI.emojiOf(m.j);
+        banner({ e: c.e, whoHtml: (emo ? Emo.img(emo) + ' ' : '') + esc(name), t: c.t, urgent: !!c.urgent });
         if (cfg && cfg.log) cfg.log(m.i, name, m.q, now);
         if (navigator.vibrate) { try { navigator.vibrate(c.urgent ? [200, 80, 200, 80, 200] : [90]); } catch (x) {} }
         return true;
@@ -120,13 +123,13 @@ var Msg = (function () {
     function btn(code, big) {
         var c = CODES[code];
         return '<button data-msg="' + code + '" aria-label="' + c.t + '"' + (c.urgent ? ' class="urg"' : '') + '>' +
-               '<span class="mem">' + c.e + '</span>' + (big ? '<span class="mlb">' + c.t + '</span>' : '') + '</button>';
+               '<span class="mem">' + Emo.img(c.e) + '</span>' + (big ? '<span class="mlb">' + c.t + '</span>' : '') + '</button>';
     }
 
     function init(c) {
         cfg = c;
         $('quickRow').innerHTML = QUICK.map(function (k) { return btn(k, false); }).join('') +
-            '<button id="msgMore" aria-label="Alle Nachrichten"><span class="mem">💬</span></button>';
+            '<button id="msgMore" aria-label="Alle Nachrichten"><span class="mem">' + Emo.img('💬') + '</span></button>';
         $('msgGrid').innerHTML = ORDER.map(function (k) { return btn(k, true); }).join('');
 
         document.addEventListener('click', function (e) {
@@ -141,6 +144,6 @@ var Msg = (function () {
         $('msgPanel').addEventListener('click', function (e) { if (e.target === this) { this.hidden = true; disarm(); } });
     }
 
-    return { init: init, send: send, receive: receive, label: label, text: text, CODES: CODES,
+    return { init: init, send: send, receive: receive, label: label, text: text, html: html, CODES: CODES,
              _reset: function () { seen = {}; lastFrom = {}; cooldownUntil = 0; disarm(); } };
 })();

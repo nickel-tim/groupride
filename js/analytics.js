@@ -87,7 +87,7 @@ var Analytics = (function () {
     A.prototype.rider = function (id) {
         if (!this.riders[id]) {
             this.riders[id] = {
-                id: id, name: null, color: null,
+                id: id, name: null, color: null, emoji: null,
                 lat: null, lon: null, ele: null, acc: null,
                 fLat: null, fLon: null,   // geglaettete Position
                 s: null, offset: null, speed: 0, heading: null,
@@ -110,6 +110,7 @@ var Analytics = (function () {
         if (this.startedAt === null) this.startedAt = p.t;
         if (p.name) r.name = p.name;
         if (p.color) r.color = p.color;
+        if (p.emoji !== undefined) r.emoji = p.emoji;       // Nummer aus UI.EMOJIS oder null
 
         var dtS = (r.t && p.t > r.t) ? (p.t - r.t) / 1000 : 0;
 

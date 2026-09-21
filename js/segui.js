@@ -206,7 +206,7 @@ var SegUI = (function () {
             cls = e.isPB ? 'pb' : (e.delta > 0 ? 'behind' : 'ahead');
             html = '<b>' + esc(e.seg.name) + ' · ' + fmt(e.ms) + '</b> ' +
                    (e.best === null ? '<div class="sub2">Erste Fahrt – die Zeit ist jetzt deine Bestzeit.</div>'
-                    : e.isPB ? '🏆 neue Bestzeit (' + fmtDelta(e.delta) + ')' : '<div class="sub2">' + fmtDelta(e.delta) + ' zur Bestzeit ' + fmt(e.best) + '</div>');
+                    : e.isPB ? Emo.img('🏆') + ' neue Bestzeit (' + fmtDelta(e.delta) + ')' : '<div class="sub2">' + fmtDelta(e.delta) + ' zur Bestzeit ' + fmt(e.best) + '</div>');
         } else {
             var ids = Object.keys(active);
             if (ids.length) {

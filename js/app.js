@@ -23,7 +23,7 @@
     var route = new Route();
     var an    = new Analytics(route);
 
-    var me = { id: null, name: null, colorIdx: 0 };
+    var me = { id: null, name: null, colorIdx: 0, emoji: null };     // emoji: Nummer aus UI.EMOJIS oder null
     var secret = null, key = null, topic = null;
     var running = false;
     var lastSend = 0;
@@ -61,6 +61,8 @@
         if (!me.id) { me.id = Math.random().toString(36).slice(2, 10); store('rid', me.id); }
         me.name = store('rname') || 'Fahrer ' + me.id.slice(0, 3);
         me.colorIdx = parseInt(store('rcol') || '0', 10) % UI.COLORS.length;
+        var em = store('remoji');
+        me.emoji = (em === null || em === '') ? null : UI.validEmoji(parseInt(em, 10));
         $('inName').value = me.name;
     }
 
@@ -144,8 +146,9 @@
         if (m.q) { Msg.receive(m); return; }                      // Kurznachricht statt Position
         if (typeof m.la !== 'number' || typeof m.lo !== 'number') return;
 
+        var emo = UI.validEmoji(m.j);                        // unbekannte/ungueltige Nummer = kein Symbol
         Recorder.add(m.i, typeof m.n === 'string' ? m.n.slice(0, 14) : null, UI.COLORS[(m.c | 0) % UI.COLORS.length],
-                     (typeof m.t === 'number') ? m.t : Date.now(), m.la, m.lo, (typeof m.e === 'number') ? m.e : null);
+                     (typeof m.t === 'number') ? m.t : Date.now(), m.la, m.lo, (typeof m.e === 'number') ? m.e : null, emo);
         an.ingest(m.i, {
             lat: m.la, lon: m.lo,
             ele: (typeof m.e === 'number') ? m.e : null,
@@ -154,7 +157,8 @@
             acc: (typeof m.a === 'number') ? m.a : null,
             t: (typeof m.t === 'number') ? m.t : Date.now(),
             name: typeof m.n === 'string' ? m.n.slice(0, 14) : null,
-            color: UI.COLORS[(m.c | 0) % UI.COLORS.length]
+            color: UI.COLORS[(m.c | 0) % UI.COLORS.length],
+            emoji: emo
         });
     }
 
@@ -165,6 +169,7 @@
         if (sim) return 'sim';                                     // in der Simulation geht nichts raus
         if (!key || !running || !Net.online()) return 'offline';
         var payload = { i: me.id, n: me.name, c: me.colorIdx, t: Date.now(), q: code, mid: mid };
+        if (me.emoji !== null) payload.j = me.emoji;
         Crypt.seal(key, payload).then(Net.publish);
         setTimeout(function () { Crypt.seal(key, payload).then(Net.publish); }, 1500);
         return 'sent';
@@ -174,7 +179,7 @@
         if (!myFix || !key) return;
         var c = myFix.coords;
         var h = Sensors.heading();
-        Crypt.seal(key, {
+        var pkt = {
             i: me.id, n: me.name, c: me.colorIdx,
             la: +c.latitude.toFixed(6), lo: +c.longitude.toFixed(6),
             e: (c.altitude !== null && !isNaN(c.altitude)) ? Math.round(c.altitude) : null,
@@ -182,7 +187,9 @@
             h: h.deg === null ? null : Math.round(h.deg),
             a: c.accuracy !== null ? Math.round(c.accuracy) : null,
             t: myFix.timestamp || Date.now()
-        }).then(Net.publish);
+        };
+        if (me.emoji !== null) pkt.j = me.emoji;             // nur die Nummer; ohne Symbol bleibt die Meldung wie bisher
+        Crypt.seal(key, pkt).then(Net.publish);
     }
 
     /* ---------------- GPS ---------------- */
@@ -197,13 +204,13 @@
             speed: (c.speed !== null && !isNaN(c.speed) && c.speed > 0) ? c.speed : 0,
             heading: h.deg, acc: c.accuracy,
             t: pos.timestamp || Date.now(),
-            name: me.name, color: myColor()
+            name: me.name, color: myColor(), emoji: me.emoji
         });
         an.riders[me.id].self = true;
 
         SegUI.feed({ lat: c.latitude, lon: c.longitude, t: pos.timestamp || Date.now() });
         Recorder.add(me.id, me.name, myColor(), pos.timestamp || Date.now(), c.latitude, c.longitude,
-                     (c.altitude !== null && !isNaN(c.altitude)) ? c.altitude : null);
+                     (c.altitude !== null && !isNaN(c.altitude)) ? c.altitude : null, me.emoji);
         var last = myTrack[myTrack.length - 1];
         if (!last || (pos.timestamp - last.t) > 1500) {
             myTrack.push({ lat: c.latitude, lon: c.longitude,
@@ -246,7 +253,7 @@
                 gapS = gapM / Math.max(2, r.s > mine.s ? mine.speed : r.speed);
             }
             return {
-                name: r.name || r.id, color: r.color || UI.COLORS[1],
+                name: r.name || r.id, color: r.color || UI.COLORS[1], emoji: UI.emojiOf(r.emoji),
                 me: r.id === me.id, speed: r.lat === null ? null : r.speed,
                 gapM: gapM, gapS: gapS, ghost: !!r.ghost,
                 dropped: r.dropped, stale: r.ghost ? false : an.isStale(r)
@@ -321,7 +328,7 @@
                 if (!p || r.id === me.id) return;
                 var dx = p.x - m.x, dy = p.y - m.y;      // x = Ost, y = Nord
                 peers.push({
-                    color: r.color || UI.COLORS[1],
+                    color: r.color || UI.COLORS[1], emoji: UI.emojiOf(r.emoji),
                     short: (r.name || r.id).slice(0, 6),
                     dist: Math.hypot(dx, dy),
                     bearing: (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360,
@@ -367,7 +374,7 @@
         SegUI.startLive('sim'); SegUI.setWorld('sim');
         armGhostAgain();
         var others = UI.COLORS.filter(function (c, i) { return i !== me.colorIdx; });
-        sim = SimMode.create({ meId: me.id, meName: me.name, meColor: myColor(),
+        sim = SimMode.create({ meId: me.id, meName: me.name, meColor: myColor(), meEmoji: me.emoji,
                                colors: others.slice(0, 4) });
         simWarp = 1;
         $('simbar').hidden = false;
@@ -407,8 +414,8 @@
             sim.step().forEach(function (m) {
                 an.ingest(m.id, { lat: m.lat, lon: m.lon, ele: m.ele, speed: m.speed,
                                   heading: m.heading, acc: m.acc, t: m.t,
-                                  name: m.name, color: m.color });
-                Recorder.add(m.id, m.name, m.color, m.t, m.lat, m.lon, m.ele);
+                                  name: m.name, color: m.color, emoji: m.me ? me.emoji : m.emoji });
+                Recorder.add(m.id, m.name, m.color, m.t, m.lat, m.lon, m.ele, m.me ? me.emoji : m.emoji);
                 if (m.me) {
                     SegUI.feed({ lat: m.lat, lon: m.lon, t: m.t });
                     an.riders[m.id].self = true; simHeading = m.heading;
@@ -638,7 +645,7 @@
         var ord = lastMap ? lastMap.ord : [], riders = [], meS = null;
         function add(r, sv) {
             if (sv === null || sv === undefined) return;
-            riders.push({ id: r.id, name: r.name, color: r.color, s: sv, self: r.id === me.id,
+            riders.push({ id: r.id, name: r.name, color: r.color, emoji: UI.emojiOf(r.emoji), s: sv, self: r.id === me.id,
                           ghost: !!r.ghost, stale: !r.ghost && an.isStale(r) });
             if (r.id === me.id) meS = sv;
         }
@@ -808,6 +815,26 @@
             store('rname', me.name);
             if (an.riders[me.id]) an.riders[me.id].name = me.name;
             sendMine();
+        });
+
+        // Symbol: feste Auswahl, getippt wird nichts. "–" = keins.
+        var ep = $('emojiPick');
+        function drawEmojiPick() {
+            ep.innerHTML = '<button data-e="-1" class="' + (me.emoji === null ? 'sel' : '') + '" aria-label="Kein Symbol">–</button>' +
+                UI.EMOJIS.map(function (e, i) {
+                    return '<button data-e="' + i + '" class="' + (me.emoji === i ? 'sel' : '') + '" aria-label="Symbol ' + (i + 1) + '">' + Emo.img(e) + '</button>';
+                }).join('');
+        }
+        drawEmojiPick();
+        ep.addEventListener('click', function (e) {
+            var b = e.target.closest('button');
+            if (!b) return;
+            var i = parseInt(b.dataset.e, 10);
+            me.emoji = i < 0 ? null : UI.validEmoji(i);
+            store('remoji', me.emoji === null ? '' : String(me.emoji));
+            if (an.riders[me.id]) an.riders[me.id].emoji = me.emoji;
+            drawEmojiPick();
+            sendMine();                                   // die anderen sehen es beim naechsten Takt
         });
 
         var sw = $('swatches');

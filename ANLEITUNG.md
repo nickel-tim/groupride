@@ -307,4 +307,23 @@ Im Tacho, unter der Fahrerliste, steht eine Reihe großer Knöpfe: 🛑 **Halt!*
 
 **Simulation:** Die virtuellen Mitfahrer schicken zum Ausprobieren ein paar Nachrichten (Ben 👍, Dirk ⏳, Anna ☕, Carla ⚠️). Eigene Nachrichten bleiben in der Simulation lokal („Simulation“).
 
-**Grenzen:** Nachrichten werden nicht gespeichert und erscheinen nicht im Replay. Wer die Seite gerade nicht geöffnet hat, verpasst sie. Wo das Gerät keine Emoji-Schrift hat (manche reinen Linux-Systeme, z. B. WSL ohne `fonts-noto-color-emoji`), erscheinen die Knöpfe leer – die Nachrichten funktionieren trotzdem, die Beschriftung steht im Panel.
+**Grenzen:** Nachrichten werden nicht gespeichert und erscheinen nicht im Replay. Wer die Seite gerade nicht geöffnet hat, verpasst sie.
+
+---
+
+## Symbol (Emoji) als Icon
+
+Unter *Gruppe → Ich → Symbol* wählst du aus 24 festen Symbolen (🚴 🦊 🐻 🐼 🐯 🦁 🐸 🐵 🦄 🐺 🦅 🐝 🦉 🐧 🐢 🐇 🔥 ⚡ ⭐ 🍀 🚀 🍕 ☕ 🎸) oder „–“ für keins. Getippt wird nichts. Die Farbe bleibt; das Symbol kommt dazu.
+
+**Wo es erscheint**
+- **Karte:** das Symbol steht im (etwas größeren) Punkt, der Rang wandert vor den Namen („2 Anna“) – die Rangfolge geht nicht verloren.
+- **Kompass:** das Symbol im Punkt, ▲/▼ (vorne/hinten) als kleines Dreieck daneben.
+- **Fahrerliste** im Tacho, **Höhenprofil** (statt des Anfangsbuchstabens), **Replay**, **Nachrichten-Banner** („🐢 Dirk – Bitte warten“) und **Bilanz** (Anzeige und Bild).
+
+**Die Emoji sind Bilder, keine Schrift.** Ob ein Emoji als Zeichen erscheint, hängt von einer Schrift des Geräts ab. Fehlt sie (manche Linux-Systeme, Browser in WSL), bleiben Kästchen oder Lücken. Deshalb liefert die App die benötigten 33 Symbole (die 24 zur Auswahl plus die der Nachrichten und der Bestzeiten) selbst mit, als kleine SVG-Grafiken in `js/emoji.js`, zusammen rund 45 KB. Sie sehen überall gleich aus, funktionieren auch in Karte, Kompass und Profil (SVG) und im Bild der Bilanz. Sie brauchen kein Netz.
+
+**Lizenz:** Die Grafiken sind [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc. und Mitwirkende, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) – unverändert übernommen, nur Leerraum entfernt. Die Quellenangabe steht in der App unter dem Symbol-Feld und im Kopf von `js/emoji.js`. Wer die App weitergibt, muss sie beibehalten.
+
+**Was über die Leitung geht:** nur die **Nummer** aus der Liste (`"j": 5`), kein Text und kein Emoji. Wer kein Symbol gewählt hat, sendet nichts Zusätzliches – die Meldung bleibt wie bisher. Beim Empfänger wird die Nummer geprüft: Eine Zahl außerhalb der Liste, ein Bruch, ein Text oder ein Objekt gelten als „kein Symbol“. Damit lässt sich nichts einschleusen (getestet mit `<img src=x onerror=…>` als „Symbol“; jedes Bild im Dokument ist ein mitgeliefertes Symbol). Die Liste darf nur hinten wachsen, sonst zeigen ältere Apps ein falsches Symbol.
+
+**Grenzen:** Der Ghost behält sein „G“. Ältere Fahrten ohne Symbol zeigen weiter die Rangzahl. Sollen weitere Symbole dazukommen, muss die Grafik in `js/emoji.js` ergänzt werden; die Auswahl selbst steht in `UI.EMOJIS` in `js/ui.js`.

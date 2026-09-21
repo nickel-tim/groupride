@@ -24,11 +24,12 @@ var Recorder = (function () {
 
     function reset(me) { data = {}; meId = me || null; }
 
-    function add(id, name, color, t, lat, lon, ele) {
+    function add(id, name, color, t, lat, lon, ele, emoji) {
         var r = data[id];
-        if (!r) r = data[id] = { n: name || id, c: color || null, pts: [] };
+        if (!r) r = data[id] = { n: name || id, c: color || null, j: null, pts: [] };
         if (name) r.n = name;
         if (color) r.c = color;
+        if (emoji !== undefined) r.j = emoji;
         var last = r.pts[r.pts.length - 1];
         if (last && t - last.t < MIN_GAP) return;
         if (last && t <= last.t) return;            // Zeit muss weiterlaufen
@@ -48,7 +49,7 @@ var Recorder = (function () {
             if (p.length < 2) continue;
             var d = [], q = { lat: Math.round(p[0].lat * 1e5), lon: Math.round(p[0].lon * 1e5),
                               ele: Math.round((p[0].ele || 0) * 10), t: p[0].t }, hasEle = p[0].ele !== null;
-            var e0 = { id: id, n: r.n, c: r.c, t0: p[0].t, la0: q.lat, lo0: q.lon, e0: q.ele, ne: hasEle ? 1 : 0, d: d };
+            var e0 = { id: id, n: r.n, c: r.c, j: r.j, t0: p[0].t, la0: q.lat, lo0: q.lon, e0: q.ele, ne: hasEle ? 1 : 0, d: d };
             for (var i = 1; i < p.length; i++) {
                 var lat = Math.round(p[i].lat * 1e5), lon = Math.round(p[i].lon * 1e5);
                 var ele = Math.round((p[i].ele === null ? (q.ele / 10) : p[i].ele) * 10);
@@ -70,7 +71,7 @@ var Recorder = (function () {
                 t += d[i] * 100; lat += d[i + 1]; lon += d[i + 2]; ele += d[i + 3];
                 pts.push({ t: t, lat: lat / 1e5, lon: lon / 1e5, ele: r.ne ? ele / 10 : null });
             }
-            out.riders[r.id] = { name: r.n, color: r.c, pts: pts };
+            out.riders[r.id] = { name: r.n, color: r.c, emoji: r.j === undefined ? null : r.j, pts: pts };
         });
         return out;
     }
