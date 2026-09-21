@@ -44,12 +44,17 @@ var ReplayUI = (function () {
             ctl = MapCtl.mount($('rpMap'), {
                 prefix: 'rp', persist: false,
                 isActive: isOpen,
+                hasRoute: function () { return true; },          // "Route" = die ganze Strecke im Bild
                 getData: function () {
                     if (!sess) return null;
                     var mine = sess.an.riders[sess.meId];
                     return { route: sess.route, riders: sess.an.order(), meId: sess.meId,
                              climbs: sess.an.climbs, heading: mine ? mine.heading : null,
-                             overlay: null, smooth: true };
+                             overlay: null, axisFit: true,
+                             /* Glaetten nur, solange abgespielt wird: Bleibt das Replay stehen
+                                (Pause, Ende, Spulen), waere weiterschieben falsch -- der Punkt
+                                schoebe sich bis zu 2,6 s ueber die echte Position hinaus. */
+                             smooth: playing };
                 }
             });
         }
@@ -61,7 +66,7 @@ var ReplayUI = (function () {
         $('rpSlider').value = 0;
         // erst bis kurz nach dem Start vorrechnen, damit die Karte nicht leer ist
         target = sess.t0 + 15000;
-        ctl.reset(); ctl.opt.follow = false; ctl.opt.fitRoute = false; ctl.sync();
+        ctl.reset(); ctl.opt.follow = false; ctl.opt.fitRoute = true; ctl.sync();      // erst die ganze Strecke zeigen
         ctl.ensureLoop();
         loop(performance.now());
         return true;

@@ -78,6 +78,23 @@ Also baut die App eine gemeinsame **Streckenachse**: eine Polylinie, die sich se
 
 **Überholen wird entprellt.** ±4 m GPS-Rauschen erzeugen sonst im Sekundentakt Fantasie-Manöver zwischen zwei Fahrern, die nebeneinander rollen. Ein Wechsel zählt erst ab 8 m Unterschied und muss 3 Sekunden halten.
 
+### Kreisverkehr, enge Kehre, Kreuzungen und Rückwege
+
+Die Streckenachse baut sich beim Fahren aus dem Weg des Führenden auf (der „Routensetzer“). Früher riss sie an vier Stellen ab und fand nie wieder Anschluss:
+
+| Situation | Was schiefging | Jetzt |
+|---|---|---|
+| **enge Kehre, Kreisverkehr** | Der Knickschutz (Richtung kippt > 100°) hielt den echten Knick für einen GPS-Ausreißer und lehnte jeden Punkt ab. | Bei kurzem Schritt (≤ 30 m) zählt ein scharfer Knick nicht als Ausreißer; bei größerem Schritt darf er zweimal ablehnen, dann gilt er als echte Kurve. In Kurven werden die Punkte dichter (ab 8 m, wenn die Richtung um 40° kippt). |
+| **Acht, zweite Runde, Kreuzung** | Wer eine ältere Stelle der Achse kreuzt, galt als „nicht vorn“ und verlängerte sie nicht mehr. | Der Fahrer, der die Achse bisher gebaut hat, setzt sie mit seiner eigenen Spur fort – ohne Rückfrage bei der Projektion. Nur ein *neuer* Setzer nach einem Wechsel muss vorn und nahe an der Achse liegen. |
+| **Hin und zurück, Abzweig** | Wie oben: auf dem Rückweg liegt man auf alten Achsenstücken. | Derselbe Weg: Die Achse wächst mit dem Rückweg mit. |
+| **Funkloch, Tunnel** | Ein Sprung über 250 m wurde abgelehnt – für immer. | Hält er über fünf Meldungen an, setzt die Achse dort neu an. Die Verbindung zum alten Ende wird nicht gezeichnet (kein Strich über das Nichts) und nicht zur Positionsbestimmung benutzt. |
+
+**Kreuzungen und Überlagerungen bei der Positionsbestimmung.** Für alle anderen Fahrer wird die Position auf der Achse per Projektion bestimmt („s“ = Meter seit dem Start). Wo sich die Strecke kreuzt oder überlagert, liegen zwei Achsenstücke gleich nah; das „nächste“ wäre Zufall, und der Fahrer sprang um eine Runde vor oder zurück (in der Messung schwankte der Abstand zwischen Führendem und einem Fahrer 30 m dahinter zwischen −651 und +745 m). Jetzt zählen alle Stücke, die nicht deutlich weiter weg sind als das nächste, und unter ihnen gilt das, das zur bisherigen Position passt („Kontinuität“). Nahe am Achsenende zählt der Querabstand zur verlängerten Linie, denn der Fahrer liegt dort meist ein Stück davor.
+
+**Wie das geprüft wurde:** mit synthetischen Spuren (GPS-Rauschen 3 m, 1 Hz) – Kreisverkehr (r = 16 und 20 m, 1,25 und 2 Runden), Kehre (r = 7 und 10 m), Hin-und-zurück mit Abzweig, Funkloch, Acht, Rundkurs mit zwei Runden – jeweils mit einem zweiten Fahrer 30 m dahinter, über mehrere Zufallsmuster. Vorher endete die Achse in fünf der acht Fälle Hunderte Meter vor dem Fahrer; jetzt sind es in allen acht weniger als 35 m, und der Abstand zum Nachfahrer bleibt zwischen −6 und 44 m (Soll: 30 m ± Rauschen). Die bisherige Prüfung mit bekannter Wahrheit (`test/sim.js`: Serpentine, zwei Berge, vier Fahrer) besteht weiterhin.
+
+**Was noch nicht abgedeckt ist:** Zwei *verschiedene* Straßen, die sich auf weniger als etwa 25 m annähern und dabei parallel laufen, kann die Achse nur über die Kontinuität auseinanderhalten. Ein Fahrer, der die Achse auf einer Parallelstraße „mitten im Feld“ verlässt und erst viel später zurückkehrt, wird erst nach fünf Meldungen als abgehängt behandelt. Echte GPX-Dateien aus Tunneln und Hochhausschluchten habe ich nicht getestet.
+
 ### Was gemessen wurde
 
 Gegen eine simulierte Ausfahrt mit bekannter Wahrheit — vier Fahrer, ±4 m Positionsrauschen, ±6 m Höhenrauschen, echte Alpenkehre mit 30 m Radius, zwei Anstiege:

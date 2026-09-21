@@ -31,6 +31,12 @@ var Smooth = (function () {
     var TAU_HDG   = 0.35;     // s
     var EXTRAP_MS = 2600;
     var SNAP_M    = 60;       // groessere Spruenge (erste Meldung, Neustart) nicht verschleifen
+    /* Ein Sprung ist keine Fahrt: Springt die Position zwischen zwei Bildern (Spulen im
+       Replay, Neustart, GPS-Sprung), waere das rechnerisch ein absurdes Tempo -- und der
+       Punkt wuerde damit noch bis zu 2,6 s weiterschiessen. Darueber gilt: kein Tempo, hinsetzen.
+       Die Grenze liegt weit ueber dem, was der Zeitraffer der Simulation (x20 = ~190 m/s)
+       erzeugt. */
+    var MAX_V     = 400;      // m/s
 
     var api = { enabled: true };   // "enabled = false": rohe Werte, zum Vergleichen und Debuggen
 
@@ -57,7 +63,10 @@ var Smooth = (function () {
         // neue Meldung erkannt: Tempo aus dem Weg seit der letzten schaetzen
         if (Math.abs(xy.x - st.fx) > 1e-4 || Math.abs(xy.y - st.fy) > 1e-4) {
             var dtf = (now - st.tf) / 1000;
-            if (dtf > 0.05 && dtf < 8) {
+            var jumped = dtf > 0 && Math.hypot(xy.x - st.fx, xy.y - st.fy) / dtf > MAX_V;
+            if (jumped) {
+                st.vx = st.vy = 0; st.x = xy.x; st.y = xy.y;         // hinsetzen, nicht ausbremsen
+            } else if (dtf > 0.05 && dtf < 8) {
                 st.vx = 0.3 * st.vx + 0.7 * (xy.x - st.fx) / dtf;
                 st.vy = 0.3 * st.vy + 0.7 * (xy.y - st.fy) / dtf;
             } else { st.vx = st.vy = 0; }

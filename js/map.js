@@ -163,6 +163,7 @@ var MapView = (function () {
         for (var j = 0; j < n; j++) {
             var keep = inside[j] || (j > 0 && inside[j - 1]) || (j < n - 1 && inside[j + 1]);
             if (!keep) { cur = null; continue; }
+            if (sp[j].gap) cur = null;         // Luecke (Funkloch, Neuanfang): kein Strich ueber das Nichts
             if (!cur) { cur = []; out.push(cur); }
             var last = cur[cur.length - 1];
             var isEdge = (j === n - 1) || !(inside[j + 1] || inside[j]);
@@ -261,8 +262,11 @@ var MapView = (function () {
                 if (p.u < u0) u0 = p.u; if (p.u > u1) u1 = p.u;
                 if (p.v < v0) v0 = p.v; if (p.v > v1) v1 = p.v;
             });
-            if (ov && (d.fitOverlay || !pos.length)) {
-                ovXY(ov, frame).forEach(function (q) {
+            var fitPts = null;
+            if (ov && (d.fitOverlay || !pos.length)) fitPts = ovXY(ov, frame);
+            else if (d.fitOverlay && route.frame && route.pts.length) fitPts = route.pts;     // keine Route geladen: die Live-Achse
+            if (fitPts) {
+                fitPts.forEach(function (q) {
                     var t = tr(q.x, q.y);
                     if (t.u < u0) u0 = t.u; if (t.u > u1) u1 = t.u;
                     if (t.v < v0) v0 = t.v; if (t.v > v1) v1 = t.v;
@@ -323,7 +327,7 @@ var MapView = (function () {
             var sp = new Array(nRoute);
             for (var i = 0; i < nRoute; i++) {
                 var t = tr(route.pts[i].x, route.pts[i].y);
-                sp[i] = { x: sx(t.u), y: sy(t.v), s: route.pts[i].s };
+                sp[i] = { x: sx(t.u), y: sy(t.v), s: route.pts[i].s, gap: !!route.pts[i].gap };
             }
             var dRoute = pathOf(sp, W, H);
             parts.push('<path class="mcase" d="' + dRoute + '"/>');

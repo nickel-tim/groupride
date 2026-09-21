@@ -112,7 +112,7 @@ var MapCtl = (function () {
             var info = MapView.render($(  'Svg'), {
                 zoomMul: opt.zoomMul, panU: opt.panU, panV: opt.panV,
                 route: d.route, riders: d.riders, meId: d.meId, climbs: d.climbs, overlay: d.overlay,
-                follow: opt.follow, fitOverlay: opt.fitRoute && !!d.overlay, zoom: opt.zoom,
+                follow: opt.follow, fitOverlay: opt.fitRoute && (!!d.overlay || !!d.axisFit), zoom: opt.zoom,
                 trackUp: opt.trackUp, heading: d.heading, smooth: d.smooth,
                 tiles: opt.tiles, tileSvg: $('Tiles'), tileUrl: store('tileurl') || undefined
             });

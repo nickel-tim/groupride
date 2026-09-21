@@ -42,6 +42,33 @@ var Route = (function () {
        dauerhaft als Knick in der Achse stehen. */
     var MAX_STEP     = 250;   // m, groesster akzeptierter Stuetzpunktsprung
     var MAX_TURN     = 100;   // Grad, staerkerer Knick = Ausreisser
+    /* Wiederanschluss. Die Achse verlaengert sich nur, wenn der Setzer "vorn und nahe
+       an der Achse" ist und der Knick nicht zu scharf. Bei Kreisverkehr, enger Kehre,
+       Acht oder Hin-und-zurueck trifft das zeitweise NICHT zu -- und dann verlaengerte
+       sich die Achse nie wieder ("Spline verloren"). Deshalb: */
+    var NEAR_END     = 60;    // m: so nah am Achsenende = der Setzer setzt sie einfach fort,
+                              //    egal wohin die Projektion gerade rastet (Schleifen!)
+    var TURN_FREE    = 30;    // m: bei so kurzem Schritt ist ein scharfer Knick kein Ausreisser
+    var TURN_PATIENCE= 2;     // so oft darf der Knickschutz ablehnen, dann zaehlt es als echte Kurve
+    var DETACH_FIXES = 5;     // so viele Meldungen abseits, dann Neuanfang (mit Luecke)
+    /* Enge Kurven. Bei 20 m Punktabstand ist ein Kreisverkehr mit 20 m Radius ein grobes
+       Sechseck: die Bogenlaenge, auf die alle projiziert werden, wird dadurch ungenau.
+       In einer Kurve darf die Achse deshalb dichter werden -- aber nur, wenn die Richtung
+       wirklich kippt (das Rauschen liegt bei +-4 m und wuerde sonst Zickzack erzeugen; die
+       Positionen sind allerdings schon geglaettet). */
+    var CURVE_SPACING = 8;    // m: kuerzester Punktabstand in einer Kurve
+    var CURVE_ANGLE   = 40;   // Grad: so stark muss die Richtung seit dem letzten Segment kippen
+    /* Kreuzungen und Ueberlagerungen. Wo die Strecke sich selbst kreuzt (Acht, Kreisverkehr,
+       zweite Runde, Rueckweg auf derselben Strasse), liegen zwei Achsenstuecke gleich nah.
+       Das "naechste" waere dann Zufall -- und ein Fahrer sprang auf das falsche Stueck, seine
+       Position um Hunderte Meter, Rang und Luecken flackerten, und die Suche lief danach um
+       die falsche Stelle weiter. Deshalb zaehlen alle Stuecke, die nicht deutlich weiter weg
+       sind als das naechste, und unter ihnen gilt das, das zur bisherigen Position passt. */
+    var AHEAD_MAX    = 40;    // m: so weit vor dem Achsenende zaehlt noch der Querabstand
+    var TIE_DIST     = 10;    // m: Stuecke bis so viel weiter weg als das naechste sind gleichwertig
+    var TIE_WIDE     = 25;    // m: ... und bis hierhin, wenn das gewaehlte Stueck sonst weit von der
+                              //    bisherigen Position liegt (Umkehrstelle: das Achsenende hinkt hinterher)
+    var PLAUSIBLE_S  = 80;    // m: so viel darf ein Fahrer zwischen zwei Meldungen hoechstens vorankommen
     var TAIL_SMOOTH  = 0.30;  // Laplace-Faktor fuer den Routenschwanz
     /* GPS-Hoehe rauscht um mehrere Meter und ist damit die schlechteste
    Groesse, die das Geraet liefert. Ein enges Glaettungsfenster laesst
@@ -61,7 +88,7 @@ var Route = (function () {
         return this.pts.length ? this.pts[this.pts.length - 1].s : 0;
     };
 
-    R.prototype._push = function (lat, lon, ele) {
+    R.prototype._push = function (lat, lon, ele, gap) {
         if (!this.frame) this.frame = Geo.frame(lat, lon);
         var xy = this.frame.toXY(lat, lon);
         var s = 0;
@@ -70,7 +97,7 @@ var Route = (function () {
             s = last.s + Geo.distance(last.lat, last.lon, lat, lon);
         }
         this.pts.push({ lat: lat, lon: lon, ele: (ele === undefined ? null : ele),
-                        x: xy.x, y: xy.y, s: s });
+                        x: xy.x, y: xy.y, s: s, gap: !!gap });
         this.eleSmoothed = false;
     };
 
@@ -108,12 +135,43 @@ var Route = (function () {
             if (i1 < i0) i1 = i0;
         }
 
-        var best = null;
+        var best = null, cands = [];
         for (var i = i0; i <= i1; i++) {
             var p = this.pts[i], q = this.pts[i + 1];
+            if (q.gap) continue;              // Verbindung ueber eine Luecke ist keine Strasse
             var pr = Geo.projectOnSegment(xy.x, xy.y, p.x, p.y, q.x, q.y);
-            if (best === null || pr.dist < best.dist) {
-                best = { dist: pr.dist, perp: pr.perp, t: pr.t, i: i, len: pr.len };
+            /* Am Achsenende liegt der Fahrer meist ein Stueck DAVOR (die Achse waechst nur alle
+               20 m). Sein Abstand zum letzten Punkt waere dann bis zu 20 m -- und damit weiter
+               als das Stueck einer aelteren Runde, das er zufaellig kreuzt. Fuer Kandidaten
+               am Ende zaehlt deshalb der Querabstand zur verlaengerten Linie (bis 40 m
+               voraus), so wie es die Achse auch fuer "offset" tut. */
+            var d = pr.dist;
+            if (i === n - 2 && pr.t > 1 && (pr.t - 1) * pr.len <= AHEAD_MAX) d = pr.perp;
+            var cand = { dist: d, perp: pr.perp, t: pr.t, i: i, len: pr.len };
+            cands.push(cand);
+            if (best === null || pr.dist < best.dist) best = cand;
+        }
+        // Kontinuitaet: unter den (fast) gleich nahen Stuecken das waehlen, das zum bisherigen s passt
+        if (best !== null && hintS !== null && hintS !== undefined) {
+            var self = this, nearest = best;
+            function gapOf(c) {
+                var tc = c.t < 0 ? 0 : (c.t > 1 ? 1 : c.t);
+                return Math.abs(self.pts[c.i].s + tc * (self.pts[c.i + 1].s - self.pts[c.i].s) - hintS);
+            }
+            function pick(limit) {
+                var bg = Infinity, bc = null;
+                cands.forEach(function (c) { if (c.dist <= limit) { var g = gapOf(c); if (g < bg) { bg = g; bc = c; } } });
+                return { c: bc, gap: bg };
+            }
+            var tight = pick(nearest.dist + TIE_DIST);
+            best = tight.c;
+            /* Liegt das Ergebnis dennoch weit von der bisherigen Position, gibt es vielleicht ein
+               etwas weiter entferntes Stueck, das dazu passt (z. B. das Achsenende an einer
+               Umkehrstelle: der Fahrer ist dort zurueckgefallen, waehrend er ein aelteres
+               Stueck gerade kreuzt). Dann darf es gewinnen. */
+            if (tight.gap > PLAUSIBLE_S) {
+                var wide = pick(nearest.dist + TIE_WIDE);
+                if (wide.c && wide.gap <= PLAUSIBLE_S) best = wide.c;
             }
         }
         if (best === null) return null;
@@ -149,36 +207,85 @@ var Route = (function () {
        Segmentrichtungen werden falsch, und irgendwann faltet sich die
        Achse auf sich selbst zurueck -- ab da laufen die Bogenlaengen
        rueckwaerts und die Reihenfolge ist fuer ALLE Fahrer kaputt.  */
-    R.prototype.consider = function (lat, lon, ele, hintS, mayExtend) {
+    R.prototype.consider = function (lat, lon, ele, hintS, mayExtend, who) {
         if (this.pts.length === 0) {
             this._push(lat, lon, ele);
+            this._owner = who;
             return { s: 0, offset: 0, ahead: false };
         }
 
         var pr = this.project(lat, lon, hintS);
-        if (!pr) return null;
         var last = this.pts[this.pts.length - 1];
         var dLast = Geo.distance(last.lat, last.lon, lat, lon);
 
-        var atFront = pr.ahead || pr.s >= this.length() - MIN_SPACING;
+        if (mayExtend && (dLast >= MIN_SPACING || (dLast >= CURVE_SPACING && this._curved(lat, lon)))) {
+            var atFront = !!pr && (pr.ahead || pr.s >= this.length() - MIN_SPACING);
 
-        /* Der Seitwaerts-Schutz gilt nur INNERHALB der Route. Jenseits
-           des Endes ist "offset" der Abstand zur verlaengerten Geraden
-           des letzten Segments -- in einer Kurve waechst der zwangslaeufig.
-           Wuerde er hier greifen, entstuende eine Todesspirale: Der
-           Fuehrende kaeme nicht mehr in die Route, liefe dadurch weiter
-           voraus, wodurch der Abstand weiter waechst. Genau dort bricht
-           die Achse dann fuer alle zusammen. */
-        var onAxis = pr.ahead ? true : (pr.offset <= MAX_OFFSET);
+            /* Der Seitwaerts-Schutz gilt nur INNERHALB der Route. Jenseits
+               des Endes ist "offset" der Abstand zur verlaengerten Geraden
+               des letzten Segments -- in einer Kurve waechst der zwangslaeufig.
+               Wuerde er hier greifen, entstuende eine Todesspirale: Der
+               Fuehrende kaeme nicht mehr in die Route, liefe dadurch weiter
+               voraus, wodurch der Abstand weiter waechst. Genau dort bricht
+               die Achse dann fuer alle zusammen. */
+            var onAxis = !!pr && (pr.ahead ? true : (pr.offset <= MAX_OFFSET));
 
-        if (mayExtend && atFront && onAxis &&
-            dLast >= MIN_SPACING && dLast <= MAX_STEP &&
-            this._turnOk(lat, lon)) {
-            this._push(lat, lon, ele);
-            this._smoothTail();
-            return { s: this.length(), offset: 0, ahead: false };
+            /* Fortsetzung. Der Fahrer, der die Achse bisher gebaut hat ("Besitzer"), setzt sie
+               mit seiner eigenen Spur fort -- ohne Rueckfrage bei der Projektion. Die waere
+               hier gerade das Falsche: An einer Kreuzung, im Kreisverkehr, auf der zweiten
+               Runde oder auf dem Rueckweg liegt er AUF alten Achsenstuecken und gilt damit als
+               "nicht vorn" -- obwohl er nur seiner Spur folgt. Die Achse ist per Definition
+               der Weg des Setzers; wohin er faehrt, dorthin geht sie. Wer NEU Setzer wird
+               (Handover), muss dagegen vorn und nahe an der Achse liegen, sonst faltet sie
+               sich auf sich selbst zurueck (siehe unten). */
+            var continues = (who === this._owner) || dLast <= NEAR_END || (atFront && onAxis);
+
+            if (continues && dLast <= MAX_STEP) {
+                /* Ausreisser-Schutz: ein Fix, der die Richtung um >100 Grad kippt UND
+                   weit weg liegt, ist verdaechtig. Bei kurzem Schritt (enge Kehre,
+                   Kreisverkehr mit 15 m Radius) ist ein scharfer Knick aber echt; und
+                   haelt er an, ist es keine einzelne Ausnahme mehr. */
+                var turnOk = dLast <= TURN_FREE || this._turnOk(lat, lon);
+                if (turnOk || (this._rej || 0) >= TURN_PATIENCE) {
+                    this._push(lat, lon, ele);
+                    this._smoothTail();
+                    this._rej = 0; this._detach = 0; this._owner = who;
+                    return { s: this.length(), offset: 0, ahead: false };
+                }
+                this._rej = (this._rej || 0) + 1;
+                return pr;
+            }
+
+            /* Abgehaengt: der Besitzer ist weiter als ein plausibler Schritt vom Achsenende weg
+               (Funkloch, Tunnel, GPS-Sprung). Ein einzelner Ausreisser darf die Achse nicht
+               verbiegen -- haelt es aber ueber ein paar Meldungen an, ist es echt, und die Achse
+               setzt dort neu an: ein Punkt mit "gap" beginnt ein neues Stueck; die Verbindung zum
+               alten Ende wird weder gezeichnet noch zur Projektion benutzt. Nur der Besitzer
+               darf das: sonst wuerde ein neuer Setzer auf einer Parallelstrasse (Handover) die
+               Achse mitten im Feld unterbrechen und die Reihenfolge der Gruppe verfaelschen. */
+            var away = dLast > MAX_STEP;
+            if (who === this._owner && away) {
+                this._detach = (this._detach || 0) + 1;
+                if (this._detach >= DETACH_FIXES) {
+                    this._push(lat, lon, ele, true);
+                    this._rej = 0; this._detach = 0;
+                    return { s: this.length(), offset: 0, ahead: false };
+                }
+            } else {
+                this._detach = 0;
+            }
         }
         return pr;
+    };
+
+    // Kippt die Richtung vom letzten Segment zum Kandidaten um mindestens CURVE_ANGLE?
+    R.prototype._curved = function (lat, lon) {
+        var n = this.pts.length;
+        if (n < 2) return false;
+        var a = this.pts[n - 2], b = this.pts[n - 1];
+        if (b.gap) return false;
+        var prev = Geo.bearing(a.lat, a.lon, b.lat, b.lon), next = Geo.bearing(b.lat, b.lon, lat, lon);
+        return Math.abs(Geo.angleDelta(prev, next)) >= CURVE_ANGLE;
     };
 
     /* Faltungsschutz: ein Stuetzpunkt, der die Richtung um mehr als
@@ -189,6 +296,7 @@ var Route = (function () {
         var n = this.pts.length;
         if (n < 2) return true;
         var a = this.pts[n - 2], b = this.pts[n - 1];
+        if (b.gap) return true;              // nach einer Luecke gibt es keine "vorige Richtung"
         var prev = Geo.bearing(a.lat, a.lon, b.lat, b.lon);
         var next = Geo.bearing(b.lat, b.lon, lat, lon);
         return Math.abs(Geo.angleDelta(prev, next)) <= MAX_TURN;
@@ -201,6 +309,7 @@ var Route = (function () {
         var n = this.pts.length;
         if (n < 3) return;
         var a = this.pts[n - 3], b = this.pts[n - 2], c = this.pts[n - 1];
+        if (b.gap || c.gap) return;          // nicht ueber eine Luecke hinweg glaetten
         b.lat += TAIL_SMOOTH * (a.lat + c.lat - 2 * b.lat);
         b.lon += TAIL_SMOOTH * (a.lon + c.lon - 2 * b.lon);
         var xy = this.frame.toXY(b.lat, b.lon);

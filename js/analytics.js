@@ -151,7 +151,7 @@ var Analytics = (function () {
         // Position, sonst zackt die Polylinie und die Segmentrichtung
         // wird unbrauchbar.
         var pr = this.route.consider(r.fLat, r.fLon, r.ele, r.s,
-                                     this.setterId === id);
+                                     this.setterId === id, id);
         if (pr) {
             r.s = pr.s;
             r.offset = pr.offset;
