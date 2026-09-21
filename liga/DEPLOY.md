@@ -51,6 +51,10 @@ tauschen. Ohne Mail-Versand gibt es keine Anmeldung.
 npx wrangler d1 migrations apply groupride --remote
 ```
 
+Die Migration in `migrations/` ist absichtlich **kommentarfrei** (D1 lehnt sonst mit „SQL code did not
+contain a statement" ab). Die kommentierte Fassung steht in `schema.annotated.sql`; nach Änderungen dort
+`python3 liga/tools/strip_sql.py` ausführen.
+
 Danach wie bisher: committen und pushen (Cloudflare baut automatisch), oder `npx wrangler deploy`.
 Die Migration einmalig von Hand ausführen und nur bei Schema-Änderungen wiederholen; im
 automatischen Build fehlt dem Token meist das Recht für D1.
