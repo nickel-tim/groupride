@@ -1,0 +1,2 @@
+{ "name": "gruppenausfahrt-relay", "private": true, "type": "module",
+  "devDependencies": { "wrangler": "^4" } }

@@ -1,0 +1,242 @@
+/* ============================================================
+ * Gruppenausfahrt -- Instrumenten-Layout fuer den Lenker
+ * ============================================================
+ * Zwei Themes, und das ist hier kein Zierrat: Dunkel spart auf OLED
+ * Akku und blendet in der Daemmerung nicht. Bei direkter Sonne ist
+ * es aber schlechter lesbar als ein heller Screen -- deshalb der
+ * "Sonne"-Modus mit maximalem Kontrast.
+ * ============================================================ */
+
+:root {
+    --bg:     #0d1214;
+    --bg2:    #151d21;
+    --bg3:    #1e282d;
+    --line:   #2b383e;
+    --ink:    #e8f0f2;
+    --ink2:   #93a7af;
+    --ink3:   #5f7379;
+    --self:   #ffffff;
+    --warn:   #ffb02e;
+    --bad:    #ff5d4d;
+    --good:   #7ed957;
+    --shadow: 0 2px 10px rgba(0,0,0,.45);
+}
+
+:root[data-theme="sun"] {
+    --bg:     #eceff1;
+    --bg2:    #ffffff;
+    --bg3:    #dde3e6;
+    --line:   #b9c5ca;
+    --ink:    #0b1214;
+    --ink2:   #44565d;
+    --ink3:   #6b7d84;
+    --self:   #0b1214;
+    --warn:   #a35c00;
+    --bad:    #c0271a;
+    --good:   #2f7d32;
+    --shadow: 0 1px 4px rgba(0,0,0,.14);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    -webkit-user-select: none; user-select: none;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Zahlen: schmal laufend und tabellarisch, damit die Tachoziffern
+   beim Wechsel nicht springen. */
+.num {
+    font-family: 'Barlow Semi Condensed', 'Roboto Condensed', 'Liberation Sans Narrow',
+                 'Arial Narrow', 'Helvetica Neue Condensed', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+/* ---------------- Kopfzeile ---------------- */
+header {
+    flex: none;
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px; color: var(--ink2);
+}
+#netDot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bad); flex: none;
+    transition: background .3s;
+}
+#netDot.on   { background: var(--good); }
+#netDot.wait { background: var(--warn); }
+header .grow { flex: 1; min-width: 0; overflow: hidden;
+               text-overflow: ellipsis; white-space: nowrap; }
+header b { color: var(--ink); font-weight: 600; }
+
+/* ---------------- Ansichten ---------------- */
+main { flex: 1; position: relative; min-height: 0; }
+.view {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    padding: 0 14px;
+}
+.view.active { display: flex; }
+.view.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---------------- Tacho ---------------- */
+.speedrow {
+    flex: none;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 10px; padding: 8px 0 2px;
+}
+.speedbig {
+    font-size: 70px; line-height: .86; font-weight: 300;
+    letter-spacing: -2px; color: var(--self);
+}
+.speedbig.stale { color: var(--ink3); }
+.speedunit { font-size: 13px; color: var(--ink2); margin-bottom: 8px; }
+.rankbox { text-align: right; margin-bottom: 4px; }
+.rankbig { font-size: 34px; font-weight: 300; line-height: 1; }
+.ranklbl { font-size: 10px; color: var(--ink2); text-transform: uppercase;
+           letter-spacing: .6px; }
+
+/* ---------------- Kompass ---------------- */
+.compasswrap {
+    flex: none;
+    display: flex; justify-content: center;
+    padding: 4px 0 6px;
+}
+#compass { width: min(70vw, 270px); height: min(70vw, 270px); max-width: 100%; }
+.cring   { fill: none; stroke: var(--line); stroke-width: 1; }
+.cring.faint { stroke-dasharray: 2 4; }
+.clbl    { fill: var(--ink3); font-size: 7px; }
+.cnose   { fill: var(--self); }
+.chead   { fill: var(--ink3); font-size: 9px; font-weight: 600; }
+
+/* ---------------- Fahrerliste ---------------- */
+.riders { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
+.rrow {
+    display: grid;
+    grid-template-columns: 4px 18px 1fr auto auto;
+    align-items: center; gap: 9px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+}
+.rrow:last-child { border-bottom: none; }
+.rbar { width: 4px; height: 26px; border-radius: 2px; background: transparent; }
+.rrow.me .rbar { background: var(--self); }
+.rdot { width: 13px; height: 13px; border-radius: 50%; justify-self: center; }
+.rname { font-size: 15px; overflow: hidden; text-overflow: ellipsis;
+         white-space: nowrap; }
+.rname .tag {
+    font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 6px;
+    background: var(--bg3); color: var(--ink2); letter-spacing: .5px;
+    vertical-align: 2px;
+}
+.rname .tag.drop { background: var(--bad); color: #fff; }
+.rname .tag.stale{ background: var(--warn); color: #241400; }
+.rspd { font-size: 19px; text-align: right; min-width: 56px; }
+.rgap { font-size: 12px; text-align: right; min-width: 70px; color: var(--ink2);
+        line-height: 1.2; }
+.rgap i { font-style: normal; display: block; font-size: 10px; color: var(--ink3); }
+.rrow.gone { opacity: .45; }
+
+/* ---------------- Verlauf / Berge ---------------- */
+h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink3); font-weight: 600;
+    padding: 14px 0 7px;
+}
+.ev {
+    display: flex; gap: 9px; align-items: baseline;
+    padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.ev .tm { font-size: 11px; color: var(--ink3); min-width: 42px; flex: none; }
+.ev .ic { flex: none; width: 17px; text-align: center; font-size: 13px; }
+.ev.pass   .ic { color: var(--good); }
+.ev.attack .ic { color: var(--warn); }
+.ev.drop   .ic { color: var(--bad); }
+.ev.lead   .ic { color: var(--ink2); }
+.ev.rejoin .ic { color: var(--good); }
+
+.climb {
+    background: var(--bg2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 11px 12px; margin-bottom: 10px;
+}
+.climb .hd {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px; gap: 8px;
+}
+.climb .ttl { font-size: 15px; font-weight: 600; }
+.climb .meta { font-size: 11px; color: var(--ink2); text-align: right; }
+.crank { display: grid; grid-template-columns: 16px 1fr auto auto; gap: 8px;
+         font-size: 13px; padding: 3px 0; align-items: center; }
+.crank .pos { color: var(--ink3); font-size: 11px; }
+.crank .tme { text-align: right; min-width: 52px; }
+.crank .vam { text-align: right; min-width: 62px; font-size: 11px; color: var(--ink2); }
+.crank.win .nm { font-weight: 600; }
+
+.bar {
+    height: 5px; border-radius: 3px; background: var(--bg3);
+    overflow: hidden; margin-top: 4px;
+}
+.bar i { display: block; height: 100%; background: var(--ink2); }
+
+/* ---------------- Gruppe / Einstellungen ---------------- */
+label { display: block; font-size: 11px; color: var(--ink3);
+        text-transform: uppercase; letter-spacing: .7px; margin: 12px 0 5px; }
+input[type=text], input[type=url] {
+    width: 100%; padding: 10px 11px; font-size: 15px; font-family: inherit;
+    background: var(--bg2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px;
+}
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; }
+.sw.sel { border-color: var(--ink); }
+.btn {
+    display: block; width: 100%; padding: 12px; margin-top: 9px;
+    border: none; border-radius: 8px; font-size: 15px; font-family: inherit;
+    background: var(--bg3); color: var(--ink);
+}
+.btn:active { filter: brightness(1.25); }
+.btn.go { background: var(--good); color: #05210a; font-weight: 600; }
+.btn.stop { background: var(--bad); color: #fff; font-weight: 600; }
+.note { font-size: 12px; color: var(--ink2); line-height: 1.5; margin-top: 9px; }
+.note code { background: var(--bg3); padding: 1px 4px; border-radius: 3px;
+             font-size: 11px; word-break: break-all; }
+.warnbox {
+    background: var(--bg2); border-left: 3px solid var(--warn);
+    padding: 9px 11px; border-radius: 0 6px 6px 0;
+    font-size: 12px; color: var(--ink2); line-height: 1.5; margin-top: 10px;
+}
+
+/* ---------------- Reiter ---------------- */
+nav {
+    flex: none; display: flex;
+    background: var(--bg2); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+nav button {
+    flex: 1; border: none; background: none; color: var(--ink3);
+    font-family: inherit; font-size: 10.5px; letter-spacing: .4px;
+    padding: 9px 2px 8px; text-transform: uppercase;
+}
+nav button.on { color: var(--ink); box-shadow: inset 0 2px 0 var(--ink); }
+/* [hidden] ist nur eine UA-Regel (display:none) -- eine eigene
+   display-Angabe schlaegt sie. Ohne die naechste Zeile stehen
+   dauerhaft "0"-Badges in der Leiste. */
+nav button .bdg[hidden] { display: none !important; }
+nav button .bdg {
+    display: inline-block; min-width: 15px; margin-left: 3px;
+    background: var(--warn); color: #241400; border-radius: 8px;
+    font-size: 9px; padding: 0 4px;
+}
+
+.empty { color: var(--ink3); font-size: 13px; padding: 18px 0; line-height: 1.6; }

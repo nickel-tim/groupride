@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d1214">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Gruppenausfahrt</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Semi+Condensed:wght@300;400;600&display=swap">
+<style>
+/* ============================================================
+ * Gruppenausfahrt -- Instrumenten-Layout fuer den Lenker
+ * ============================================================
+ * Zwei Themes, und das ist hier kein Zierrat: Dunkel spart auf OLED
+ * Akku und blendet in der Daemmerung nicht. Bei direkter Sonne ist
+ * es aber schlechter lesbar als ein heller Screen -- deshalb der
+ * "Sonne"-Modus mit maximalem Kontrast.
+ * ============================================================ */
+
+:root {
+    --bg:     #0d1214;
+    --bg2:    #151d21;
+    --bg3:    #1e282d;
+    --line:   #2b383e;
+    --ink:    #e8f0f2;
+    --ink2:   #93a7af;
+    --ink3:   #5f7379;
+    --self:   #ffffff;
+    --warn:   #ffb02e;
+    --bad:    #ff5d4d;
+    --good:   #7ed957;
+    --shadow: 0 2px 10px rgba(0,0,0,.45);
+}
+
+:root[data-theme="sun"] {
+    --bg:     #eceff1;
+    --bg2:    #ffffff;
+    --bg3:    #dde3e6;
+    --line:   #b9c5ca;
+    --ink:    #0b1214;
+    --ink2:   #44565d;
+    --ink3:   #6b7d84;
+    --self:   #0b1214;
+    --warn:   #a35c00;
+    --bad:    #c0271a;
+    --good:   #2f7d32;
+    --shadow: 0 1px 4px rgba(0,0,0,.14);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    -webkit-user-select: none; user-select: none;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Zahlen: schmal laufend und tabellarisch, damit die Tachoziffern
+   beim Wechsel nicht springen. */
+.num {
+    font-family: 'Barlow Semi Condensed', 'Roboto Condensed', 'Liberation Sans Narrow',
+                 'Arial Narrow', 'Helvetica Neue Condensed', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+/* ---------------- Kopfzeile ---------------- */
+header {
+    flex: none;
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px; color: var(--ink2);
+}
+#netDot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bad); flex: none;
+    transition: background .3s;
+}
+#netDot.on   { background: var(--good); }
+#netDot.wait { background: var(--warn); }
+header .grow { flex: 1; min-width: 0; overflow: hidden;
+               text-overflow: ellipsis; white-space: nowrap; }
+header b { color: var(--ink); font-weight: 600; }
+
+/* ---------------- Ansichten ---------------- */
+main { flex: 1; position: relative; min-height: 0; }
+.view {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    padding: 0 14px;
+}
+.view.active { display: flex; }
+.view.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ---------------- Tacho ---------------- */
+.speedrow {
+    flex: none;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 10px; padding: 8px 0 2px;
+}
+.speedbig {
+    font-size: 70px; line-height: .86; font-weight: 300;
+    letter-spacing: -2px; color: var(--self);
+}
+.speedbig.stale { color: var(--ink3); }
+.speedunit { font-size: 13px; color: var(--ink2); margin-bottom: 8px; }
+.rankbox { text-align: right; margin-bottom: 4px; }
+.rankbig { font-size: 34px; font-weight: 300; line-height: 1; }
+.ranklbl { font-size: 10px; color: var(--ink2); text-transform: uppercase;
+           letter-spacing: .6px; }
+
+/* ---------------- Kompass ---------------- */
+.compasswrap {
+    flex: none;
+    display: flex; justify-content: center;
+    padding: 4px 0 6px;
+}
+#compass { width: min(70vw, 270px); height: min(70vw, 270px); max-width: 100%; }
+.cring   { fill: none; stroke: var(--line); stroke-width: 1; }
+.cring.faint { stroke-dasharray: 2 4; }
+.clbl    { fill: var(--ink3); font-size: 7px; }
+.cnose   { fill: var(--self); }
+.chead   { fill: var(--ink3); font-size: 9px; font-weight: 600; }
+
+/* ---------------- Fahrerliste ---------------- */
+.riders { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
+.rrow {
+    display: grid;
+    grid-template-columns: 4px 18px 1fr auto auto;
+    align-items: center; gap: 9px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+}
+.rrow:last-child { border-bottom: none; }
+.rbar { width: 4px; height: 26px; border-radius: 2px; background: transparent; }
+.rrow.me .rbar { background: var(--self); }
+.rdot { width: 13px; height: 13px; border-radius: 50%; justify-self: center; }
+.rname { font-size: 15px; overflow: hidden; text-overflow: ellipsis;
+         white-space: nowrap; }
+.rname .tag {
+    font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 6px;
+    background: var(--bg3); color: var(--ink2); letter-spacing: .5px;
+    vertical-align: 2px;
+}
+.rname .tag.drop { background: var(--bad); color: #fff; }
+.rname .tag.stale{ background: var(--warn); color: #241400; }
+.rspd { font-size: 19px; text-align: right; min-width: 56px; }
+.rgap { font-size: 12px; text-align: right; min-width: 70px; color: var(--ink2);
+        line-height: 1.2; }
+.rgap i { font-style: normal; display: block; font-size: 10px; color: var(--ink3); }
+.rrow.gone { opacity: .45; }
+
+/* ---------------- Verlauf / Berge ---------------- */
+h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink3); font-weight: 600;
+    padding: 14px 0 7px;
+}
+.ev {
+    display: flex; gap: 9px; align-items: baseline;
+    padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.ev .tm { font-size: 11px; color: var(--ink3); min-width: 42px; flex: none; }
+.ev .ic { flex: none; width: 17px; text-align: center; font-size: 13px; }
+.ev.pass   .ic { color: var(--good); }
+.ev.attack .ic { color: var(--warn); }
+.ev.drop   .ic { color: var(--bad); }
+.ev.lead   .ic { color: var(--ink2); }
+.ev.rejoin .ic { color: var(--good); }
+
+.climb {
+    background: var(--bg2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 11px 12px; margin-bottom: 10px;
+}
+.climb .hd {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px; gap: 8px;
+}
+.climb .ttl { font-size: 15px; font-weight: 600; }
+.climb .meta { font-size: 11px; color: var(--ink2); text-align: right; }
+.crank { display: grid; grid-template-columns: 16px 1fr auto auto; gap: 8px;
+         font-size: 13px; padding: 3px 0; align-items: center; }
+.crank .pos { color: var(--ink3); font-size: 11px; }
+.crank .tme { text-align: right; min-width: 52px; }
+.crank .vam { text-align: right; min-width: 62px; font-size: 11px; color: var(--ink2); }
+.crank.win .nm { font-weight: 600; }
+
+.bar {
+    height: 5px; border-radius: 3px; background: var(--bg3);
+    overflow: hidden; margin-top: 4px;
+}
+.bar i { display: block; height: 100%; background: var(--ink2); }
+
+/* ---------------- Gruppe / Einstellungen ---------------- */
+label { display: block; font-size: 11px; color: var(--ink3);
+        text-transform: uppercase; letter-spacing: .7px; margin: 12px 0 5px; }
+input[type=text], input[type=url] {
+    width: 100%; padding: 10px 11px; font-size: 15px; font-family: inherit;
+    background: var(--bg2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px;
+}
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; }
+.sw.sel { border-color: var(--ink); }
+.btn {
+    display: block; width: 100%; padding: 12px; margin-top: 9px;
+    border: none; border-radius: 8px; font-size: 15px; font-family: inherit;
+    background: var(--bg3); color: var(--ink);
+}
+.btn:active { filter: brightness(1.25); }
+.btn.go { background: var(--good); color: #05210a; font-weight: 600; }
+.btn.stop { background: var(--bad); color: #fff; font-weight: 600; }
+.note { font-size: 12px; color: var(--ink2); line-height: 1.5; margin-top: 9px; }
+.note code { background: var(--bg3); padding: 1px 4px; border-radius: 3px;
+             font-size: 11px; word-break: break-all; }
+.warnbox {
+    background: var(--bg2); border-left: 3px solid var(--warn);
+    padding: 9px 11px; border-radius: 0 6px 6px 0;
+    font-size: 12px; color: var(--ink2); line-height: 1.5; margin-top: 10px;
+}
+
+/* ---------------- Reiter ---------------- */
+nav {
+    flex: none; display: flex;
+    background: var(--bg2); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+nav button {
+    flex: 1; border: none; background: none; color: var(--ink3);
+    font-family: inherit; font-size: 10.5px; letter-spacing: .4px;
+    padding: 9px 2px 8px; text-transform: uppercase;
+}
+nav button.on { color: var(--ink); box-shadow: inset 0 2px 0 var(--ink); }
+/* [hidden] ist nur eine UA-Regel (display:none) -- eine eigene
+   display-Angabe schlaegt sie. Ohne die naechste Zeile stehen
+   dauerhaft "0"-Badges in der Leiste. */
+nav button .bdg[hidden] { display: none !important; }
+nav button .bdg {
+    display: inline-block; min-width: 15px; margin-left: 3px;
+    background: var(--warn); color: #241400; border-radius: 8px;
+    font-size: 9px; padding: 0 4px;
+}
+
+.empty { color: var(--ink3); font-size: 13px; padding: 18px 0; line-height: 1.6; }
+
+</style>
+</head>
+<body>
+
+<header>
+    <span id="netDot"></span>
+    <span class="grow" id="netTxt">nicht verbunden</span>
+    <span id="hdSrc" class="num">--</span>
+</header>
+
+<main>
+
+    <!-- ============ Tacho ============ -->
+    <section class="view active" id="v-tacho">
+        <div class="speedrow">
+            <div style="display:flex;align-items:flex-end;gap:7px">
+                <span class="speedbig num" id="mySpeed">--</span>
+                <span class="speedunit">km/h</span>
+            </div>
+            <div class="rankbox">
+                <div class="rankbig num" id="myRank">–</div>
+                <div class="ranklbl" id="myRankLbl">Position</div>
+            </div>
+        </div>
+
+        <div class="compasswrap">
+            <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
+                <circle class="cring faint" cx="0" cy="0" r="30"></circle>
+                <circle class="cring faint" cx="0" cy="0" r="62"></circle>
+                <circle class="cring" cx="0" cy="0" r="92"></circle>
+                <!-- unten beschriftet: oben sitzt die Fahrtrichtungsmarke -->
+                <text class="clbl" x="3" y="34">30 m</text>
+                <text class="clbl" x="3" y="66">150 m</text>
+                <text class="clbl" x="3" y="96">500 m</text>
+                <!-- eigene Fahrtrichtung: immer oben (track-up) -->
+                <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
+                <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
+                <g id="cPeers"></g>
+            </svg>
+        </div>
+
+        <div class="riders" id="riderList"></div>
+    </section>
+
+    <!-- ============ Verlauf ============ -->
+    <section class="view scroll" id="v-log">
+        <h2>Führungsarbeit</h2>
+        <div id="frontWork"></div>
+        <h2>Was passiert ist</h2>
+        <div id="eventList"></div>
+    </section>
+
+    <!-- ============ Berge ============ -->
+    <section class="view scroll" id="v-climbs">
+        <h2>Bergsprints</h2>
+        <div id="climbList"></div>
+    </section>
+
+    <!-- ============ Gruppe ============ -->
+    <section class="view scroll" id="v-group">
+        <h2>Ich</h2>
+        <label for="inName">Name</label>
+        <input type="text" id="inName" maxlength="14" placeholder="Dein Name" autocomplete="off">
+        <label>Farbe</label>
+        <div class="swatches" id="swatches"></div>
+
+        <h2>Gruppe</h2>
+        <button class="btn go" id="btnStart">Ausfahrt starten</button>
+        <button class="btn" id="btnShare">Link zum Mitfahren teilen</button>
+        <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
+        <div class="note" id="linkNote"></div>
+
+        <h2>Anzeige</h2>
+        <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
+
+        <h2>Auswertung</h2>
+        <button class="btn" id="btnExport">Ausfahrt als JSON sichern</button>
+        <button class="btn" id="btnGpx">Eigene Spur als GPX</button>
+
+        <h2>Verbindung</h2>
+        <div class="note" id="netNote"></div>
+        <label for="inRelay">Eigener Relay (optional)</label>
+        <input type="url" id="inRelay" placeholder="wss://dein-worker.workers.dev" autocomplete="off">
+        <button class="btn" id="btnRelay">Relay übernehmen und neu laden</button>
+
+        <div class="warnbox" id="privacyNote"></div>
+        <div style="height:24px"></div>
+    </section>
+
+</main>
+
+<nav>
+    <button class="on" data-v="tacho">Tacho</button>
+    <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
+    <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
+    <button data-v="group">Gruppe</button>
+</nav>
+
+<script>
+/* ==== js/geo.js ==== */
+/* ============================================================
+ * geo.js -- Geodaesie-Grundlagen
+ * ============================================================
+ * Alles rechnet auf einer lokalen Tangentialebene in Metern.
+ * Auf Gruppenausfahrt-Skala (wenige km) ist der Fehler daraus
+ * weit unter der GPS-Genauigkeit, und es ist massiv schneller
+ * als jede Ellipsoid-Rechnung bei 1 Hz x 8 Fahrern.
+ * ============================================================ */
+
+var Geo = (function () {
+    'use strict';
+
+    var D2R = Math.PI / 180;
+
+    /* Meter pro Grad -- breitengradabhaengig (WGS84-Reihenentwicklung).
+       Deutlich genauer als die uebliche 111320-Konstante. */
+    function metersPerDegLat(lat) {
+        var p = lat * D2R;
+        return 111132.92 - 559.82 * Math.cos(2 * p) + 1.175 * Math.cos(4 * p);
+    }
+    function metersPerDegLon(lat) {
+        var p = lat * D2R;
+        return 111412.84 * Math.cos(p) - 93.5 * Math.cos(3 * p);
+    }
+
+    /* Lokaler Bezugsrahmen um refLat/refLon: x = Ost, y = Nord, in Metern. */
+    function frame(refLat, refLon) {
+        var mLat = metersPerDegLat(refLat);
+        var mLon = metersPerDegLon(refLat);
+        return {
+            refLat: refLat, refLon: refLon,
+            toXY: function (lat, lon) {
+                return { x: (lon - refLon) * mLon, y: (lat - refLat) * mLat };
+            },
+            toLatLon: function (x, y) {
+                return { lat: refLat + y / mLat, lon: refLon + x / mLon };
+            }
+        };
+    }
+
+    /* Haversine, Meter. Fuer Distanzen, die exakt sein sollen. */
+    function distance(lat1, lon1, lat2, lon2) {
+        var R = 6371008.8;
+        var dLat = (lat2 - lat1) * D2R;
+        var dLon = (lon2 - lon1) * D2R;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * D2R) * Math.cos(lat2 * D2R) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+    }
+
+    /* Anfangspeilung (forward azimuth) in Grad, 0 = Nord, im Uhrzeigersinn. */
+    function bearing(lat1, lon1, lat2, lon2) {
+        var p1 = lat1 * D2R, p2 = lat2 * D2R;
+        var dl = (lon2 - lon1) * D2R;
+        var y = Math.sin(dl) * Math.cos(p2);
+        var x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+        return (Math.atan2(y, x) / D2R + 360) % 360;
+    }
+
+    /* Kuerzeste Winkeldifferenz b-a, Ergebnis in (-180, 180]. */
+    function angleDelta(a, b) {
+        var d = (b - a + 540) % 360 - 180;
+        return d === -180 ? 180 : d;
+    }
+
+    /* Projektion eines Punkts auf ein Segment, alles in Metern.
+         t     Laufparameter; 0..1 innerhalb, ausserhalb extrapoliert
+         dist  echter Abstand zum Segment (auf die Endpunkte geklemmt)
+         perp  senkrechter Abstand zur VERLAENGERTEN Geraden
+               -- das ist der richtige Wert, wenn ueber das Ende
+                  hinaus extrapoliert wird
+         len   Segmentlaenge                                        */
+    function projectOnSegment(px, py, ax, ay, bx, by) {
+        var vx = bx - ax, vy = by - ay;
+        var len2 = vx * vx + vy * vy;
+        if (len2 < 1e-9) {
+            var ddx = px - ax, ddy = py - ay;
+            var d0 = Math.sqrt(ddx * ddx + ddy * ddy);
+            return { t: 0, dist: d0, perp: d0, len: 0 };
+        }
+        var len = Math.sqrt(len2);
+        var t = ((px - ax) * vx + (py - ay) * vy) / len2;
+        var tc = t < 0 ? 0 : (t > 1 ? 1 : t);
+        var cx = ax + tc * vx, cy = ay + tc * vy;
+        var dx = px - cx, dy = py - cy;
+        // Kreuzprodukt / Laenge = Abstand zur unendlichen Geraden
+        var perp = Math.abs((px - ax) * vy - (py - ay) * vx) / len;
+        return { t: t, dist: Math.sqrt(dx * dx + dy * dy), perp: perp, len: len };
+    }
+
+    return {
+        D2R: D2R,
+        metersPerDegLat: metersPerDegLat,
+        metersPerDegLon: metersPerDegLon,
+        frame: frame,
+        distance: distance,
+        bearing: bearing,
+        angleDelta: angleDelta,
+        projectOnSegment: projectOnSegment
+    };
+})();
+
+if (typeof module !== 'undefined') module.exports = Geo;
+
+</script>
+<script>
+/* ==== js/route.js ==== */
+/* ============================================================
+ * route.js -- die gemeinsame Streckenachse
+ * ============================================================
+ * Das Herzstueck. Ohne sie gibt es keine Reihenfolge:
+ * paarweise Abstaende sagen NICHT, wer vorne ist.
+ *
+ * Die Achse ist eine Polylinie, die sich selbst organisiert:
+ * Wer gerade am weitesten vorne liegt, verlaengert sie. Alle
+ * anderen werden darauf projiziert und bekommen eine Position
+ * als Bogenlaenge s (Meter seit Routenbeginn).
+ *
+ * Damit fallen ab:
+ *   - Reihenfolge      = nach s sortieren
+ *   - Luecke in Metern = Differenz der s
+ *   - Ueberholvorgang  = Vorzeichenwechsel einer s-Differenz
+ *   - Bergsprint       = s-Intervall mit Steigung, Zeit pro Fahrer darin
+ *
+ * Und Serpentinen zerstoeren die Logik nicht, weil die Suche auf
+ * ein Fenster um die letzte bekannte Position begrenzt wird -- sonst
+ * wuerde ein Fahrer auf der Kehre darunter faelschlich dort
+ * einrasten.
+ *
+ * Genauigkeit: s wird per Haversine zwischen den Stuetzpunkten
+ * aufsummiert (exakt), die lokale Projektionsgeometrie laeuft in
+ * einer festen Tangentialebene (Verzerrung auf Ausfahrt-Skala
+ * weit unter der GPS-Genauigkeit).
+ * ============================================================ */
+
+var Route = (function () {
+    'use strict';
+
+    /* Stuetzpunktabstand: nicht beliebig klein waehlbar. Bei 8 m Abstand
+       und +-4 m GPS-Rauschen ist die Segmentrichtung auf +-27 Grad
+       unbestimmt -- die Extrapolation ueber das Routenende zeigt dann
+       irgendwohin. 20 m druecken das auf gut +-5 Grad. */
+    var MIN_SPACING  = 20;    // m, Stuetzpunktabstand
+    var MAX_OFFSET   = 45;    // m, weiter weg -> Route NICHT verlaengern
+                              //    (schuetzt vor Parallelstrasse/Radweg)
+    var SEARCH_WIN   = 400;   // m, Suchfenster um die letzte Position
+    /* Ein Sprung ueber MAX_STEP pro Meldung waere >250 m/s -- das ist
+       ein GPS-Ausreisser, kein Fahrer. Solche Punkte bleiben sonst
+       dauerhaft als Knick in der Achse stehen. */
+    var MAX_STEP     = 250;   // m, groesster akzeptierter Stuetzpunktsprung
+    var MAX_TURN     = 100;   // Grad, staerkerer Knick = Ausreisser
+    var TAIL_SMOOTH  = 0.30;  // Laplace-Faktor fuer den Routenschwanz
+    /* GPS-Hoehe rauscht um mehrere Meter und ist damit die schlechteste
+   Groesse, die das Geraet liefert. Ein enges Glaettungsfenster laesst
+   davon so viel uebrig, dass die Steigungsrechnung unbrauchbar wird.
+   100 m ist der Kompromiss: Rampen unter ~200 m Laenge sind damit
+   nicht mehr aufloesbar -- ein Barometer haette das gekonnt, aber
+   darauf gibt der Browser keinen Zugriff. */
+    var ELE_SMOOTH   = 100;   // m, Fensterbreite Hoehenglaettung
+
+    function R() {
+        this.pts   = [];      // {lat, lon, ele, x, y, s}
+        this.frame = null;
+        this.eleSmoothed = false;
+    }
+
+    R.prototype.length = function () {
+        return this.pts.length ? this.pts[this.pts.length - 1].s : 0;
+    };
+
+    R.prototype._push = function (lat, lon, ele) {
+        if (!this.frame) this.frame = Geo.frame(lat, lon);
+        var xy = this.frame.toXY(lat, lon);
+        var s = 0;
+        if (this.pts.length) {
+            var last = this.pts[this.pts.length - 1];
+            s = last.s + Geo.distance(last.lat, last.lon, lat, lon);
+        }
+        this.pts.push({ lat: lat, lon: lon, ele: (ele === undefined ? null : ele),
+                        x: xy.x, y: xy.y, s: s });
+        this.eleSmoothed = false;
+    };
+
+    /* Binaersuche: groesster Index mit pts[i].s <= s */
+    R.prototype._idxAtS = function (s) {
+        var lo = 0, hi = this.pts.length - 1;
+        if (hi < 0) return -1;
+        while (lo < hi) {
+            var mid = (lo + hi + 1) >> 1;
+            if (this.pts[mid].s <= s) lo = mid; else hi = mid - 1;
+        }
+        return lo;
+    };
+
+    /* ---- Projektion ---------------------------------------------
+       hintS: letzte bekannte Bogenlaenge dieses Fahrers, oder null.
+       Rueckgabe: {s, offset, ahead} oder null bei leerer Route.
+         offset = seitlicher Abstand zur Achse
+         ahead  = true, wenn ueber das Routenende hinaus extrapoliert  */
+    R.prototype.project = function (lat, lon, hintS) {
+        var n = this.pts.length;
+        if (n === 0) return null;
+        if (n === 1) {
+            return { s: 0, offset: Geo.distance(this.pts[0].lat, this.pts[0].lon, lat, lon),
+                     ahead: false };
+        }
+
+        var xy = this.frame.toXY(lat, lon);
+        var i0 = 0, i1 = n - 2;
+        if (hintS !== null && hintS !== undefined) {
+            var a = this._idxAtS(Math.max(0, hintS - SEARCH_WIN));
+            var b = this._idxAtS(Math.min(this.length(), hintS + SEARCH_WIN));
+            if (a >= 0) i0 = a;
+            if (b >= 0) i1 = Math.min(n - 2, b);
+            if (i1 < i0) i1 = i0;
+        }
+
+        var best = null;
+        for (var i = i0; i <= i1; i++) {
+            var p = this.pts[i], q = this.pts[i + 1];
+            var pr = Geo.projectOnSegment(xy.x, xy.y, p.x, p.y, q.x, q.y);
+            if (best === null || pr.dist < best.dist) {
+                best = { dist: pr.dist, perp: pr.perp, t: pr.t, i: i, len: pr.len };
+            }
+        }
+        if (best === null) return null;
+
+        var segS = this.pts[best.i + 1].s - this.pts[best.i].s;
+        var tc = best.t < 0 ? 0 : (best.t > 1 ? 1 : best.t);
+        var s = this.pts[best.i].s + tc * segS;
+        var offset = best.dist;
+        var ahead = false;
+
+        // Ueber das Ende hinaus: entlang der letzten Richtung extrapolieren
+        if (best.i === n - 2 && best.t > 1) {
+            s = this.pts[n - 1].s + (best.t - 1) * segS;
+            offset = best.perp;
+            ahead = true;
+        }
+        // Vor den Anfang: negatives s (Fahrer hinter dem Routenstart)
+        if (best.i === 0 && best.t < 0) {
+            s = best.t * segS;
+            offset = best.perp;
+        }
+
+        return { s: s, offset: offset, ahead: ahead };
+    };
+
+    /* ---- Route pflegen -----------------------------------------
+       mayExtend: nur der aktuelle "Routensetzer" darf verlaengern.
+
+       Das ist keine Optimierung, sondern notwendig. Wenn abwechselnd
+       verschiedene Fahrer Stuetzpunkte setzen, unterscheiden sich
+       deren Positionen seitlich um mehrere Meter bei nur 20 m
+       Laengsfortschritt. Die Polylinie zickzackt dann, die
+       Segmentrichtungen werden falsch, und irgendwann faltet sich die
+       Achse auf sich selbst zurueck -- ab da laufen die Bogenlaengen
+       rueckwaerts und die Reihenfolge ist fuer ALLE Fahrer kaputt.  */
+    R.prototype.consider = function (lat, lon, ele, hintS, mayExtend) {
+        if (this.pts.length === 0) {
+            this._push(lat, lon, ele);
+            return { s: 0, offset: 0, ahead: false };
+        }
+
+        var pr = this.project(lat, lon, hintS);
+        if (!pr) return null;
+        var last = this.pts[this.pts.length - 1];
+        var dLast = Geo.distance(last.lat, last.lon, lat, lon);
+
+        var atFront = pr.ahead || pr.s >= this.length() - MIN_SPACING;
+
+        /* Der Seitwaerts-Schutz gilt nur INNERHALB der Route. Jenseits
+           des Endes ist "offset" der Abstand zur verlaengerten Geraden
+           des letzten Segments -- in einer Kurve waechst der zwangslaeufig.
+           Wuerde er hier greifen, entstuende eine Todesspirale: Der
+           Fuehrende kaeme nicht mehr in die Route, liefe dadurch weiter
+           voraus, wodurch der Abstand weiter waechst. Genau dort bricht
+           die Achse dann fuer alle zusammen. */
+        var onAxis = pr.ahead ? true : (pr.offset <= MAX_OFFSET);
+
+        if (mayExtend && atFront && onAxis &&
+            dLast >= MIN_SPACING && dLast <= MAX_STEP &&
+            this._turnOk(lat, lon)) {
+            this._push(lat, lon, ele);
+            this._smoothTail();
+            return { s: this.length(), offset: 0, ahead: false };
+        }
+        return pr;
+    };
+
+    /* Faltungsschutz: ein Stuetzpunkt, der die Richtung um mehr als
+       MAX_TURN kippt, ist ein Ausreisser. Eine echte Kehre verteilt
+       ihre 180 Grad auf mehrere Segmente (bei 20 m Abstand rund 40 Grad
+       pro Segment) und kommt hier nie in Konflikt. */
+    R.prototype._turnOk = function (lat, lon) {
+        var n = this.pts.length;
+        if (n < 2) return true;
+        var a = this.pts[n - 2], b = this.pts[n - 1];
+        var prev = Geo.bearing(a.lat, a.lon, b.lat, b.lon);
+        var next = Geo.bearing(b.lat, b.lon, lat, lon);
+        return Math.abs(Geo.angleDelta(prev, next)) <= MAX_TURN;
+    };
+
+    /* Laplace-Glaettung des vorletzten Punkts: nimmt den Restzickzack
+       heraus, ohne den Verlauf zu verschieben. Danach die Bogenlaengen
+       des Schwanzes neu rechnen. */
+    R.prototype._smoothTail = function () {
+        var n = this.pts.length;
+        if (n < 3) return;
+        var a = this.pts[n - 3], b = this.pts[n - 2], c = this.pts[n - 1];
+        b.lat += TAIL_SMOOTH * (a.lat + c.lat - 2 * b.lat);
+        b.lon += TAIL_SMOOTH * (a.lon + c.lon - 2 * b.lon);
+        var xy = this.frame.toXY(b.lat, b.lon);
+        b.x = xy.x; b.y = xy.y;
+        b.s = a.s + Geo.distance(a.lat, a.lon, b.lat, b.lon);
+        c.s = b.s + Geo.distance(b.lat, b.lon, c.lat, c.lon);
+        this.eleSmoothed = false;
+    };
+
+    /* ---- Hoehenprofil ------------------------------------------
+       Gleitender Mittelwert ueber ELE_SMOOTH Meter Streckenlaenge.
+       Rohe GPS-Hoehe ist fuer Steigungen unbrauchbar -- ohne diese
+       Glaettung "findet" man Rampen, die es nicht gibt.          */
+    R.prototype.smoothElevation = function () {
+        var n = this.pts.length;
+        if (n < 3 || this.eleSmoothed) return;
+        var half = ELE_SMOOTH / 2;
+        var out = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var s0 = this.pts[i].s - half, s1 = this.pts[i].s + half;
+            var sum = 0, cnt = 0;
+            for (var j = i; j >= 0 && this.pts[j].s >= s0; j--) {
+                if (this.pts[j].ele !== null) { sum += this.pts[j].ele; cnt++; }
+            }
+            for (var k = i + 1; k < n && this.pts[k].s <= s1; k++) {
+                if (this.pts[k].ele !== null) { sum += this.pts[k].ele; cnt++; }
+            }
+            out[i] = cnt ? sum / cnt : null;
+        }
+        for (var m = 0; m < n; m++) this.pts[m].eleS = out[m];
+        this.eleSmoothed = true;
+    };
+
+    /* Geglaettete Hoehe an beliebiger Bogenlaenge, linear interpoliert. */
+    R.prototype.eleAt = function (s) {
+        this.smoothElevation();
+        var n = this.pts.length;
+        if (n === 0) return null;
+        var i = this._idxAtS(s);
+        if (i < 0) return null;
+        if (i >= n - 1) return this.pts[n - 1].eleS;
+        var p = this.pts[i], q = this.pts[i + 1];
+        if (p.eleS === null || q.eleS === null) return p.eleS !== null ? p.eleS : q.eleS;
+        var span = q.s - p.s;
+        if (span < 1e-6) return p.eleS;
+        var f = (s - p.s) / span;
+        return p.eleS + f * (q.eleS - p.eleS);
+    };
+
+    /* Kurs (Grad) der Achse an der Stelle s -- fuer "wohin geht es weiter". */
+    R.prototype.courseAt = function (s) {
+        var n = this.pts.length;
+        if (n < 2) return null;
+        var i = this._idxAtS(s);
+        if (i < 0) i = 0;
+        if (i > n - 2) i = n - 2;
+        var p = this.pts[i], q = this.pts[i + 1];
+        return Geo.bearing(p.lat, p.lon, q.lat, q.lon);
+    };
+
+    R.prototype.toJSON = function () {
+        return this.pts.map(function (p) {
+            return { lat: p.lat, lon: p.lon, ele: p.ele, s: p.s };
+        });
+    };
+
+    R.MIN_SPACING = MIN_SPACING;
+    R.MAX_OFFSET  = MAX_OFFSET;
+    R.SEARCH_WIN  = SEARCH_WIN;
+    return R;
+})();
+
+if (typeof module !== 'undefined') module.exports = Route;
+
+</script>
+<script>
+/* ==== js/analytics.js ==== */
+/* ============================================================
+ * analytics.js -- was auf einer Gruppenausfahrt wirklich zaehlt
+ * ============================================================
+ * Alles hier baut auf der Bogenlaenge s aus route.js auf.
+ * Ohne gemeinsame Achse gaebe es keine dieser Zahlen.
+ *
+ *   Reihenfolge      nach s sortieren
+ *   Fuehrungsarbeit  Zeit als order[0], plus einzelne Ablosungen
+ *   Ueberholvorgang  Vorzeichenwechsel von (sA - sB), entprellt
+ *   Antritt          jemand gewinnt >15 m auf die Gruppe in <20 s
+ *   Bergsprint       Steigungsintervall der Achse + Zeit je Fahrer darin
+ *   Abgerissen       Luecke zur Spitze ueber Schwelle / steht
+ *
+ * Entprellung ist hier nicht Kosmetik: GPS-Rauschen von +-3 m
+ * erzeugt sonst im Sekundentakt Fantasie-Ueberholmanoever
+ * zwischen zwei Fahrern, die nebeneinander rollen.
+ * ============================================================ */
+
+var Analytics = (function () {
+    'use strict';
+
+    // --- Ueberholen ---
+    var PASS_DEADBAND = 8;       // m, innerhalb davon gilt: gleichauf
+    var PASS_SUSTAIN  = 3000;    // ms, so lange muss die neue Lage halten
+
+    // --- Antritt ---
+    var ATTACK_GAIN   = 15;      // m Vorsprungsgewinn auf den Schnitt
+    var ATTACK_WIN    = 20000;   // ms Fenster
+    var ATTACK_COOLDOWN = 45000; // ms, nicht dauerhaft neu melden
+
+    // --- Berge ---
+    var CLIMB_START   = 0.030;   // 3 % Steigung startet
+    var CLIMB_END     = 0.010;   // unter 1 % endet
+    /* CLIMB_END_RUN ist Hysterese IM RAUM: ein kurzer Rauschdip in der
+       Steigung darf einen Anstieg nicht beenden, sonst zerfaellt ein
+       Berg in ein Dutzend Schnipsel. */
+    var CLIMB_END_RUN = 120;     // m, so lange muss es flach bleiben
+    var CLIMB_MIN_GAIN= 12;      // m Hoehengewinn
+    var CLIMB_MIN_LEN = 200;     // m Laenge
+    var GRADE_WIN     = 150;     // m, Fenster fuer die Steigungsmessung
+
+    // --- Abriss ---
+    var DROP_GAP      = 200;     // m zur Spitze
+    var STOP_SPEED    = 1.5;     // m/s
+    var STOP_TIME     = 30000;   // ms
+
+    var STALE_MS      = 15000;   // ohne Update gilt ein Fahrer als veraltet
+    var GONE_MS       = 180000;  // danach ganz raus
+
+    /* Positionsglaettung. Rohe Fixes wackeln um +-4 m; genau dieses
+       Wackeln erzeugt die Fantasie-Ueberholmanoever. Die Verzoegerung
+       (ca. 20 m bei 10 m/s) trifft ALLE Fahrer gleich und aendert die
+       Reihenfolge deshalb nicht -- sie verschiebt nur die Achse als
+       Ganzes ein wenig nach hinten. */
+    var POS_TAU       = 2.0;     // s
+
+    /* Antritt: nicht "ist dauerhaft stärker", sondern "beschleunigt
+       jetzt". Deshalb zwei Bedingungen gleichzeitig. */
+    var ATTACK_SURGE  = 1.5;     // m/s Tempozuwachs gegenueber eigenem Schnitt
+    var ATTACK_REF    = 30000;   // ms Referenzfenster fuer diesen Schnitt
+
+    /* Abriss mit Hysterese, sonst flattert es im Sekundentakt. */
+    var REJOIN_GAP    = 120;     // m, erst darunter gilt man als zurueck
+
+    /* Routensetzer-Wechsel: erst wenn jemand klar vorne ist, sonst
+       wechselt die Zustaendigkeit im GPS-Rauschen hin und her -- und
+       genau das erzeugt den Zickzack, den der Setzer verhindern soll. */
+    var HANDOVER      = 25;      // m Vorsprung vor dem Routenende
+    var SETTER_TIMEOUT= 10000;   // ms ohne Meldung -> Achse uebernehmen
+
+    function A(route) {
+        this.route   = route;
+        this.riders  = {};
+        this.events  = [];
+        this.stints  = [];      // Ablosungen: {id, tStart, tEnd, ms, meters}
+        this.climbs  = [];
+        this.pairs   = {};
+        this.setterId = null;
+        this.leader  = null;
+        this.leaderSince = null;
+        this.leaderStartS = null;
+        this.lastTick = null;
+        this.lastClimbScan = 0;
+        this.startedAt = null;
+    }
+
+    A.prototype.rider = function (id) {
+        if (!this.riders[id]) {
+            this.riders[id] = {
+                id: id, name: null, color: null,
+                lat: null, lon: null, ele: null, acc: null,
+                fLat: null, fLon: null,   // geglaettete Position
+                s: null, offset: null, speed: 0, heading: null,
+                t: 0, lastSeen: 0,
+                frontMs: 0, maxSpeed: 0,
+                hist: [],                 // {t, s} fuer Bergzeiten
+                vHist: [],                // {t, v} fuer Antritts-Erkennung
+                stoppedSince: null,
+                dropped: false,
+                lastAttack: 0,
+                self: false
+            };
+        }
+        return this.riders[id];
+    };
+
+    /* ---- Position einarbeiten ------------------------------------ */
+    A.prototype.ingest = function (id, p) {
+        var r = this.rider(id);
+        if (this.startedAt === null) this.startedAt = p.t;
+        if (p.name) r.name = p.name;
+        if (p.color) r.color = p.color;
+
+        var dtS = (r.t && p.t > r.t) ? (p.t - r.t) / 1000 : 0;
+
+        r.lat = p.lat; r.lon = p.lon;
+        r.ele = (p.ele === undefined ? null : p.ele);
+        r.acc = (p.acc === undefined ? null : p.acc);
+        r.speed = p.speed || 0;
+        if (p.heading !== undefined && p.heading !== null) r.heading = p.heading;
+        r.t = p.t;
+        r.lastSeen = Date.now();
+        if (r.speed > r.maxSpeed) r.maxSpeed = r.speed;
+
+        // --- Position glaetten ---
+        if (r.fLat === null || dtS === 0 || dtS > 10) {
+            r.fLat = p.lat; r.fLon = p.lon;
+        } else {
+            var k = POS_TAU / (POS_TAU + dtS);
+            r.fLat = k * r.fLat + (1 - k) * p.lat;
+            r.fLon = k * r.fLon + (1 - k) * p.lon;
+        }
+
+        /* --- Routensetzer bestimmen ---
+           Nur EIN Fahrer verlaengert die Achse (siehe route.js: sonst
+           faltet sie sich). Uebernommen wird sie, wenn jemand klar
+           vorne ist, oder wenn der bisherige Setzer nicht mehr sendet
+           (Handy leer, Funkloch) -- sonst stuende die Achse still. */
+        if (this.route.pts.length === 0) {
+            this.setterId = id;
+        } else if (this.setterId !== id) {
+            var setter = this.riders[this.setterId];
+            var setterGone = !setter || (p.t - setter.t) > SETTER_TIMEOUT;
+            var probe = this.route.project(r.fLat, r.fLon, r.s);
+            if (setterGone || (probe && probe.s > this.route.length() + HANDOVER)) {
+                this.setterId = id;
+            }
+        }
+
+        // Achse pflegen bzw. darauf projizieren -- mit der geglaetteten
+        // Position, sonst zackt die Polylinie und die Segmentrichtung
+        // wird unbrauchbar.
+        var pr = this.route.consider(r.fLat, r.fLon, r.ele, r.s,
+                                     this.setterId === id);
+        if (pr) {
+            r.s = pr.s;
+            r.offset = pr.offset;
+        }
+
+        // Tempoverlauf fuer die Antritts-Erkennung
+        r.vHist.push({ t: p.t, v: r.speed });
+        if (r.vHist.length > 600) r.vHist.splice(0, 200);
+
+        // Verlauf fuer Bergzeiten -- dezimiert, damit es nicht ausufert
+        if (r.s !== null) {
+            var h = r.hist;
+            var lastH = h.length ? h[h.length - 1] : null;
+            if (!lastH || Math.abs(r.s - lastH.s) > 3 || p.t - lastH.t > 2000) {
+                h.push({ t: p.t, s: r.s });
+                if (h.length > 20000) h.splice(0, 5000);
+            }
+        }
+
+        // Stillstand
+        if (r.speed < STOP_SPEED) {
+            if (r.stoppedSince === null) r.stoppedSince = p.t;
+        } else {
+            r.stoppedSince = null;
+        }
+    };
+
+    /* ---- aktive Fahrer, sortiert von vorne nach hinten ----------- */
+    A.prototype.order = function () {
+        var now = Date.now();
+        var out = [];
+        for (var id in this.riders) {
+            var r = this.riders[id];
+            if (r.s === null) continue;
+            if (now - r.lastSeen > GONE_MS) continue;
+            out.push(r);
+        }
+        out.sort(function (a, b) { return b.s - a.s; });
+        return out;
+    };
+
+    A.prototype.isStale = function (r) {
+        return Date.now() - r.lastSeen > STALE_MS;
+    };
+
+    /* ---- periodische Auswertung --------------------------------- */
+    A.prototype.tick = function (now) {
+        now = now || Date.now();
+        var dt = this.lastTick === null ? 0 : now - this.lastTick;
+        this.lastTick = now;
+        if (dt < 0 || dt > 30000) dt = 0;
+
+        var ord = this.order();
+        if (!ord.length) return ord;
+
+        // --- Fuehrungsarbeit + Ablosungen ---
+        var lead = ord[0];
+        if (dt) lead.frontMs += dt;
+
+        if (this.leader !== lead.id) {
+            if (this.leader !== null) {
+                var prev = this.riders[this.leader];
+                this.stints.push({
+                    id: this.leader,
+                    tStart: this.leaderSince,
+                    tEnd: now,
+                    ms: now - this.leaderSince,
+                    meters: (prev && prev.s !== null && this.leaderStartS !== null)
+                                ? Math.max(0, prev.s - this.leaderStartS) : 0
+                });
+                this._event(now, 'lead', { id: lead.id, from: this.leader });
+            }
+            this.leader = lead.id;
+            this.leaderSince = now;
+            this.leaderStartS = lead.s;
+        }
+
+        /* Aufwaermphase: solange die Achse noch kurz ist, sind die
+           s-Werte nicht belastbar. Wer hier schon Ueberholvorgaenge
+           meldet, produziert reine Startartefakte. */
+        var warm = this.route.length() > 150;
+
+        // --- Ueberholvorgaenge ---
+        if (warm) this._detectPasses(ord, now);
+
+        // --- Antritte ---
+        if (warm) this._detectAttacks(ord, now);
+
+        // --- Abriss ---
+        for (var i = 0; i < ord.length; i++) {
+            var r = ord[i];
+            var gapToLead = lead.s - r.s;
+            var standing = r.stoppedSince !== null && (r.t - r.stoppedSince) > STOP_TIME;
+            /* Hysterese: abgerissen ab DROP_GAP, zurueck erst unter
+               REJOIN_GAP. Mit einer einzigen Schwelle flattert der
+               Zustand im Sekundentakt, sobald jemand genau dort pendelt. */
+            var nowDropped = r.dropped
+                ? (gapToLead > REJOIN_GAP || (standing && r !== lead))
+                : ((gapToLead > DROP_GAP) || (standing && ord.length > 1 && r !== lead));
+            if (nowDropped && !r.dropped) {
+                this._event(now, 'drop', { id: r.id, gap: Math.round(gapToLead),
+                                           standing: standing });
+            }
+            if (!nowDropped && r.dropped) {
+                this._event(now, 'rejoin', { id: r.id });
+            }
+            r.dropped = nowDropped;
+        }
+
+        // --- Berge (nicht jede Runde, das kostet) ---
+        if (now - this.lastClimbScan > 8000) {
+            this.lastClimbScan = now;
+            this._scanClimbs();
+            this._scoreClimbs();
+        }
+
+        return ord;
+    };
+
+    A.prototype._event = function (t, type, data) {
+        data = data || {};
+        data.t = t; data.type = type;
+        this.events.push(data);
+        if (this.events.length > 500) this.events.splice(0, 100);
+        return data;
+    };
+
+    /* ---- Ueberholen, entprellt ---------------------------------- */
+    A.prototype._detectPasses = function (ord, now) {
+        for (var i = 0; i < ord.length; i++) {
+            for (var j = i + 1; j < ord.length; j++) {
+                var a = ord[i], b = ord[j];
+                // kanonische Paarreihenfolge, damit das Vorzeichen stabil ist
+                var first = a.id < b.id ? a : b;
+                var second = a.id < b.id ? b : a;
+                var key = first.id + '|' + second.id;
+                var diff = first.s - second.s;
+
+                var st = this.pairs[key];
+                if (!st) { st = this.pairs[key] = { sign: 0, cand: 0, since: now }; }
+
+                var sign = 0;
+                if (diff > PASS_DEADBAND) sign = 1;
+                else if (diff < -PASS_DEADBAND) sign = -1;
+
+                if (sign === 0) continue;          // gleichauf: nichts entscheiden
+
+                if (sign !== st.cand) {
+                    st.cand = sign;
+                    st.since = now;
+                    continue;
+                }
+                // Kandidat haelt sich lange genug?
+                if (now - st.since < PASS_SUSTAIN) continue;
+
+                if (st.sign !== 0 && st.sign !== sign) {
+                    var passer = sign === 1 ? first : second;
+                    var passed = sign === 1 ? second : first;
+                    this._event(now, 'pass', { id: passer.id, over: passed.id });
+                }
+                st.sign = sign;
+            }
+        }
+    };
+
+    /* ---- Antritt: Vorsprungsgewinn auf den Gruppenschnitt -------- */
+    A.prototype._detectAttacks = function (ord, now) {
+        if (ord.length < 2) return;
+        var mean = 0;
+        for (var i = 0; i < ord.length; i++) mean += ord[i].s;
+        mean /= ord.length;
+
+        for (var k = 0; k < ord.length; k++) {
+            var r = ord[k];
+            if (now - r.lastAttack < ATTACK_COOLDOWN) continue;
+            // s relativ zum Schnitt, vor ATTACK_WIN und jetzt
+            var relNow = r.s - mean;
+            var past = this._sAt(r, r.t - ATTACK_WIN);
+            if (past === null) continue;
+            var meanPast = 0, cnt = 0;
+            for (var m = 0; m < ord.length; m++) {
+                var sp = this._sAt(ord[m], ord[m].t - ATTACK_WIN);
+                if (sp !== null) { meanPast += sp; cnt++; }
+            }
+            if (!cnt) continue;
+            meanPast /= cnt;
+            var relPast = past - meanPast;
+            if (relNow - relPast < ATTACK_GAIN) continue;
+
+            /* Zweite Bedingung: der Fahrer muss JETZT schneller sein als
+               er selbst zuletzt war. Ohne das meldet jeder Bergfahrer
+               auf jeder Steigung dauernd "Antritt", nur weil er
+               konstant staerker ist -- das ist kein Antritt. */
+            var vNow = this._vMean(r, r.t - 8000, r.t);
+            var vRef = this._vMean(r, r.t - ATTACK_REF, r.t - 10000);
+            if (vNow === null || vRef === null) continue;
+            if (vNow - vRef < ATTACK_SURGE) continue;
+
+            r.lastAttack = now;
+            this._event(now, 'attack', {
+                id: r.id,
+                gain: Math.round(relNow - relPast),
+                surge: Math.round((vNow - vRef) * 36) / 10   // km/h
+            });
+        }
+    };
+
+    /* Mittleres Tempo eines Fahrers im Zeitfenster [t0, t1]. */
+    A.prototype._vMean = function (r, t0, t1) {
+        var sum = 0, cnt = 0;
+        for (var i = r.vHist.length - 1; i >= 0; i--) {
+            var e = r.vHist[i];
+            if (e.t < t0) break;
+            if (e.t <= t1) { sum += e.v; cnt++; }
+        }
+        return cnt ? sum / cnt : null;
+    };
+
+    /* Bogenlaenge eines Fahrers zum Zeitpunkt t, linear interpoliert. */
+    A.prototype._sAt = function (r, t) {
+        var h = r.hist;
+        if (!h.length) return null;
+        if (t <= h[0].t) return null;
+        if (t >= h[h.length - 1].t) return h[h.length - 1].s;
+        var lo = 0, hi = h.length - 1;
+        while (lo < hi) {
+            var mid = (lo + hi + 1) >> 1;
+            if (h[mid].t <= t) lo = mid; else hi = mid - 1;
+        }
+        var p = h[lo], q = h[Math.min(h.length - 1, lo + 1)];
+        if (q.t === p.t) return p.s;
+        var f = (t - p.t) / (q.t - p.t);
+        return p.s + f * (q.s - p.s);
+    };
+
+    /* Zeitpunkt, zu dem ein Fahrer die Bogenlaenge sTarget aufwaerts
+       passiert hat -- die LETZTE solche Kreuzung vor beforeT.
+
+       Bewusst die letzte, nicht die erste: Solange die Achse noch
+       waechst, extrapoliert project() ueber das Routenende hinaus und
+       kann kurzzeitig ueberschiessen. Die erste Kreuzung ist dann ein
+       Artefakt aus der Aufwaermphase -- damit "gewinnt" der schwaechste
+       Fahrer den Berg in 30 Sekunden. Die letzte Kreuzung ist die
+       echte Auffahrt (und bei zwei Runden ueber denselben Berg die
+       aktuelle). */
+    A.prototype._tCross = function (r, sTarget, beforeT) {
+        var h = r.hist, res = null;
+        for (var i = 1; i < h.length; i++) {
+            if (beforeT !== null && h[i].t > beforeT) break;
+            if (h[i - 1].s <= sTarget && h[i].s >= sTarget) {
+                var span = h[i].s - h[i - 1].s;
+                var f = span < 1e-6 ? 0 : (sTarget - h[i - 1].s) / span;
+                res = h[i - 1].t + f * (h[i].t - h[i - 1].t);
+            }
+        }
+        return res;
+    };
+
+    /* ---- Steigungen auf der Achse finden ------------------------ */
+    A.prototype._scanClimbs = function () {
+        var rt = this.route;
+        rt.smoothElevation();
+        var pts = rt.pts;
+        if (pts.length < 10) return;
+
+        var found = [];
+        var cur = null;
+        var flatRun = 0;
+
+        for (var i = 0; i < pts.length; i++) {
+            var s0 = pts[i].s;
+            var e0 = rt.eleAt(s0);
+            var e1 = rt.eleAt(s0 + GRADE_WIN);
+            if (e0 === null || e1 === null) continue;
+            var grade = (e1 - e0) / GRADE_WIN;
+
+            if (cur === null) {
+                if (grade >= CLIMB_START) {
+                    cur = { sStart: s0, eStart: e0, sEnd: s0, eEnd: e0 };
+                    flatRun = 0;
+                }
+            } else {
+                if (grade >= CLIMB_END) {
+                    cur.sEnd = s0 + GRADE_WIN;
+                    cur.eEnd = e1;
+                    flatRun = 0;
+                } else {
+                    flatRun += (i > 0 ? (pts[i].s - pts[i - 1].s) : 0);
+                    if (flatRun >= CLIMB_END_RUN) {
+                        var gain = cur.eEnd - cur.eStart;
+                        var len = cur.sEnd - cur.sStart;
+                        if (gain >= CLIMB_MIN_GAIN && len >= CLIMB_MIN_LEN) found.push(cur);
+                        cur = null;
+                    }
+                }
+            }
+        }
+        if (cur !== null) {
+            var g2 = cur.eEnd - cur.eStart, l2 = cur.sEnd - cur.sStart;
+            if (g2 >= CLIMB_MIN_GAIN && l2 >= CLIMB_MIN_LEN) found.push(cur);
+        }
+
+        // Bestehende Berge anhand von sStart wiedererkennen, damit die
+        // gemessenen Zeiten nicht bei jedem Scan verloren gehen.
+        var merged = [];
+        for (var f = 0; f < found.length; f++) {
+            var nf = found[f];
+            var old = null;
+            for (var o = 0; o < this.climbs.length; o++) {
+                if (Math.abs(this.climbs[o].sStart - nf.sStart) < 80) { old = this.climbs[o]; break; }
+            }
+            if (old) {
+                old.sEnd = nf.sEnd; old.eStart = nf.eStart; old.eEnd = nf.eEnd;
+                merged.push(old);
+            } else {
+                merged.push({
+                    sStart: nf.sStart, sEnd: nf.sEnd,
+                    eStart: nf.eStart, eEnd: nf.eEnd,
+                    times: {}, no: merged.length + 1
+                });
+            }
+        }
+        merged.forEach(function (c, i) { c.no = i + 1; });
+        this.climbs = merged;
+    };
+
+    /* ---- Zeiten der Fahrer auf jedem Berg ----------------------- */
+    A.prototype._scoreClimbs = function () {
+        for (var c = 0; c < this.climbs.length; c++) {
+            var cl = this.climbs[c];
+            cl.gain = cl.eEnd - cl.eStart;
+            cl.len  = cl.sEnd - cl.sStart;
+            cl.grade = cl.len > 0 ? cl.gain / cl.len : 0;
+
+            for (var id in this.riders) {
+                var r = this.riders[id];
+                if (r.s === null || r.s < cl.sEnd) continue;   // noch nicht oben
+                if (cl.times[id] && cl.times[id].done) continue;
+                var tOut = this._tCross(r, cl.sEnd, null);
+                if (tOut === null) continue;
+                var tIn  = this._tCross(r, cl.sStart, tOut);
+                if (tIn === null || tOut <= tIn) continue;
+                var dur = tOut - tIn;
+                /* Plausibilitaet: bergauf ist niemand mit 20 m/s
+                   unterwegs und niemand langsamer als Schieben. */
+                var avgMs = cl.len / (dur / 1000);
+                if (avgMs > 20 || avgMs < 0.5) continue;
+                cl.times[id] = {
+                    ms: dur,
+                    vam: cl.gain / (dur / 3600000),        // Hoehenmeter pro Stunde
+                    avg: cl.len / (dur / 1000),            // m/s
+                    done: true
+                };
+            }
+        }
+    };
+
+    /* ---- Rangliste eines Berges --------------------------------- */
+    A.prototype.climbRanking = function (climb) {
+        var out = [];
+        for (var id in climb.times) {
+            out.push({ id: id, name: (this.riders[id] && this.riders[id].name) || id,
+                       ms: climb.times[id].ms, vam: climb.times[id].vam });
+        }
+        out.sort(function (a, b) { return a.ms - b.ms; });
+        return out;
+    };
+
+    /* ---- Luecken zwischen benachbarten Fahrern ------------------ */
+    A.prototype.gaps = function (ord) {
+        var out = [];
+        for (var i = 1; i < ord.length; i++) {
+            var front = ord[i - 1], back = ord[i];
+            var m = front.s - back.s;
+            out.push({ front: front.id, back: back.id, meters: m,
+                       seconds: m / Math.max(2, back.speed) });
+        }
+        return out;
+    };
+
+    /* ---- Zusammenfassung fuer den Export ------------------------ */
+    A.prototype.summary = function () {
+        var self = this;
+        var ord = this.order();
+        var totalFront = 0;
+        ord.forEach(function (r) { totalFront += r.frontMs; });
+
+        return {
+            startedAt: this.startedAt,
+            endedAt: Date.now(),
+            routeLength: Math.round(this.route.length()),
+            riders: ord.map(function (r) {
+                return {
+                    id: r.id, name: r.name || r.id,
+                    frontMs: Math.round(r.frontMs),
+                    frontShare: totalFront ? r.frontMs / totalFront : 0,
+                    maxSpeed: r.maxSpeed,
+                    finalS: Math.round(r.s)
+                };
+            }),
+            stints: this.stints.map(function (s) {
+                return { id: s.id, name: (self.riders[s.id] && self.riders[s.id].name) || s.id,
+                         tStart: s.tStart, ms: Math.round(s.ms),
+                         meters: Math.round(s.meters) };
+            }),
+            climbs: this.climbs.map(function (c) {
+                return {
+                    no: c.no,
+                    startS: Math.round(c.sStart), length: Math.round(c.len),
+                    gain: Math.round(c.gain * 10) / 10,
+                    gradePct: Math.round(c.grade * 1000) / 10,
+                    ranking: self.climbRanking(c).map(function (x) {
+                        return { name: x.name, seconds: Math.round(x.ms / 100) / 10,
+                                 vam: Math.round(x.vam) };
+                    })
+                };
+            }),
+            events: this.events.map(function (e) {
+                var o = { t: e.t, type: e.type };
+                if (e.id)   o.who  = (self.riders[e.id]   && self.riders[e.id].name)   || e.id;
+                if (e.over) o.whom = (self.riders[e.over] && self.riders[e.over].name) || e.over;
+                if (e.from) o.from = (self.riders[e.from] && self.riders[e.from].name) || e.from;
+                if (e.gain !== undefined) o.gain = e.gain;
+                if (e.gap  !== undefined) o.gap  = e.gap;
+                return o;
+            })
+        };
+    };
+
+    A.PASS_DEADBAND = PASS_DEADBAND;
+    A.PASS_SUSTAIN  = PASS_SUSTAIN;
+    A.DROP_GAP      = DROP_GAP;
+    A.STALE_MS      = STALE_MS;
+    return A;
+})();
+
+if (typeof module !== 'undefined') module.exports = Analytics;
+
+</script>
+<script>
+/* ==== js/crypto.js ==== */
+/* ============================================================
+ * crypto.js -- Ende-zu-Ende-Verschluesselung der Positionen
+ * ============================================================
+ * Warum ueberhaupt: Im Standardbetrieb laeuft der Austausch ueber
+ * einen OEFFENTLICHEN MQTT-Broker. Wer das Topic kennt, liest mit.
+ * Deshalb verlaesst keine Position das Handy im Klartext.
+ *
+ * Der Schluessel steht im URL-Fragment (hinter dem #). Fragmente
+ * werden von Browsern NICHT an Server gesendet -- der Broker, dein
+ * Webspace und jedes Log dazwischen sehen ihn also nie. Wer den Link
+ * hat, ist in der Gruppe; wer ihn nicht hat, sieht auf dem Broker nur
+ * Rauschen.
+ *
+ * Aus einem einzigen Geheimnis werden zwei Dinge getrennt abgeleitet:
+ *   Raum-ID (= MQTT-Topic)  aus HKDF-Info "room"
+ *   AES-Schluessel          aus HKDF-Info "key"
+ * Getrennte Ableitung, damit die oeffentlich sichtbare Raum-ID
+ * nichts ueber den Schluessel verraet.
+ * ============================================================ */
+
+var Crypt = (function () {
+    'use strict';
+
+    var enc = new TextEncoder();
+    var dec = new TextDecoder();
+
+    function b64urlEncode(bytes) {
+        var s = '';
+        for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function b64urlDecode(str) {
+        var s = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4) s += '=';
+        var raw = atob(s);
+        var out = new Uint8Array(raw.length);
+        for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+        return out;
+    }
+
+    function newSecret() {
+        var b = new Uint8Array(32);
+        crypto.getRandomValues(b);
+        return b64urlEncode(b);
+    }
+
+    /* HKDF-SHA256 -- getrennte Ableitung pro Verwendungszweck. */
+    async function derive(secretB64, info, bits) {
+        var raw = b64urlDecode(secretB64);
+        var base = await crypto.subtle.importKey('raw', raw, 'HKDF', false, ['deriveBits']);
+        return new Uint8Array(await crypto.subtle.deriveBits({
+            name: 'HKDF', hash: 'SHA-256',
+            salt: enc.encode('groupride.v1'),
+            info: enc.encode(info)
+        }, base, bits));
+    }
+
+    async function roomId(secretB64) {
+        var b = await derive(secretB64, 'room', 96);
+        return b64urlEncode(b);                      // 16 Zeichen, URL-tauglich
+    }
+
+    async function aesKey(secretB64) {
+        var b = await derive(secretB64, 'key', 256);
+        return crypto.subtle.importKey('raw', b, { name: 'AES-GCM' }, false,
+                                       ['encrypt', 'decrypt']);
+    }
+
+    /* Jede Nachricht bekommt eine frische IV. AES-GCM authentifiziert
+       zusaetzlich -- manipulierte Pakete schlagen beim Entschluesseln
+       fehl statt stillschweigend Unsinn zu liefern. */
+    async function seal(key, obj) {
+        var iv = new Uint8Array(12);
+        crypto.getRandomValues(iv);
+        var ct = new Uint8Array(await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv: iv }, key, enc.encode(JSON.stringify(obj))));
+        var out = new Uint8Array(iv.length + ct.length);
+        out.set(iv, 0); out.set(ct, iv.length);
+        return b64urlEncode(out);
+    }
+
+    async function open(key, b64) {
+        try {
+            var all = b64urlDecode(b64);
+            if (all.length < 13) return null;
+            var iv = all.slice(0, 12), ct = all.slice(12);
+            var pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+            return JSON.parse(dec.decode(pt));
+        } catch (e) {
+            return null;        // fremde Gruppe oder beschaedigt: einfach ignorieren
+        }
+    }
+
+    return {
+        newSecret: newSecret,
+        roomId: roomId,
+        aesKey: aesKey,
+        seal: seal,
+        open: open,
+        b64urlEncode: b64urlEncode
+    };
+})();
+
+</script>
+<script>
+/* ==== js/net.js ==== */
+/* ============================================================
+ * net.js -- Transport: oeffentlicher MQTT-Broker ODER eigener Relay
+ * ============================================================
+ * Zwei Wege, gleiche Schnittstelle:
+ *
+ *   mqtt   Oeffentlicher Broker ueber WSS. Kein Account, kein Deploy.
+ *          Nutzlast ist verschluesselt (crypto.js), der Broker sieht
+ *          nur Zufallsbytes. Keine Verfuegbarkeitsgarantie.
+ *
+ *   relay  Eigener Cloudflare Worker (worker/relay.js), schlichtes
+ *          WebSocket. Stabiler und unter eigener Kontrolle.
+ *          Aktivierung per ?relay=wss://...
+ *
+ * Beides bewusst "fire and forget": Positionen sind nur Sekunden lang
+ * interessant. Eine verlorene Meldung wird nicht nachgesendet, die
+ * naechste ist schon unterwegs. Deshalb MQTT QoS 0 und kein Retain --
+ * Retain waere sogar schaedlich, weil neue Teilnehmer dann veraltete
+ * Positionen als aktuell angezeigt bekaemen.
+ * ============================================================ */
+
+var Net = (function () {
+    'use strict';
+
+    var BROKERS = [
+        'wss://broker.emqx.io:8084/mqtt',
+        'wss://broker.hivemq.com:8884/mqtt',
+        'wss://test.mosquitto.org:8081/'
+    ];
+    var MQTT_LIB = 'https://cdn.jsdelivr.net/npm/mqtt@5.16.0/dist/mqtt.min.js';
+
+    var mode = 'mqtt';
+    var client = null, ws = null;
+    var topic = null;
+    var onMsg = null, onState = null;
+    var brokerIdx = 0;
+    var relayUrl = null;
+    var closed = false;
+
+    function state(s, detail) { if (onState) onState(s, detail); }
+
+    function loadScript(src) {
+        return new Promise(function (res, rej) {
+            var s = document.createElement('script');
+            s.src = src;
+            s.onload = res;
+            s.onerror = function () { rej(new Error('Skript nicht ladbar: ' + src)); };
+            document.head.appendChild(s);
+        });
+    }
+
+    /* ---------------- MQTT ---------------- */
+    async function connectMqtt() {
+        if (typeof window.mqtt === 'undefined') {
+            state('loading');
+            try {
+                await loadScript(MQTT_LIB);
+            } catch (e) {
+                state('error', 'MQTT-Bibliothek nicht ladbar. Ohne Netz laeuft die ' +
+                               'App weiter, du siehst nur dich selbst.');
+                return;
+            }
+        }
+        openBroker();
+    }
+
+    function openBroker() {
+        if (closed) return;
+        var url = BROKERS[brokerIdx % BROKERS.length];
+        state('connecting', url);
+
+        try {
+            client = window.mqtt.connect(url, {
+                clientId: 'gr_' + Math.random().toString(36).slice(2, 10),
+                keepalive: 30,
+                reconnectPeriod: 0,          // eigene Broker-Rotation
+                connectTimeout: 8000,
+                clean: true
+            });
+        } catch (e) {
+            nextBroker();
+            return;
+        }
+
+        client.on('connect', function () {
+            state('online', url);
+            client.subscribe(topic, { qos: 0 });
+        });
+        client.on('message', function (t, payload) {
+            if (onMsg) onMsg(payload.toString());
+        });
+        client.on('error', function () { try { client.end(true); } catch (e) {} });
+        client.on('close', function () { nextBroker(); });
+    }
+
+    function nextBroker() {
+        if (closed) return;
+        client = null;
+        brokerIdx++;
+        state('retry', BROKERS[brokerIdx % BROKERS.length]);
+        setTimeout(openBroker, 2500);
+    }
+
+    /* ---------------- eigener Relay ---------------- */
+    function connectRelay() {
+        if (closed) return;
+        var url = relayUrl + (relayUrl.indexOf('?') >= 0 ? '&' : '?') +
+                  'room=' + encodeURIComponent(topic);
+        state('connecting', url);
+        try {
+            ws = new WebSocket(url);
+        } catch (e) {
+            state('error', 'Relay-Adresse ungueltig');
+            return;
+        }
+        ws.onopen    = function () { state('online', url); };
+        ws.onmessage = function (ev) { if (onMsg) onMsg(String(ev.data)); };
+        ws.onclose   = function () {
+            ws = null;
+            if (closed) return;
+            state('retry', url);
+            setTimeout(connectRelay, 2500);
+        };
+        ws.onerror   = function () { try { ws.close(); } catch (e) {} };
+    }
+
+    /* ---------------- Schnittstelle ---------------- */
+    function start(opts) {
+        closed = false;
+        topic  = opts.topic;
+        onMsg  = opts.onMessage;
+        onState= opts.onState;
+        relayUrl = opts.relayUrl || null;
+        mode = relayUrl ? 'relay' : 'mqtt';
+        if (mode === 'relay') connectRelay(); else connectMqtt();
+    }
+
+    function publish(payloadStr) {
+        try {
+            if (mode === 'relay') {
+                if (ws && ws.readyState === 1) ws.send(payloadStr);
+            } else if (client && client.connected) {
+                client.publish(topic, payloadStr, { qos: 0, retain: false });
+            }
+        } catch (e) { /* stillschweigend: naechste Meldung kommt gleich */ }
+    }
+
+    function stop() {
+        closed = true;
+        try { if (client) client.end(true); } catch (e) {}
+        try { if (ws) ws.close(); } catch (e) {}
+        client = null; ws = null;
+    }
+
+    function online() {
+        return mode === 'relay' ? !!(ws && ws.readyState === 1)
+                                : !!(client && client.connected);
+    }
+
+    return { start: start, publish: publish, stop: stop, online: online,
+             mode: function () { return mode; } };
+})();
+
+</script>
+<script>
+/* ==== js/sensors.js ==== */
+/* ============================================================
+ * sensors.js -- GPS, Kurs, Display wachhalten
+ * ============================================================
+ * Der Kurs ist hier der interessante Teil.
+ *
+ * Man wuerde reflexhaft den Magnetometer nehmen. Auf dem Fahrrad ist
+ * das die schlechtere Wahl: Die meisten Handyhalterungen am Lenker
+ * sind MAGNETISCH, und Lenker, Vorbau und Bremszuege sind Stahl. Der
+ * Kompass zeigt dann verlaesslich falsch -- teils um 90 Grad und mehr.
+ *
+ * coords.heading aus dem GNSS-Chip hat dieses Problem nicht: Es kommt
+ * aus der Doppler-Verschiebung, ist also rein kinematisch. Der Preis
+ * ist, dass es nur bei Bewegung existiert.
+ *
+ * Also: oberhalb von HEAD_MIN_SPEED das GPS, darunter der Magnetometer
+ * als Rueckfall. Genau umgekehrt zur naiven Erwartung.
+ * ============================================================ */
+
+var Sensors = (function () {
+    'use strict';
+
+    var HEAD_MIN_SPEED = 2.5;    // m/s, darueber ist GPS-Kurs verlaesslich
+
+    var onPos = null, onErr = null;
+    var watchId = null;
+    var wakeLock = null;
+
+    var magHeading = null;       // Grad, aus dem Magnetometer
+    var gpsHeading = null;       // Grad, aus dem GNSS-Chip
+    var lastSpeed  = 0;
+    var magSource  = 'keiner';
+
+    /* ---------- GPS ---------- */
+    function startGps(cb, errCb) {
+        onPos = cb; onErr = errCb;
+        if (!navigator.geolocation) {
+            if (onErr) onErr('Dieser Browser hat keine Geolocation-API.');
+            return false;
+        }
+        watchId = navigator.geolocation.watchPosition(function (pos) {
+            var c = pos.coords;
+            lastSpeed = (c.speed !== null && !isNaN(c.speed) && c.speed >= 0) ? c.speed : 0;
+            if (c.heading !== null && !isNaN(c.heading) && lastSpeed >= HEAD_MIN_SPEED) {
+                gpsHeading = c.heading;
+            }
+            if (onPos) onPos(pos);
+        }, function (e) {
+            var msg = 'GPS-Fehler';
+            if (e.code === 1) msg = 'Standortfreigabe verweigert. In den ' +
+                                    'Browser-Einstellungen fuer diese Seite erlauben.';
+            else if (e.code === 2) msg = 'Kein GPS-Empfang.';
+            else if (e.code === 3) msg = 'GPS antwortet nicht (Timeout).';
+            if (onErr) onErr(msg);
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+        return true;
+    }
+
+    function stopGps() {
+        if (watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
+    /* ---------- Magnetometer ----------
+       Muss aus einer Nutzergeste heraus angefragt werden (iOS 13+),
+       sonst lehnt Safari stillschweigend ab. */
+    async function startCompass() {
+        try {
+            if (typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                var res = await DeviceOrientationEvent.requestPermission();
+                if (res !== 'granted') { magSource = 'abgelehnt'; return false; }
+            }
+        } catch (e) {
+            magSource = 'abgelehnt'; return false;
+        }
+
+        // Absolute Orientierung, wo verfuegbar (Android/Chrome)
+        if ('ondeviceorientationabsolute' in window) {
+            window.addEventListener('deviceorientationabsolute', handleOrient, true);
+            magSource = 'absolut';
+        } else {
+            window.addEventListener('deviceorientation', handleOrient, true);
+            magSource = 'relativ';
+        }
+        return true;
+    }
+
+    function handleOrient(e) {
+        var h = null;
+        if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+            // iOS: bereits Grad im Uhrzeigersinn ab magnetisch Nord
+            h = e.webkitCompassHeading;
+            magSource = 'iOS';
+        } else if (typeof e.alpha === 'number' && e.alpha !== null) {
+            // W3C: alpha zaehlt GEGEN den Uhrzeigersinn ab Nord
+            h = 360 - e.alpha;
+            if (e.absolute === true) magSource = 'absolut';
+        }
+        if (h === null) return;
+
+        /* Bildschirmdrehung herausrechnen: im Querformat zeigt die
+           Geraeteachse 90 Grad neben der Blickrichtung. */
+        var angle = 0;
+        if (screen.orientation && typeof screen.orientation.angle === 'number') {
+            angle = screen.orientation.angle;
+        } else if (typeof window.orientation === 'number') {
+            angle = window.orientation;
+        }
+        magHeading = (h + angle + 360) % 360;
+    }
+
+    /* Der effektive Kurs plus die Quelle, damit die App ehrlich
+       anzeigen kann, worauf die Pfeile beruhen. */
+    function heading() {
+        if (lastSpeed >= HEAD_MIN_SPEED && gpsHeading !== null) {
+            return { deg: gpsHeading, src: 'GPS' };
+        }
+        if (magHeading !== null) return { deg: magHeading, src: 'Kompass' };
+        if (gpsHeading !== null) return { deg: gpsHeading, src: 'GPS (alt)' };
+        return { deg: null, src: magSource === 'abgelehnt' ? 'verweigert' : '--' };
+    }
+
+    /* ---------- Display wachhalten ----------
+       Ohne das sperrt das Handy nach Sekunden, und in vielen Browsern
+       stirbt damit auch der GPS-Strom. */
+    async function keepAwake(on) {
+        try {
+            if (!('wakeLock' in navigator)) return false;
+            if (on) {
+                if (wakeLock) return true;
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', function () { wakeLock = null; });
+                return true;
+            }
+            if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    // Nach dem Zurueckholen aus dem Hintergrund ist die Sperre weg
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && wakeLock === null) keepAwake(true);
+    });
+
+    return {
+        startGps: startGps, stopGps: stopGps,
+        startCompass: startCompass,
+        heading: heading,
+        keepAwake: keepAwake,
+        hasWakeLock: function () { return !!wakeLock; },
+        compassSource: function () { return magSource; }
+    };
+})();
+
+</script>
+<script>
+/* ==== js/ui.js ==== */
+/* ============================================================
+ * ui.js -- Darstellung
+ * ============================================================
+ * Am Lenker gilt: eine Zahl, die man bei 30 km/h in einem Blick
+ * erfasst, ist mehr wert als fuenf, die man lesen muesste. Deshalb
+ * gross, tabellarisch und ohne Animation an den Zahlen.
+ * ============================================================ */
+
+var UI = (function () {
+    'use strict';
+
+    /* Fahrerfarben: auf beiden Untergruenden unterscheidbar und auch
+       bei Rot-Gruen-Schwaeche noch trennbar (Helligkeit variiert mit). */
+    var COLORS = ['#f2b01e', '#3fa9f5', '#ff6b52', '#8bc34a',
+                  '#b48ce8', '#26c6da', '#ec87b9', '#c9a227'];
+
+    function $(id) { return document.getElementById(id); }
+    function kmh(ms) { return ms * 3.6; }
+
+    function fmtDur(ms) {
+        var s = Math.round(ms / 1000);
+        var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+        if (h) return h + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+        return m + ':' + String(ss).padStart(2, '0');
+    }
+    function fmtDist(m) {
+        var a = Math.abs(m);
+        if (a < 1000) return Math.round(m) + ' m';
+        return (m / 1000).toFixed(a < 10000 ? 2 : 1) + ' km';
+    }
+    function clock(t) {
+        var d = new Date(t);
+        return String(d.getHours()).padStart(2, '0') + ':' +
+               String(d.getMinutes()).padStart(2, '0');
+    }
+
+    /* Distanz -> Radius auf dem Zifferblatt.
+       Logarithmisch, weil die relevanten Abstaende von 5 m (Hinterrad)
+       bis 500 m (abgerissen) reichen. Linear waere alles unter 50 m
+       ein Punkt in der Mitte. */
+    function radiusFor(d) {
+        var R = 92, DMAX = 500, K = 30;
+        var v = Math.log(1 + d / K) / Math.log(1 + DMAX / K);
+        return Math.max(0, Math.min(1, v)) * R;
+    }
+
+    /* ---------------- Tacho ---------------- */
+    function renderSpeed(speed, fresh) {
+        var el = $('mySpeed');
+        if (speed === null) { el.textContent = '--'; el.classList.add('stale'); return; }
+        var v = kmh(speed);
+        el.textContent = v < 10 ? v.toFixed(1) : String(Math.round(v));
+        el.classList.toggle('stale', !fresh);
+    }
+
+    function renderRank(pos, total) {
+        $('myRank').textContent = pos ? pos + '.' : '–';
+        $('myRankLbl').textContent = total > 1 ? 'von ' + total : 'Position';
+    }
+
+    /* ---------------- Kompass ----------------
+       Track-up: die eigene Fahrtrichtung zeigt immer nach oben, die
+       Pfeile der anderen liegen relativ dazu. Das ist beim Fahren
+       richtig -- eine nordfeste Rose muesste man erst umrechnen. */
+    function renderCompass(me, peers, heading) {
+        var g = $('cPeers');
+        var parts = [];
+
+        $('cCenter').textContent = heading === null ? 'kein Kurs' : 'DU';
+
+        for (var i = 0; i < peers.length; i++) {
+            var p = peers[i];
+            if (p.dist === null || p.bearing === null) continue;
+
+            // Ohne eigenen Kurs kann nur nordfest gezeichnet werden
+            var rel = (heading === null) ? p.bearing : (p.bearing - heading);
+            var a = (rel - 90) * Math.PI / 180;      // -90: 0 Grad = oben
+            var r = radiusFor(p.dist);
+            var x = Math.cos(a) * r, y = Math.sin(a) * r;
+
+            var op = p.stale ? 0.4 : 1;
+            parts.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+                       '" r="7" fill="' + p.color + '" opacity="' + op + '"></circle>');
+            // Vorne/hinten kommt aus der Bogenlaenge, nicht aus der Peilung --
+            // in einer Kurve liegt jemand seitlich und ist doch vorne.
+            if (p.ahead !== null) {
+                parts.push('<text x="' + x.toFixed(1) + '" y="' + (y + 2.6).toFixed(1) +
+                           '" text-anchor="middle" font-size="8" font-weight="700" ' +
+                           'fill="rgba(0,0,0,.72)">' + (p.ahead ? '▲' : '▼') +
+                           '</text>');
+            }
+            parts.push('<text x="' + x.toFixed(1) + '" y="' + (y - 10).toFixed(1) +
+                       '" text-anchor="middle" font-size="7.5" fill="' + p.color +
+                       '" opacity="' + op + '">' + escapeHtml(p.short) + '</text>');
+        }
+        g.innerHTML = parts.join('');
+    }
+
+    /* ---------------- Fahrerliste ---------------- */
+    function renderRiders(rows) {
+        var out = [];
+        for (var i = 0; i < rows.length; i++) {
+            var r = rows[i];
+            var tags = '';
+            if (r.me) tags += '<span class="tag">DU</span>';
+            if (r.dropped) tags += '<span class="tag drop">ABGERISSEN</span>';
+            else if (r.stale) tags += '<span class="tag stale">KEIN SIGNAL</span>';
+
+            var gap = '';
+            if (r.me) {
+                gap = '<i>&nbsp;</i>';
+            } else if (r.gapM === null) {
+                gap = '<i>ohne Bezug</i>';
+            } else {
+                var sign = r.gapM > 0 ? '+' : '−';
+                gap = sign + fmtDist(Math.abs(r.gapM)) +
+                      '<i>' + (r.gapS === null ? '' :
+                               sign + Math.round(Math.abs(r.gapS)) + ' s') + '</i>';
+            }
+
+            out.push(
+                '<div class="rrow' + (r.me ? ' me' : '') + (r.stale ? ' gone' : '') + '">' +
+                  '<div class="rbar"></div>' +
+                  '<div class="rdot" style="background:' + r.color + '"></div>' +
+                  '<div class="rname">' + escapeHtml(r.name) + tags + '</div>' +
+                  '<div class="rspd num">' + (r.speed === null ? '--' :
+                        (kmh(r.speed) < 10 ? kmh(r.speed).toFixed(1)
+                                           : Math.round(kmh(r.speed)))) + '</div>' +
+                  '<div class="rgap num">' + gap + '</div>' +
+                '</div>');
+        }
+        $('riderList').innerHTML = out.join('') ||
+            '<div class="empty">Noch niemand verbunden.<br>' +
+            'Teile den Link unter „Gruppe“ – wer ihn öffnet, erscheint hier.</div>';
+    }
+
+    /* ---------------- Führungsarbeit ---------------- */
+    function renderFrontWork(rows) {
+        if (!rows.length) { $('frontWork').innerHTML =
+            '<div class="empty">Sobald gefahren wird, zählt hier mit, wer vorne war.</div>';
+            return; }
+        var max = 0;
+        rows.forEach(function (r) { if (r.frontMs > max) max = r.frontMs; });
+        var out = rows.map(function (r) {
+            var w = max ? (100 * r.frontMs / max) : 0;
+            return '<div style="padding:7px 0;border-bottom:1px solid var(--line)">' +
+              '<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px">' +
+                '<span><span class="rdot" style="display:inline-block;width:9px;height:9px;' +
+                'background:' + r.color + ';margin-right:6px"></span>' +
+                escapeHtml(r.name) + '</span>' +
+                '<span class="num">' + fmtDur(r.frontMs) +
+                '  <span style="color:var(--ink3);font-size:11px">' +
+                Math.round(r.share * 100) + ' %</span></span></div>' +
+              '<div class="bar"><i style="width:' + w.toFixed(0) +
+                '%;background:' + r.color + '"></i></div></div>';
+        });
+        $('frontWork').innerHTML = out.join('');
+    }
+
+    /* ---------------- Ereignisse ---------------- */
+    var ICONS = { pass: '⇄', attack: '⚡', drop: '✂',
+                  rejoin: '↻', lead: '⚑' };
+
+    function renderEvents(evs) {
+        if (!evs.length) { $('eventList').innerHTML =
+            '<div class="empty">Überholvorgänge, Antritte und Abrisse erscheinen hier, ' +
+            'sobald die Streckenachse steht (etwa 150 m nach dem Start).</div>'; return; }
+        var out = evs.slice().reverse().slice(0, 80).map(function (e) {
+            return '<div class="ev ' + e.type + '">' +
+                '<span class="tm num">' + clock(e.t) + '</span>' +
+                '<span class="ic">' + (ICONS[e.type] || '•') + '</span>' +
+                '<span>' + e.text + '</span></div>';
+        });
+        $('eventList').innerHTML = out.join('');
+    }
+
+    /* ---------------- Berge ---------------- */
+    function renderClimbs(climbs) {
+        if (!climbs.length) { $('climbList').innerHTML =
+            '<div class="empty">Noch kein Anstieg erkannt.<br>' +
+            'Erkannt werden Rampen ab etwa 200 m Länge und 12 Höhenmetern – ' +
+            'kürzere gibt die GPS-Höhe nicht her.</div>'; return; }
+
+        var out = climbs.map(function (c) {
+            var rank = c.ranking.map(function (x, i) {
+                return '<div class="crank' + (i === 0 ? ' win' : '') + '">' +
+                    '<span class="pos num">' + (i + 1) + '.</span>' +
+                    '<span class="nm"><span style="display:inline-block;width:9px;height:9px;' +
+                    'border-radius:50%;background:' + x.color + ';margin-right:6px"></span>' +
+                    escapeHtml(x.name) + '</span>' +
+                    '<span class="tme num">' + fmtDur(x.ms) + '</span>' +
+                    '<span class="vam num">' + Math.round(x.vam) + ' Hm/h</span></div>';
+            }).join('') || '<div class="empty" style="padding:4px 0">Noch niemand oben.</div>';
+
+            return '<div class="climb"><div class="hd">' +
+                '<span class="ttl">Anstieg ' + c.no + '</span>' +
+                '<span class="meta num">+' + c.gain.toFixed(0) + ' Hm &middot; ' +
+                fmtDist(c.len) + ' &middot; ' + (c.grade * 100).toFixed(1) + ' %</span>' +
+                '</div>' + rank + '</div>';
+        });
+        $('climbList').innerHTML = out.join('');
+    }
+
+    /* ---------------- Kopfzeile / Hinweise ---------------- */
+    function renderNet(state, txt) {
+        var d = $('netDot');
+        d.className = state === 'online' ? 'on' : (state === 'off' ? '' : 'wait');
+        $('netTxt').innerHTML = txt;
+    }
+    function renderHeadingSrc(h) {
+        $('hdSrc').textContent = h.deg === null ? h.src
+            : Math.round(h.deg) + '° ' + h.src;
+    }
+
+    function badge(id, n) {
+        var el = $(id);
+        el.hidden = !n;
+        el.textContent = n;
+    }
+
+    function escapeHtml(s) {
+        return String(s === null || s === undefined ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    return {
+        COLORS: COLORS,
+        renderSpeed: renderSpeed, renderRank: renderRank,
+        renderCompass: renderCompass, renderRiders: renderRiders,
+        renderFrontWork: renderFrontWork, renderEvents: renderEvents,
+        renderClimbs: renderClimbs, renderNet: renderNet,
+        renderHeadingSrc: renderHeadingSrc, badge: badge,
+        fmtDur: fmtDur, fmtDist: fmtDist, escapeHtml: escapeHtml, kmh: kmh
+    };
+})();
+
+</script>
+<script>
+/* ==== js/app.js ==== */
+/* ============================================================
+ * app.js -- Verdrahtung
+ * ============================================================
+ * Eine Eigenschaft ist wichtig zu verstehen: Es gibt KEINEN Server,
+ * der die Wahrheit kennt. Jedes Handy baut seine eigene Streckenachse
+ * und rechnet selbst. Die absoluten Bogenlaengen unterscheiden sich
+ * deshalb von Geraet zu Geraet (jede Achse startet dort, wo dieses
+ * Handy die erste Position gesehen hat) -- die DIFFERENZEN, und damit
+ * Reihenfolge, Luecken und Bergzeiten, sind auf allen Geraeten gleich.
+ *
+ * Der Preis: Bei Funkloechern koennen zwei Handys kurz
+ * unterschiedliche Staende zeigen. Der Gewinn: kein Backend, keine
+ * Registrierung, kein Datenabfluss.
+ * ============================================================ */
+
+(function () {
+    'use strict';
+
+    var SEND_MS   = 2000;     // Sendetakt: oefter braucht niemand, und der
+                              // oeffentliche Broker soll nicht leiden
+    var RENDER_MS = 200;
+
+    var route = new Route();
+    var an    = new Analytics(route);
+
+    var me = { id: null, name: null, colorIdx: 0 };
+    var secret = null, key = null, topic = null;
+    var running = false;
+    var lastSend = 0;
+    var myFix = null;         // letzte eigene Position
+    var myTrack = [];         // fuer den GPX-Export
+    var seenEvents = 0, seenClimbs = 0;
+    var relayUrl = null;
+
+    function $(id) { return document.getElementById(id); }
+    function store(k, v) { try { if (v === undefined) return localStorage.getItem(k);
+                                 localStorage.setItem(k, v); } catch (e) { return null; } }
+
+    /* ---------------- Identitaet ---------------- */
+    function initIdentity() {
+        me.id = store('rid');
+        if (!me.id) { me.id = Math.random().toString(36).slice(2, 10); store('rid', me.id); }
+        me.name = store('rname') || 'Fahrer ' + me.id.slice(0, 3);
+        me.colorIdx = parseInt(store('rcol') || '0', 10) % UI.COLORS.length;
+        $('inName').value = me.name;
+    }
+
+    function myColor() { return UI.COLORS[me.colorIdx]; }
+
+    /* ---------------- Raum aus dem URL-Fragment ----------------
+       Das Fragment (hinter dem #) wird vom Browser NICHT an Server
+       gesendet. Der Schluessel bleibt deshalb zwischen den Handys. */
+    async function initRoom() {
+        var frag = new URLSearchParams(location.hash.replace(/^#/, ''));
+        secret = frag.get('k');
+        if (!secret || secret.length < 20) {
+            secret = Crypt.newSecret();
+            frag.set('k', secret);
+            history.replaceState(null, '', location.pathname + location.search +
+                                 '#' + frag.toString());
+        }
+        var q = new URLSearchParams(location.search);
+        relayUrl = q.get('relay') || store('relay') || null;
+        if (relayUrl) $('inRelay').value = relayUrl;
+
+        topic = 'groupride/v1/' + (await Crypt.roomId(secret));
+        key   = await Crypt.aesKey(secret);
+        renderLinkNote();
+        renderNetNote();
+    }
+
+    /* Der Relay MUSS im geteilten Link stehen: Wer auf dem oeffentlichen
+       Broker landet, waehrend andere den eigenen Relay nutzen, sieht
+       niemanden -- beide Wege sind getrennte Welten. */
+    function shareLink() {
+        var q = new URLSearchParams(location.search);
+        if (relayUrl) q.set('relay', relayUrl); else q.delete('relay');
+        var qs = q.toString();
+        return location.origin + location.pathname + (qs ? '?' + qs : '') + location.hash;
+    }
+
+    function renderLinkNote() {
+        $('linkNote').innerHTML =
+            'Wer diesen Link öffnet, ist in der Gruppe – ohne Installation, ohne Konto.' +
+            '<br><br><code>' + UI.escapeHtml(shareLink()) + '</code>';
+    }
+
+    function renderNetNote() {
+        var m = Net.mode();
+        $('netNote').innerHTML = m === 'relay'
+            ? 'Eigener Relay: <code>' + UI.escapeHtml(relayUrl) + '</code>'
+            : 'Öffentlicher MQTT-Broker. Kein Konto nötig, aber auch keine ' +
+              'Verfügbarkeitsgarantie. Fällt einer aus, wird automatisch der nächste probiert.';
+        $('privacyNote').innerHTML =
+            '<b>Zur Vertraulichkeit:</b> Positionen verlassen das Handy nur ' +
+            'AES-GCM-verschlüsselt. Der Schlüssel steht hinter dem <code>#</code> der ' +
+            'Adresse und wird von Browsern nie an einen Server gesendet – der Broker ' +
+            'sieht ausschließlich Zufallsbytes. Wer den Link weitergibt, gibt allerdings ' +
+            'auch den Schlüssel weiter.';
+    }
+
+    /* ---------------- Netz ---------------- */
+    function startNet() {
+        Net.start({
+            topic: topic,
+            relayUrl: relayUrl,
+            onMessage: onWire,
+            onState: function (s, detail) {
+                if (s === 'online')      UI.renderNet('online', 'verbunden');
+                else if (s === 'loading')  UI.renderNet('wait', 'lade Netzwerkteil …');
+                else if (s === 'connecting')UI.renderNet('wait', 'verbinde …');
+                else if (s === 'retry')    UI.renderNet('wait', 'nächster Broker …');
+                else if (s === 'error')    UI.renderNet('off', UI.escapeHtml(detail || 'Fehler'));
+            }
+        });
+    }
+
+    async function onWire(str) {
+        var m = await Crypt.open(key, str);
+        // null = fremde Gruppe oder beschaedigt. Verwerfen, nicht melden.
+        if (!m || !m.i || m.i === me.id) return;
+        if (typeof m.la !== 'number' || typeof m.lo !== 'number') return;
+
+        an.ingest(m.i, {
+            lat: m.la, lon: m.lo,
+            ele: (typeof m.e === 'number') ? m.e : null,
+            speed: (typeof m.v === 'number') ? m.v : 0,
+            heading: (typeof m.h === 'number') ? m.h : null,
+            acc: (typeof m.a === 'number') ? m.a : null,
+            t: (typeof m.t === 'number') ? m.t : Date.now(),
+            name: typeof m.n === 'string' ? m.n.slice(0, 14) : null,
+            color: UI.COLORS[(m.c | 0) % UI.COLORS.length]
+        });
+    }
+
+    function sendMine() {
+        if (!myFix || !key) return;
+        var c = myFix.coords;
+        var h = Sensors.heading();
+        Crypt.seal(key, {
+            i: me.id, n: me.name, c: me.colorIdx,
+            la: +c.latitude.toFixed(6), lo: +c.longitude.toFixed(6),
+            e: (c.altitude !== null && !isNaN(c.altitude)) ? Math.round(c.altitude) : null,
+            v: Math.round((c.speed || 0) * 100) / 100,
+            h: h.deg === null ? null : Math.round(h.deg),
+            a: c.accuracy !== null ? Math.round(c.accuracy) : null,
+            t: myFix.timestamp || Date.now()
+        }).then(Net.publish);
+    }
+
+    /* ---------------- GPS ---------------- */
+    function onFix(pos) {
+        myFix = pos;
+        var c = pos.coords;
+        var h = Sensors.heading();
+
+        an.ingest(me.id, {
+            lat: c.latitude, lon: c.longitude,
+            ele: (c.altitude !== null && !isNaN(c.altitude)) ? c.altitude : null,
+            speed: (c.speed !== null && !isNaN(c.speed) && c.speed > 0) ? c.speed : 0,
+            heading: h.deg, acc: c.accuracy,
+            t: pos.timestamp || Date.now(),
+            name: me.name, color: myColor()
+        });
+        an.riders[me.id].self = true;
+
+        var last = myTrack[myTrack.length - 1];
+        if (!last || (pos.timestamp - last.t) > 1500) {
+            myTrack.push({ lat: c.latitude, lon: c.longitude,
+                           ele: (c.altitude !== null && !isNaN(c.altitude)) ? c.altitude : null,
+                           t: pos.timestamp || Date.now() });
+        }
+
+        var now = Date.now();
+        if (now - lastSend >= SEND_MS) { lastSend = now; sendMine(); }
+    }
+
+    /* ---------------- Renderloop ---------------- */
+    function render() {
+        var ord = an.tick();
+        var mine = an.riders[me.id];
+        var h = Sensors.heading();
+
+        UI.renderHeadingSrc(h);
+        UI.renderSpeed(mine && mine.lat !== null ? mine.speed : null,
+                       mine ? !an.isStale(mine) : false);
+
+        var pos = 0;
+        for (var i = 0; i < ord.length; i++) if (ord[i].id === me.id) pos = i + 1;
+        UI.renderRank(pos, ord.length);
+
+        // --- Kompass ---
+        var peers = [];
+        if (mine && mine.lat !== null) {
+            for (var k = 0; k < ord.length; k++) {
+                var r = ord[k];
+                if (r.id === me.id || r.lat === null) continue;
+                peers.push({
+                    color: r.color || UI.COLORS[1],
+                    short: (r.name || r.id).slice(0, 6),
+                    dist: Geo.distance(mine.lat, mine.lon, r.lat, r.lon),
+                    bearing: Geo.bearing(mine.lat, mine.lon, r.lat, r.lon),
+                    ahead: (r.s !== null && mine.s !== null) ? (r.s > mine.s) : null,
+                    stale: an.isStale(r)
+                });
+            }
+        }
+        UI.renderCompass(mine, peers, h.deg);
+
+        // --- Liste: Luecke immer relativ zu MIR, das ist die Zahl,
+        //     die man beim Fahren wissen will ---
+        var rows = ord.map(function (r) {
+            var gapM = null, gapS = null;
+            if (mine && mine.s !== null && r.s !== null && r.id !== me.id) {
+                gapM = r.s - mine.s;
+                gapS = gapM / Math.max(2, r.s > mine.s ? mine.speed : r.speed);
+            }
+            return {
+                name: r.name || r.id, color: r.color || UI.COLORS[1],
+                me: r.id === me.id, speed: r.lat === null ? null : r.speed,
+                gapM: gapM, gapS: gapS,
+                dropped: r.dropped, stale: an.isStale(r)
+            };
+        });
+        UI.renderRiders(rows);
+
+        // --- Führungsarbeit ---
+        var tot = 0; ord.forEach(function (r) { tot += r.frontMs; });
+        UI.renderFrontWork(ord.filter(function (r) { return r.frontMs > 0; })
+            .sort(function (a, b) { return b.frontMs - a.frontMs; })
+            .map(function (r) {
+                return { name: r.name || r.id, color: r.color || UI.COLORS[1],
+                         frontMs: r.frontMs, share: tot ? r.frontMs / tot : 0 };
+            }));
+
+        // --- Ereignisse ---
+        UI.renderEvents(an.events.map(function (e) { return { t: e.t, type: e.type,
+                                                              text: eventText(e) }; }));
+
+        // --- Berge ---
+        UI.renderClimbs(an.climbs.map(function (c) {
+            return { no: c.no, gain: c.gain || 0, len: c.len || 0, grade: c.grade || 0,
+                     ranking: an.climbRanking(c).map(function (x) {
+                         var rr = an.riders[x.id];
+                         return { name: x.name, ms: x.ms, vam: x.vam,
+                                  color: (rr && rr.color) || UI.COLORS[1] };
+                     }) };
+        }));
+
+        if (an.events.length > seenEvents && !isActive('log'))
+            UI.badge('bdgLog', an.events.length - seenEvents);
+        if (an.climbs.length > seenClimbs && !isActive('climbs'))
+            UI.badge('bdgClimbs', an.climbs.length - seenClimbs);
+
+        if (running && !Net.online()) UI.renderNet('wait', 'kein Netz – nur eigene Daten');
+    }
+
+    function nameOf(id) {
+        var r = an.riders[id];
+        return UI.escapeHtml((r && r.name) || id);
+    }
+
+    function eventText(e) {
+        switch (e.type) {
+            case 'pass':   return nameOf(e.id) + ' überholt ' + nameOf(e.over);
+            case 'attack': return nameOf(e.id) + ' tritt an – ' + e.gain + ' m gewonnen' +
+                                  (e.surge ? ' (+' + e.surge + ' km/h)' : '');
+            case 'drop':   return nameOf(e.id) + (e.standing ? ' steht' : ' ist abgerissen') +
+                                  (e.gap ? ' – ' + UI.fmtDist(e.gap) + ' zurück' : '');
+            case 'rejoin': return nameOf(e.id) + ' ist wieder dran';
+            case 'lead':   return nameOf(e.id) + ' übernimmt die Führung' +
+                                  (e.from ? ' von ' + nameOf(e.from) : '');
+            default:       return e.type;
+        }
+    }
+
+    /* ---------------- Reiter ---------------- */
+    function isActive(v) { return $('v-' + v).classList.contains('active'); }
+
+    function showView(v) {
+        ['tacho', 'log', 'climbs', 'group'].forEach(function (x) {
+            $('v-' + x).classList.toggle('active', x === v);
+        });
+        document.querySelectorAll('nav button').forEach(function (b) {
+            b.classList.toggle('on', b.dataset.v === v);
+        });
+        if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
+        if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
+    }
+
+    /* ---------------- Download ---------------- */
+    function download(name, text, mime) {
+        var b = new Blob([text], { type: mime || 'application/octet-stream' });
+        var u = URL.createObjectURL(b);
+        var a = document.createElement('a');
+        a.href = u; a.download = name;
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1500);
+    }
+
+    function gpx() {
+        function iso(t) { return new Date(t).toISOString().replace(/\.\d+Z$/, 'Z'); }
+        var o = ['<?xml version="1.0" encoding="UTF-8"?>',
+            '<gpx version="1.1" creator="Gruppenausfahrt" ' +
+            'xmlns="http://www.topografix.com/GPX/1/1">',
+            '<trk><name>Gruppenausfahrt ' +
+            (myTrack.length ? iso(myTrack[0].t).slice(0, 10) : '') + '</name>',
+            '<type>cycling</type><trkseg>'];
+        myTrack.forEach(function (p) {
+            o.push('<trkpt lat="' + p.lat.toFixed(7) + '" lon="' + p.lon.toFixed(7) + '">' +
+                   (p.ele !== null ? '<ele>' + p.ele.toFixed(1) + '</ele>' : '') +
+                   '<time>' + iso(p.t) + '</time></trkpt>');
+        });
+        o.push('</trkseg></trk></gpx>');
+        return o.join('\n');
+    }
+
+    /* ---------------- Bedienung ---------------- */
+    function wire() {
+        document.querySelectorAll('nav button').forEach(function (b) {
+            b.addEventListener('click', function () { showView(b.dataset.v); });
+        });
+
+        $('inName').addEventListener('change', function () {
+            me.name = (this.value || '').trim().slice(0, 14) || me.name;
+            this.value = me.name;
+            store('rname', me.name);
+            if (an.riders[me.id]) an.riders[me.id].name = me.name;
+            sendMine();
+        });
+
+        var sw = $('swatches');
+        UI.COLORS.forEach(function (c, i) {
+            var b = document.createElement('button');
+            b.className = 'sw' + (i === me.colorIdx ? ' sel' : '');
+            b.style.background = c;
+            b.addEventListener('click', function () {
+                me.colorIdx = i; store('rcol', String(i));
+                sw.querySelectorAll('.sw').forEach(function (x, j) {
+                    x.classList.toggle('sel', j === i);
+                });
+                if (an.riders[me.id]) an.riders[me.id].color = myColor();
+                sendMine();
+            });
+            sw.appendChild(b);
+        });
+
+        /* Start MUSS aus einer Nutzergeste kommen: iOS gibt den
+           Kompass nur so frei, und Wake Lock ebenfalls. */
+        $('btnStart').addEventListener('click', async function () {
+            if (running) {
+                running = false;
+                Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
+                this.textContent = 'Ausfahrt starten';
+                this.className = 'btn go';
+                UI.renderNet('off', 'gestoppt');
+                return;
+            }
+            running = true;
+            this.textContent = 'Ausfahrt beenden';
+            this.className = 'btn stop';
+
+            await Sensors.startCompass();
+            Sensors.keepAwake(true);
+            var ok = Sensors.startGps(onFix, function (msg) {
+                UI.renderNet('off', UI.escapeHtml(msg));
+            });
+            if (!ok) UI.renderNet('off', 'Kein GPS verfügbar');
+            startNet();
+            showView('tacho');
+        });
+
+        $('btnShare').addEventListener('click', async function () {
+            var url = shareLink();
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Gruppenausfahrt', url: url });
+                    return;
+                }
+            } catch (e) { /* abgebrochen */ }
+            try {
+                await navigator.clipboard.writeText(url);
+                this.textContent = 'Link kopiert';
+                var b = this;
+                setTimeout(function () { b.textContent = 'Link zum Mitfahren teilen'; }, 1800);
+            } catch (e) {
+                prompt('Diesen Link weitergeben:', url);
+            }
+        });
+
+        $('btnNewRoom').addEventListener('click', function () {
+            if (!confirm('Neue Gruppe öffnen? Der alte Link funktioniert dann nicht mehr ' +
+                         'für dich, und die bisherige Auswertung wird verworfen.')) return;
+            location.hash = 'k=' + Crypt.newSecret();
+            location.reload();
+        });
+
+        $('btnTheme').addEventListener('click', function () {
+            var sun = document.documentElement.getAttribute('data-theme') === 'sun';
+            document.documentElement.setAttribute('data-theme', sun ? 'dark' : 'sun');
+            store('theme', sun ? 'dark' : 'sun');
+            var mt = document.querySelector('meta[name=theme-color]');
+            if (mt) mt.setAttribute('content', sun ? '#0d1214' : '#eceff1');
+        });
+
+        $('btnExport').addEventListener('click', function () {
+            var s = an.summary();
+            s.myId = me.id;
+            download('gruppenausfahrt_' + new Date().toISOString().slice(0, 16)
+                        .replace(/[-:T]/g, '') + '.json',
+                     JSON.stringify(s, null, 2), 'application/json');
+        });
+
+        $('btnGpx').addEventListener('click', function () {
+            if (!myTrack.length) { alert('Noch keine eigene Spur aufgezeichnet.'); return; }
+            download('spur_' + new Date().toISOString().slice(0, 10) + '.gpx',
+                     gpx(), 'application/gpx+xml');
+        });
+
+        $('btnRelay').addEventListener('click', function () {
+            var v = ($('inRelay').value || '').trim();
+            if (v && !/^wss:\/\//.test(v)) {
+                alert('Der Relay muss mit wss:// beginnen (verschlüsseltes WebSocket).');
+                return;
+            }
+            if (v) store('relay', v); else { try { localStorage.removeItem('relay'); } catch (e) {} }
+            location.reload();
+        });
+    }
+
+    /* ---------------- Start ---------------- */
+    window.addEventListener('load', async function () {
+        var th = store('theme');
+        if (th) document.documentElement.setAttribute('data-theme', th);
+
+        initIdentity();
+        wire();
+        try {
+            await initRoom();
+        } catch (e) {
+            UI.renderNet('off', 'Verschlüsselung nicht verfügbar – ist die Seite ' +
+                                'über https:// geladen?');
+        }
+        UI.renderNet('off', 'bereit – unter „Gruppe“ starten');
+        showView('group');
+        setInterval(render, RENDER_MS);
+        render();
+    });
+})();
+
+</script>
+</body>
+</html>

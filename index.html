@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d1214">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Gruppenausfahrt</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Semi+Condensed:wght@300;400;600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header>
+    <span id="netDot"></span>
+    <span class="grow" id="netTxt">nicht verbunden</span>
+    <span id="hdSrc" class="num">--</span>
+</header>
+
+<main>
+
+    <!-- ============ Tacho ============ -->
+    <section class="view active" id="v-tacho">
+        <div class="speedrow">
+            <div style="display:flex;align-items:flex-end;gap:7px">
+                <span class="speedbig num" id="mySpeed">--</span>
+                <span class="speedunit">km/h</span>
+            </div>
+            <div class="rankbox">
+                <div class="rankbig num" id="myRank">–</div>
+                <div class="ranklbl" id="myRankLbl">Position</div>
+            </div>
+        </div>
+
+        <div class="compasswrap">
+            <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
+                <circle class="cring faint" cx="0" cy="0" r="30"></circle>
+                <circle class="cring faint" cx="0" cy="0" r="62"></circle>
+                <circle class="cring" cx="0" cy="0" r="92"></circle>
+                <!-- unten beschriftet: oben sitzt die Fahrtrichtungsmarke -->
+                <text class="clbl" x="3" y="34">30 m</text>
+                <text class="clbl" x="3" y="66">150 m</text>
+                <text class="clbl" x="3" y="96">500 m</text>
+                <!-- eigene Fahrtrichtung: immer oben (track-up) -->
+                <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
+                <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
+                <g id="cPeers"></g>
+            </svg>
+        </div>
+
+        <div class="riders" id="riderList"></div>
+    </section>
+
+    <!-- ============ Verlauf ============ -->
+    <section class="view scroll" id="v-log">
+        <h2>Führungsarbeit</h2>
+        <div id="frontWork"></div>
+        <h2>Was passiert ist</h2>
+        <div id="eventList"></div>
+    </section>
+
+    <!-- ============ Berge ============ -->
+    <section class="view scroll" id="v-climbs">
+        <h2>Bergsprints</h2>
+        <div id="climbList"></div>
+    </section>
+
+    <!-- ============ Gruppe ============ -->
+    <section class="view scroll" id="v-group">
+        <h2>Ich</h2>
+        <label for="inName">Name</label>
+        <input type="text" id="inName" maxlength="14" placeholder="Dein Name" autocomplete="off">
+        <label>Farbe</label>
+        <div class="swatches" id="swatches"></div>
+
+        <h2>Gruppe</h2>
+        <button class="btn go" id="btnStart">Ausfahrt starten</button>
+        <button class="btn" id="btnShare">Link zum Mitfahren teilen</button>
+        <button class="btn" id="btnNewRoom">Neue Gruppe öffnen</button>
+        <div class="note" id="linkNote"></div>
+
+        <h2>Anzeige</h2>
+        <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
+
+        <h2>Auswertung</h2>
+        <button class="btn" id="btnExport">Ausfahrt als JSON sichern</button>
+        <button class="btn" id="btnGpx">Eigene Spur als GPX</button>
+
+        <h2>Verbindung</h2>
+        <div class="note" id="netNote"></div>
+        <label for="inRelay">Eigener Relay (optional)</label>
+        <input type="url" id="inRelay" placeholder="wss://dein-worker.workers.dev" autocomplete="off">
+        <button class="btn" id="btnRelay">Relay übernehmen und neu laden</button>
+
+        <div class="warnbox" id="privacyNote"></div>
+        <div style="height:24px"></div>
+    </section>
+
+</main>
+
+<nav>
+    <button class="on" data-v="tacho">Tacho</button>
+    <button data-v="log">Verlauf<span class="bdg" id="bdgLog" hidden>0</span></button>
+    <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
+    <button data-v="group">Gruppe</button>
+</nav>
+
+<script src="js/geo.js"></script>
+<script src="js/route.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/net.js"></script>
+<script src="js/sensors.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
