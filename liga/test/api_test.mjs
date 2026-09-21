@@ -1,12 +1,12 @@
-/* Integrationstest der Liga-API gegen einen laufenden Worker mit lokaler D1.
+/* Integration test of the league API against a running worker with a local D1.
  *
  *   Terminal 1:  npx wrangler d1 migrations apply groupride --local -c liga/wrangler.dev.jsonc
  *                npx wrangler dev -c liga/wrangler.dev.jsonc
- *   Terminal 2:  node liga/test/api_test.mjs            (BASE=http://127.0.0.1:8787 ist Standard)
+ *   Terminal 2:  node liga/test/api_test.mjs            (BASE=http://127.0.0.1:8787 is the default)
  *
- * Der Test spielt mehrere "Handys": eigene Schluesselpaare, echte Signaturen, echte Codes
- * (DEV_MAIL=1 legt den Code in die Antwort). Er laeuft mehrfach hintereinander, weil er
- * zufaellige Adressen benutzt.
+ * The test plays several "phones": own key pairs, real signatures, real codes
+ * (DEV_MAIL=1 puts the code in the response). It can run several times in a row because it
+ * uses random addresses.
  */
 import Codec from '../../js/liga-codec.js';
 import Cats from '../../js/liga-cats.js';
@@ -20,7 +20,7 @@ function check(name, cond, extra) {
 }
 const rnd = () => Math.random().toString(36).slice(2, 8);
 
-/* ---------- ein "Handy" ---------- */
+/* ---------- a "phone" ---------- */
 class Dev {
     async init() {
         this.pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
@@ -40,7 +40,7 @@ class Dev {
         const out = await res.json().catch(() => ({}));
         return { status: res.status, ...out };
     }
-    /* Konto per E-Mail-Code anlegen/anmelden */
+    /* Create/log in an account by e-mail code */
     async login(email, name, extra) {
         const s = await this.call('POST', '/api/auth/start', { email });
         if (!s.devCode) throw new Error('kein devCode: ' + JSON.stringify(s));
@@ -51,7 +51,7 @@ class Dev {
     }
 }
 
-/* ---------- synthetische Fahrten ---------- */
+/* ---------- synthetic rides ---------- */
 const M = 111320;
 function makeRide(startTs, { km = 30, v = 7.5, lat = 48.1, lon = 11.5, hd = 0.6, ele0 = 500, seed = 1 } = {}) {
     let s = seed * 9301;
@@ -94,7 +94,7 @@ console.log('--- Zeitraeume (reine Rechnung)');
     const q = L({ unit: 'month', every: 3, start_ts: Date.parse('2026-01-05T00:00:00Z') });
     const q2 = P.periodAt(q, Date.parse('2026-05-01T12:00:00Z'));
     check('3 Monate: Jan-Mrz, dann Apr-Jun', iso(P.periodByIndex(q, 0).start) === '2025-12-31T23:00:00.000Z' && iso(q2.start) === '2026-03-31T22:00:00.000Z' && q2.index === 1, [iso(q2.start), q2.index]);
-    const w = L({ unit: 'week', start_ts: Date.parse('2026-03-25T10:00:00Z') });     // Mittwoch
+    const w = L({ unit: 'week', start_ts: Date.parse('2026-03-25T10:00:00Z') });     // Wednesday
     const wk = P.periodAt(w, Date.parse('2026-03-25T10:00:00Z'));
     check('Woche beginnt am Montag', iso(wk.start) === '2026-03-22T23:00:00.000Z' && new Date(wk.start + H).getUTCDay() === 1, iso(wk.start));
     check('Woche ueber die Zeitumstellung (29.3.) ist 167 h lang', (wk.end - wk.start) === 167 * H, (wk.end - wk.start) / H);
@@ -158,7 +158,7 @@ const anna = await new Dev().init(), ben = await new Dev().init(), cy = await ne
     const me = await anna.call('GET', '/api/me');
     check('/api/me', me.status === 200 && me.account.id === anna.account.id && me.devices.length === 1 && me.devices[0].current, me);
 
-    // zweites Geraet: dasselbe Konto (Browserdaten geloescht / neues Handy)
+    // second device: the same account (browser data cleared / new phone)
     const anna2 = await new Dev().init();
     await anna2.login(email, 'Egal');
     check('zweites Geraet: gleiches Konto, nicht neu', anna2.account.id === anna.account.id && anna2.created === false, anna2.account);
@@ -170,11 +170,11 @@ const anna = await new Dev().init(), ben = await new Dev().init(), cy = await ne
     check('abgemeldetes Geraet: 401', (await anna2.call('GET', '/api/me')).status === 401);
     check('eigenes Geraet nicht abmeldbar', (await anna.call('DELETE', '/api/devices/' + me2.devices.find(d => d.current).id)).status === 404);
 
-    // Begrenzung: hoechstens 5 Codes je Stunde und Adresse
+    // Limit: at most 5 codes per hour and address
     const spam = `spam-${S}@example.com`, dev = await new Dev().init(); let last;
     for (let i = 0; i < 6; i++) last = await dev.call('POST', '/api/auth/start', { email: spam });
     check('6. Code binnen einer Stunde: 429', last.status === 429, last);
-    // 5 Fehlversuche sperren den Code
+    // 5 failed attempts lock the code
     const lock = `lock-${S}@example.com`, dl = await new Dev().init();
     const ls = await dl.call('POST', '/api/auth/start', { email: lock });
     let lr; for (let i = 0; i < 6; i++) lr = await dl.call('POST', '/api/auth/verify', { email: lock, code: ls.devCode === '123456' ? '654321' : '123456' });
@@ -201,7 +201,7 @@ let rideA1, rideA2, rideA3, rideB1, rideB2;
     r = await anna.call('POST', '/api/rides', rideA1);
     check('gleiche Fahrt nochmal: idempotent', r.status === 200 && r.dup === true, r);
     check('fremde Fahrt-ID: 409', (await ben.call('POST', '/api/rides', rideA1)).status === 409);
-    // Ueberschneidung: zweite Fahrt, halb zeitgleich
+    // Overlap: second ride, half simultaneous
     r = await anna.call('POST', '/api/rides', await rideBody(makeRide(t0 + 10 * 60000, { km: 20, seed: 3 })));
     check('Ueberschneidung mit eigener Fahrt: 409 overlap', r.status === 409 && r.reason === 'overlap', r);
     r = await anna.call('POST', '/api/rides', await rideBody(makeRide(NOW - 3 * D, { km: 10 }), { src: 'sim' }));
@@ -228,11 +228,11 @@ let rideA1, rideA2, rideA3, rideB1, rideB2;
     r = await anna.call('POST', '/api/rides', await rideBody(makeRide(NOW - 3 * D, { km: 10 }), { day: '2001-01-01' }));
     check('Datum passt nicht zur Startzeit', r.status === 400, r);
 
-    // weitere Fahrten fuer die Ligen
+    // more rides for the leagues
     rideA2 = await rideBody(makeRide(NOW - 4 * D, { km: 40, seed: 4, lat: 48.3 }), { values: { gain: 400, top: 16.5, t10k: 1300000, avg20: 6.8 } });
     rideA3 = await rideBody(makeRide(NOW - 3 * D, { km: 20, seed: 5, lat: 48.5 }), { values: { gain: 80, top: 12 } });
     for (const b of [rideA2, rideA3]) check('Fahrt angenommen', (await anna.call('POST', '/api/rides', b)).status === 200);
-    rideB1 = await rideBody(makeRide(NOW - 5 * D, { km: 60, seed: 6, lat: 48.1, v: 8 }), { values: { gain: 300, top: 18.1, t10k: 1250000 } });   // gleiche Gegend wie Anna
+    rideB1 = await rideBody(makeRide(NOW - 5 * D, { km: 60, seed: 6, lat: 48.1, v: 8 }), { values: { gain: 300, top: 18.1, t10k: 1250000 } });   // same area as Anna
     rideB2 = await rideBody(makeRide(NOW - 2 * D, { km: 25, seed: 8, lat: 48.7 }), { values: { gain: 100, top: 11, coffee: 1, front: 600000 } });
     for (const b of [rideB1, rideB2]) check('Fahrt (Ben) angenommen', (await ben.call('POST', '/api/rides', b)).status === 200);
     const list = await anna.call('GET', '/api/rides');
@@ -281,7 +281,7 @@ console.log('--- Ranglisten');
     check('Uebersicht', ov.status === 200 && ov.members.length === 2 && ov.period.open && !ov.period.frozen, ov.period);
     const km = r => Math.round(r.v / 1000);
     const dist = ov.boards.dist;
-    // Anna: 30 + 12 + 40 + 20 = 102 km, Ben: 60 + 25 = 85 km (mal 0,97-Toleranz)
+    // Anna: 30 + 12 + 40 + 20 = 102 km, Ben: 60 + 25 = 85 km (times 0.97 tolerance)
     check('Kilometer: Anna vor Ben', dist[0].name === 'Anna' && dist[0].rank === 1 && dist[1].name === 'Benny' && dist[1].rank === 2, dist.map(r => [r.name, km(r)]));
     check('Kilometer: Summen stimmen (Anna ~99, Ben ~82)', Math.abs(km(dist[0]) - 99) < 5 && Math.abs(km(dist[1]) - 82) < 5, dist.map(r => km(r)));
     check('Fahrten zaehlen', ov.boards.rides[0].v === 4 && ov.boards.rides[1].v === 2, ov.boards.rides.map(r => r.v));
@@ -293,7 +293,7 @@ console.log('--- Ranglisten');
     check('Kategorie nur fuer Anna: Ben ohne Wert, kein Rang', ov.boards.avg20[0].name === 'Anna' && ov.boards.avg20[1].rank === null && ov.boards.avg20[1].v === null, ov.boards.avg20);
     check('Hoehenmeter: Summe der gemeldeten Werte (Anna 120+90+400+80, Ben 300+100)', ov.boards.gain[0].name === 'Anna' && ov.boards.gain[0].v === 690 && ov.boards.gain[1].v === 400, ov.boards.gain.map(r => r.v));
     const exploreBefore = ov.boards.explore.find(r => r.name === 'Anna').v;
-    const rerun = await anna.call('POST', '/api/rides', await rideBody(makeRide(NOW - 1.5 * D, { km: 30, seed: 40 })));       // dieselbe Strecke wie Annas erste Fahrt
+    const rerun = await anna.call('POST', '/api/rides', await rideBody(makeRide(NOW - 1.5 * D, { km: 30, seed: 40 })));       // the same route as Anna's first ride
     const ovRe = await anna.call('GET', '/api/leagues/' + league);
     check('dieselbe Gegend nochmal befahren: keine neuen Kacheln', rerun.status === 200 && ovRe.boards.explore.find(r => r.name === 'Anna').v === exploreBefore, [exploreBefore, ovRe.boards.explore.find(r => r.name === 'Anna').v]);
     check('...aber Kilometer und Fahrten zaehlen', ovRe.boards.rides.find(r => r.name === 'Anna').v === 5);
@@ -307,7 +307,7 @@ console.log('--- Ranglisten');
     check('Punkte: je Kategorie mit Wert (n - Platz + 1), gesamt plausibel', sumPoints > 10 && sumPoints < 60, sumPoints);
     check('Teamziel: Fortschritt = Summe beider', ov.goals.team[0].cat === 'dist' && Math.abs(ov.goals.team[0].progress - (dist[0].v + dist[1].v)) < 1, ov.goals.team);
 
-    // Stand fuer den Tacho
+    // Standing for the speedometer
     const st = await ben.call('GET', `/api/leagues/${league}/standing?cat=dist`);
     check('Tacho-Stand: Ben Platz 2, Anna vor ihm', st.standing.me.rank === 2 && st.standing.above.name === 'Anna' && st.standing.below === null && st.standing.of === 2, st.standing);
     const st2 = await anna.call('GET', `/api/leagues/${league}/standing?cat=t10k`);
@@ -315,7 +315,7 @@ console.log('--- Ranglisten');
     check('Tacho-Stand Gesamt', (await anna.call('GET', `/api/leagues/${league}/standing?cat=_total`)).standing.me.rank >= 1);
     check('Tacho-Stand unbekannte Kategorie: 400', (await anna.call('GET', `/api/leagues/${league}/standing?cat=x`)).status === 400);
 
-    // persoenliche Ziele
+    // personal goals
     const g = await ben.call('PUT', `/api/leagues/${league}/goals`, { goals: [{ cat: 'dist', target: 200000 }, { cat: 'gain', target: 1000 }] });
     check('persoenliche Ziele setzen', g.status === 200 && g.goals.length === 2);
     const ov2 = await anna.call('GET', '/api/leagues/' + league);
@@ -351,7 +351,7 @@ console.log('--- Einstellungen und Rechte');
 
 console.log('--- Abgelaufener Zeitraum: Einfrieren und Ruhmeshalle');
 {
-    // einmalige Liga vor 40..35 Tagen, ohne Nachfrist
+    // one-off league 40..35 days ago, without grace period
     const c = await anna.call('POST', '/api/leagues', { name: 'Sommer', unit: 'once', start_ts: NOW - 50 * D, end_ts: NOW - 30 * D, grace_h: 0, cats: ['dist', 'top', 'rides'] });
     const id = c.id, secret = c.invite.split('.')[1];
     await ben.call('POST', '/api/leagues/join', { id, secret });
@@ -366,14 +366,14 @@ console.log('--- Abgelaufener Zeitraum: Einfrieren und Ruhmeshalle');
     const hall = await ben.call('GET', `/api/leagues/${id}/hall`);
     check('Ruhmeshalle: ein Zeitraum, Sieger je Kategorie', hall.periods.length === 1 && hall.periods[0].cats.dist[0].name === 'Benny' && hall.periods[0].cats.top[0].name === 'Benny', hall);
     check('Titelzaehler', hall.titles[0].name === 'Benny' && hall.titles[0].total === 1, hall.titles);
-    // eine spaet hochgeladene Fahrt aendert den eingefrorenen Stand nicht mehr
+    // a late-uploaded ride no longer changes the frozen standing
     await anna.call('POST', '/api/rides', await rideBody(makeRide(NOW - 42 * D, { km: 90, seed: 24, lat: 46 })));
     const ov2 = await anna.call('GET', '/api/leagues/' + id);
     check('nach dem Einfrieren zaehlen spaete Fahrten nicht mehr', ov2.boards.dist[0].name === 'Benny');
     const t = await anna.call('PATCH', '/api/leagues/' + id, { unit: 'month' });
     check('Zeitraum nach dem Abschluss nicht mehr aenderbar: 409', t.status === 409, t);
     check('Name bleibt aenderbar', (await anna.call('PATCH', '/api/leagues/' + id, { name: 'Sommer 2026' })).status === 200);
-    // Nachfrist: Liga, die gerade erst zu Ende ist, friert noch nicht ein
+    // Grace period: a league that has only just ended does not freeze yet
     const g = await anna.call('POST', '/api/leagues', { name: 'Frisch', unit: 'once', start_ts: NOW - 5 * D, end_ts: NOW - 1 * D, grace_h: 48, cats: ['dist'] });
     const og = await anna.call('GET', '/api/leagues/' + g.id);
     check('innerhalb der Nachfrist noch nicht eingefroren', og.period.frozen === false && og.period.open === false, og.period);
@@ -441,11 +441,11 @@ console.log('--- Loeschen');
     check('geloeschte Fahrt fehlt in der Liste', !(await anna.call('GET', '/api/rides')).rides.some(r => r.id === rideA2.id));
     check('Ben: fremde Fahrt loeschen: 404', (await ben.call('DELETE', '/api/rides/' + rideA3.id)).status === 404);
 
-    // Admin verlaesst die Liga: Ben wird Admin
+    // Admin leaves the league: Ben becomes admin
     check('Admin verlaesst die Liga', (await anna.call('DELETE', `/api/leagues/${league}/members/${anna.account.id}`)).status === 200);
     const ov = await ben.call('GET', '/api/leagues/' + league);
     check('Ben ist jetzt Admin', ov.league.isAdmin === true && ov.members.length === 1, ov.league);
-    // Konto loeschen: nimmt alles mit
+    // Delete account: takes everything with it
     check('Konto ohne Bestaetigung: 400', (await ben.call('DELETE', '/api/me', {})).status === 400);
     check('Konto loeschen', (await ben.call('DELETE', '/api/me', { confirm: true })).status === 200);
     check('danach ist der Schluessel ungueltig', (await ben.call('GET', '/api/me')).status === 401);

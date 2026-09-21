@@ -1,22 +1,22 @@
 /* ============================================================
- * mapctl.js -- eine bedienbare Karte: Werkzeugleiste, Gesten, Zeichenschleife
+ * mapctl.js -- a usable map: toolbar, gestures, drawing loop
  * ============================================================
- * MapView zeichnet ein Bild. MapCtl macht daraus eine Karte, die man
- * benutzt: Knoepfe (Alle / Ich / Route, Nord / Kurs, Zoom, Strassenkarte),
- * Verschieben und Zoomen per Geste, eine Zeichenschleife mit ~30 Bildern
- * pro Sekunde, solange die Karte sichtbar ist.
+ * MapView draws a picture. MapCtl turns it into a map you
+ * use: buttons (All / Me / Route, North / Heading, zoom, street map),
+ * pan and zoom by gesture, a drawing loop with ~30 frames
+ * per second while the map is visible.
  *
- * Es gibt mehr als eine Karte (live und Replay), deshalb ist das eine Fabrik
- * und kein Singleton: jede Karte hat eigenen Zustand und eigene Element-IDs
+ * There is more than one map (live and replay), so this is a factory
+ * and not a singleton: every map has its own state and its own element IDs
  * (prefix + "Svg", "All", ...).
  *
  *   MapCtl.mount(rootElement, {
  *     prefix:    'map',
  *     getData:   () => { route, riders, meId, climbs, heading, overlay, smooth },
- *     isActive:  () => Karte gerade sichtbar?
- *     hasRoute:  () => gibt es eine Streckenueberlagerung? (zeigt den Knopf "Route")
- *     persist:   true -> Strassenkarten-Wahl merken
- *     extras:    [ { id, label, title } ]   weitere Knoepfe der Leiste
+ *     isActive:  () => is the map currently visible?
+ *     hasRoute:  () => is there a route overlay? (shows the "Route" button)
+ *     persist:   true -> remember the street map choice
+ *     extras:    [ { id, label, title } ]   further buttons of the bar
  *   })
  * ============================================================ */
 
@@ -67,13 +67,13 @@ var MapCtl = (function () {
         root.innerHTML = template(p, cfg);
         function $(id) { return root.querySelector('#' + p + id); }
 
-        /* Verschiebung (panU/panV, Meter) und Zoomfaktor (zoomMul) liegen ueber dem
-           automatischen Ausschnitt von "Alle", "Ich" bzw. "Route". Ein Fingerzeig
-           verschiebt also relativ dazu -- die Karte folgt weiter der Gruppe. */
+        /* Shift (panU/panV, metres) and zoom factor (zoomMul) lie on top of the
+           automatic section of "All", "Me" or "Route". A finger movement
+           therefore shifts relative to it -- the map keeps following the group. */
         var opt = { follow: false, fitRoute: false, trackUp: false, tiles: false, zoom: 1,
                     zoomMul: 1, panU: 0, panV: 0 };
-        if (cfg.persist) opt.tiles = store('tiles') === '1' && store('tilesOn') === '1';   // nur nach frueherer Einwilligung
-        var v = { k: 1, cx: 0, cy: 0 };            // Massstab/Mitte des letzten Zeichnens
+        if (cfg.persist) opt.tiles = store('tiles') === '1' && store('tilesOn') === '1';   // only after earlier consent
+        var v = { k: 1, cx: 0, cy: 0 };            // scale/centre of the last drawing
         var raf = 0, loopOn = false, loopT = 0;
 
         function dirty() { return !!(opt.panU || opt.panV) || Math.abs(opt.zoomMul - 1) > 0.01; }
@@ -81,7 +81,7 @@ var MapCtl = (function () {
 
         function pan(dx, dy) { opt.panU -= dx / v.k; opt.panV += dy / v.k; }
 
-        // Zoom um einen Bildpunkt: der Punkt unter dem Finger bleibt unter dem Finger
+        // Zoom around a picture point: the point under the finger stays under the finger
         function zoomAbout(px, py, f) {
             var k0 = v.k, k1 = Math.max(K_MIN, Math.min(K_MAX, k0 * f));
             if (k1 === k0) return;
@@ -89,7 +89,7 @@ var MapCtl = (function () {
             opt.panU += dx * (1 / k0 - 1 / k1);
             opt.panV += dy * (1 / k1 - 1 / k0);
             opt.zoomMul *= k1 / k0;
-            v.k = k1;                              // gleich weiterrechnen, bevor neu gezeichnet ist
+            v.k = k1;                              // keep computing right away, before it is redrawn
         }
 
         function sync() {
@@ -120,15 +120,15 @@ var MapCtl = (function () {
             if (info.k) v = { k: info.k, cx: info.cx, cy: info.cy };
             var txt = '';
             if (info.riders) {
-                txt = info.riders + ' Fahrer';
-                if (info.length > 0) txt += ' · Streckenachse ' + UI.fmtDist(info.length);
+                txt = T('{n} Fahrer', { n: info.riders });
+                if (info.length > 0) txt += ' · ' + T('Streckenachse {d}', { d: UI.fmtDist(info.length) });
             }
-            if (d.overlay) txt += (txt ? ' · ' : '') + 'Route „' + d.overlay.name + '“ ' + UI.fmtDist(d.overlay.len);
-            if (opt.trackUp && d.heading === null && info.riders) txt += ' · noch kein Kurs, Norden oben';
+            if (d.overlay) txt += (txt ? ' · ' : '') + T('Route „{name}“ {d}', { name: d.overlay.name, d: UI.fmtDist(d.overlay.len) });
+            if (opt.trackUp && d.heading === null && info.riders) txt += ' · ' + T('noch kein Kurs, Norden oben');
             $('Info').textContent = txt;
         }
 
-        // hoechstens einmal je Bild neu zeichnen, auch wenn Gesten schneller kommen
+        // redraw at most once per frame, even if gestures arrive faster
         function redraw() {
             if (raf) return;
             raf = requestAnimationFrame(function () {
@@ -138,10 +138,10 @@ var MapCtl = (function () {
             });
         }
 
-        /* Die Karte zeichnet mit ~30 Bildern pro Sekunde, solange sie sichtbar ist
-           (die Positionen selbst kommen nur ~1x pro Sekunde -- dazwischen glaettet
-           MapView, siehe smooth.js). Ist ein anderer Reiter offen oder die Seite im
-           Hintergrund, laeuft nichts: das schont den Akku. */
+        /* The map draws at ~30 frames per second while it is visible
+           (the positions themselves only arrive ~1x per second -- in between
+           MapView smooths, see smooth.js). If another tab is open or the page is in the
+           background, nothing runs: that saves the battery. */
         function loop(ts) {
             if (!cfg.isActive() || document.hidden) { loopOn = false; return; }
             if (ts - loopT >= 33) { loopT = ts; draw(); }
@@ -153,7 +153,7 @@ var MapCtl = (function () {
             requestAnimationFrame(loop);
         }
 
-        // --- Knoepfe ---
+        // --- Buttons ---
         function again() { sync(); draw(); }
         $('All').addEventListener('click',    function () { opt.follow = false; opt.fitRoute = false; reset(); again(); });
         $('Me').addEventListener('click',     function () { opt.follow = true;  opt.fitRoute = false; reset(); again(); });
@@ -167,10 +167,7 @@ var MapCtl = (function () {
 
         $('TilesBtn').addEventListener('click', function () {
             if (!opt.tiles && store('tiles') !== '1') {
-                if (!confirm('Für die Straßenkarte lädt dein Handy Kartenbilder von tile.openstreetmap.org.\n\n' +
-                             'Der Anbieter sieht dabei deine IP-Adresse und den ungefähren Kartenausschnitt – ' +
-                             'nicht deinen Namen, deine Gruppe oder den Gruppenschlüssel.\n\n' +
-                             'Ohne Straßenkarte bleibt alles wie bisher, auch offline.\n\nEinschalten?')) return;
+                if (!confirm(T('Für die Straßenkarte lädt dein Handy Kartenbilder von tile.openstreetmap.org.\n\nDer Anbieter sieht dabei deine IP-Adresse und den ungefähren Kartenausschnitt – nicht deinen Namen, deine Gruppe oder den Gruppenschlüssel.\n\nOhne Straßenkarte bleibt alles wie bisher, auch offline.\n\nEinschalten?'))) return;
                 store('tiles', '1');
             }
             opt.tiles = !opt.tiles;
@@ -178,8 +175,22 @@ var MapCtl = (function () {
             again();
         });
 
+        /* Texts of the toolbar (the template is built once, so a language switch calls this again) */
+        function relabel() {
+            var groups = root.querySelectorAll('.seg[role="group"]');
+            [T('Ausschnitt'), T('Ausrichtung'), T('Zoom'), T('Kartenhintergrund')].forEach(function (s, i) { if (groups[i]) groups[i].setAttribute('aria-label', s); });
+            $('All').textContent = T('Alle'); $('Me').textContent = T('Ich'); $('Route').textContent = T('Route');
+            $('North').textContent = T('Nord'); $('Course').textContent = T('Kurs');
+            $('Out').setAttribute('aria-label', T('Herauszoomen')); $('In').setAttribute('aria-label', T('Hineinzoomen'));
+            $('TilesBtn').textContent = T('Straßenkarte');
+            $('Svg').setAttribute('aria-label', T('Karte')); $('Center').setAttribute('aria-label', T('Ansicht zurücksetzen'));
+            $('Attr').textContent = T('© OpenStreetMap-Mitwirkende');
+            (cfg.extras || []).forEach(function (x) { var b = $(x.id); if (b) b.textContent = T(x.label); });
+        }
+        relabel();
+
         sync();
-        return { opt: opt, draw: draw, sync: sync, redraw: redraw, ensureLoop: ensureLoop, reset: reset,
+        return { opt: opt, draw: draw, sync: sync, redraw: redraw, ensureLoop: ensureLoop, reset: reset, relabel: relabel,
                  el: function (id) { return $(id); } };
     }
 

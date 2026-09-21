@@ -1,4 +1,4 @@
-/* util.js -- kleine Helfer fuer den Liga-Worker */
+/* util.js -- small helpers for the league worker */
 
 export class HttpError extends Error {
     constructor(status, message, extra) { super(message); this.status = status; this.extra = extra || {}; }
@@ -41,7 +41,7 @@ export async function hmacHex(secret, text) {
 export function randomId(bytes = 16) {
     return bytesToB64u(crypto.getRandomValues(new Uint8Array(bytes)));
 }
-/* Vergleich ohne fruehen Abbruch (gegen Zeitmessung bei Geheimnissen) */
+/* Comparison without early exit (against timing attacks on secrets) */
 export function safeEqual(a, b) {
     a = String(a); b = String(b);
     if (a.length !== b.length) return false;

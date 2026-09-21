@@ -1,23 +1,23 @@
 /* ============================================================
- * ui.js -- Darstellung
+ * ui.js -- presentation
  * ============================================================
- * Am Lenker gilt: eine Zahl, die man bei 30 km/h in einem Blick
- * erfasst, ist mehr wert als fuenf, die man lesen muesste. Deshalb
- * gross, tabellarisch und ohne Animation an den Zahlen.
+ * On the handlebars: a number you grasp at a glance at 30 km/h
+ * is worth more than five you would have to read. Hence
+ * large, tabular and without animation on the numbers.
  * ============================================================ */
 
 var UI = (function () {
     'use strict';
 
-    /* Fahrerfarben: auf beiden Untergruenden unterscheidbar und auch
-       bei Rot-Gruen-Schwaeche noch trennbar (Helligkeit variiert mit). */
+    /* Rider colours: distinguishable on both backgrounds and still
+       separable with red-green colour blindness (brightness varies too). */
     var COLORS = ['#f2b01e', '#3fa9f5', '#ff6b52', '#8bc34a',
                   '#b48ce8', '#26c6da', '#ec87b9', '#c9a227'];
 
-    /* Symbole zur Auswahl. Auf der Leitung geht nur die NUMMER aus dieser Liste (kein Text):
-       so kann niemand beliebigen Inhalt einschleusen, und die Meldung bleibt winzig. Die Liste
-       darf nur hinten wachsen -- sonst zeigen aeltere Apps ein falsches Symbol. Alles einzelne
-       Emoji-Zeichen (keine Folgen mit Zero-Width-Joiner), die ueberall gleich dargestellt werden. */
+    /* Symbols to choose from. Only the NUMBER from this list goes over the wire (no text):
+       that way nobody can smuggle in arbitrary content, and the report stays tiny. The list
+       may only grow at the end -- otherwise older apps show a wrong symbol. All single
+       emoji characters (no zero-width-joiner sequences) that are rendered the same everywhere. */
     var EMOJIS = ['🚴', '🦊', '🐻', '🐼', '🐯', '🦁', '🐸', '🐵', '🦄', '🐺', '🦅', '🐝',
                   '🦉', '🐧', '🐢', '🐇', '🔥', '⚡', '⭐', '🍀', '🚀', '🍕', '☕', '🎸'];
     function emojiOf(i) { return (typeof i === 'number' && i >= 0 && i < EMOJIS.length && i % 1 === 0) ? EMOJIS[i] : ''; }
@@ -43,17 +43,17 @@ var UI = (function () {
                String(d.getMinutes()).padStart(2, '0');
     }
 
-    /* Distanz -> Radius auf dem Zifferblatt.
-       Logarithmisch, weil die relevanten Abstaende von 5 m (Hinterrad)
-       bis 500 m (abgerissen) reichen. Linear waere alles unter 50 m
-       ein Punkt in der Mitte. */
+    /* Distance -> radius on the dial.
+       Logarithmic, because the relevant distances range from 5 m (rear wheel)
+       to 500 m (dropped). With a linear scale everything below 50 m
+       would be one dot in the centre. */
     function radiusFor(d) {
         var R = 92, DMAX = 500, K = 30;
         var v = Math.log(1 + d / K) / Math.log(1 + DMAX / K);
         return Math.max(0, Math.min(1, v)) * R;
     }
 
-    /* ---------------- Tacho ---------------- */
+    /* ---------------- Speedometer ---------------- */
     function renderSpeed(speed, fresh) {
         var el = $('mySpeed');
         if (speed === null) { el.textContent = '--'; el.classList.add('stale'); return; }
@@ -64,26 +64,26 @@ var UI = (function () {
 
     function renderRank(pos, total) {
         $('myRank').textContent = pos ? pos + '.' : '–';
-        $('myRankLbl').textContent = total > 1 ? 'von ' + total : 'Position';
+        $('myRankLbl').textContent = total > 1 ? T('von {n}', { n: total }) : T('Position');
     }
 
-    /* ---------------- Kompass ----------------
-       Track-up: die eigene Fahrtrichtung zeigt immer nach oben, die
-       Pfeile der anderen liegen relativ dazu. Das ist beim Fahren
-       richtig -- eine nordfeste Rose muesste man erst umrechnen. */
+    /* ---------------- Compass ----------------
+       Track-up: your own direction of travel always points up, the
+       arrows of the others lie relative to it. That is right while
+       riding -- a north-fixed rose would first have to be converted. */
     function renderCompass(me, peers, heading) {
         var g = $('cPeers');
         var parts = [];
 
-        $('cCenter').textContent = heading === null ? 'kein Kurs' : 'DU';
+        $('cCenter').textContent = heading === null ? T('kein Kurs') : T('DU');
 
         for (var i = 0; i < peers.length; i++) {
             var p = peers[i];
             if (p.dist === null || p.bearing === null) continue;
 
-            // Ohne eigenen Kurs kann nur nordfest gezeichnet werden
+            // Without an own heading it can only be drawn north-fixed
             var rel = (heading === null) ? p.bearing : (p.bearing - heading);
-            var a = (rel - 90) * Math.PI / 180;      // -90: 0 Grad = oben
+            var a = (rel - 90) * Math.PI / 180;      // -90: 0 degrees = up
             var r = radiusFor(p.dist);
             var x = Math.cos(a) * r, y = Math.sin(a) * r;
 
@@ -91,7 +91,7 @@ var UI = (function () {
             parts.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
                        '" r="' + (p.emoji ? 8.5 : 7) + '" fill="' + p.color + '" opacity="' + op + '"></circle>');
             if (p.emoji) {
-                // Symbol im Punkt; vorne/hinten als kleines Dreieck daneben, damit es nicht verloren geht
+                // Symbol in the dot; front/back as a small triangle beside it so that it does not get lost
                 parts.push('<g opacity="' + op + '">' + Emo.svg(p.emoji, x, y, 13) + '</g>');
                 if (p.ahead !== null) {
                     parts.push('<text x="' + (x + 11.5).toFixed(1) + '" y="' + (y + 2.6).toFixed(1) +
@@ -99,8 +99,8 @@ var UI = (function () {
                                '" opacity="' + op + '">' + (p.ahead ? '▲' : '▼') + '</text>');
                 }
             }
-            // Vorne/hinten kommt aus der Bogenlaenge, nicht aus der Peilung --
-            // in einer Kurve liegt jemand seitlich und ist doch vorne.
+            // Front/back comes from the arc length, not from the bearing --
+            // in a bend somebody lies to the side and is still in front.
             else if (p.ahead !== null) {
                 parts.push('<text x="' + x.toFixed(1) + '" y="' + (y + 2.6).toFixed(1) +
                            '" text-anchor="middle" font-size="8" font-weight="700" ' +
@@ -114,22 +114,22 @@ var UI = (function () {
         g.innerHTML = parts.join('');
     }
 
-    /* ---------------- Fahrerliste ---------------- */
+    /* ---------------- Rider list ---------------- */
     function renderRiders(rows) {
         var out = [];
         for (var i = 0; i < rows.length; i++) {
             var r = rows[i];
             var tags = '';
-            if (r.me) tags += '<span class="tag">DU</span>';
-            if (r.ghost) tags += '<span class="tag ghost">GHOST</span>';
-            if (r.dropped) tags += '<span class="tag drop">ABGERISSEN</span>';
-            else if (r.stale) tags += '<span class="tag stale">KEIN SIGNAL</span>';
+            if (r.me) tags += '<span class="tag">' + T('DU') + '</span>';
+            if (r.ghost) tags += '<span class="tag ghost">' + T('GHOST') + '</span>';
+            if (r.dropped) tags += '<span class="tag drop">' + T('ABGERISSEN') + '</span>';
+            else if (r.stale) tags += '<span class="tag stale">' + T('KEIN SIGNAL') + '</span>';
 
             var gap = '';
             if (r.me) {
                 gap = '<i>&nbsp;</i>';
             } else if (r.gapM === null) {
-                gap = '<i>ohne Bezug</i>';
+                gap = '<i>' + T('ohne Bezug') + '</i>';
             } else {
                 var sign = r.gapM > 0 ? '+' : '−';
                 gap = sign + fmtDist(Math.abs(r.gapM)) +
@@ -150,14 +150,14 @@ var UI = (function () {
                 '</div>');
         }
         $('riderList').innerHTML = out.join('') ||
-            '<div class="empty">Noch niemand verbunden.<br>' +
-            'Teile den Link unter „Gruppe“ – wer ihn öffnet, erscheint hier.</div>';
+            '<div class="empty">' + T('Noch niemand verbunden.') + '<br>' +
+            T('Teile den Link unter „Gruppe“ – wer ihn öffnet, erscheint hier.') + '</div>';
     }
 
-    /* ---------------- Führungsarbeit ---------------- */
+    /* ---------------- Front work ---------------- */
     function renderFrontWork(rows) {
         if (!rows.length) { $('frontWork').innerHTML =
-            '<div class="empty">Sobald gefahren wird, zählt hier mit, wer vorne war.</div>';
+            '<div class="empty">' + T('Sobald gefahren wird, zählt hier mit, wer vorne war.') + '</div>';
             return; }
         var max = 0;
         rows.forEach(function (r) { if (r.frontMs > max) max = r.frontMs; });
@@ -177,14 +177,13 @@ var UI = (function () {
         $('frontWork').innerHTML = out.join('');
     }
 
-    /* ---------------- Ereignisse ---------------- */
+    /* ---------------- Events ---------------- */
     var ICONS = { pass: '⇄', attack: Emo.img('⚡'), drop: '✂',
                   rejoin: '↻', lead: '⚑', msg: '✉' };
 
     function renderEvents(evs) {
         if (!evs.length) { $('eventList').innerHTML =
-            '<div class="empty">Überholvorgänge, Antritte und Abrisse erscheinen hier, ' +
-            'sobald die Streckenachse steht (etwa 150 m nach dem Start).</div>'; return; }
+            '<div class="empty">' + T('Überholvorgänge, Antritte und Abrisse erscheinen hier, sobald die Streckenachse steht (etwa 150 m nach dem Start).') + '</div>'; return; }
         var out = evs.slice().reverse().slice(0, 80).map(function (e) {
             return '<div class="ev ' + e.type + '">' +
                 '<span class="tm num">' + clock(e.t) + '</span>' +
@@ -194,12 +193,11 @@ var UI = (function () {
         $('eventList').innerHTML = out.join('');
     }
 
-    /* ---------------- Berge ---------------- */
+    /* ---------------- Climbs ---------------- */
     function renderClimbs(climbs) {
         if (!climbs.length) { $('climbList').innerHTML =
-            '<div class="empty">Noch kein Anstieg erkannt.<br>' +
-            'Erkannt werden Rampen ab etwa 200 m Länge und 12 Höhenmetern – ' +
-            'kürzere gibt die GPS-Höhe nicht her.</div>'; return; }
+            '<div class="empty">' + T('Noch kein Anstieg erkannt.') + '<br>' +
+            T('Erkannt werden Rampen ab etwa 200 m Länge und 12 Höhenmetern – kürzere gibt die GPS-Höhe nicht her.') + '</div>'; return; }
 
         var out = climbs.map(function (c) {
             var rank = c.ranking.map(function (x, i) {
@@ -209,19 +207,19 @@ var UI = (function () {
                     'border-radius:50%;background:' + x.color + ';margin-right:6px"></span>' +
                     escapeHtml(x.name) + '</span>' +
                     '<span class="tme num">' + fmtDur(x.ms) + '</span>' +
-                    '<span class="vam num">' + Math.round(x.vam) + ' Hm/h</span></div>';
-            }).join('') || '<div class="empty" style="padding:4px 0">Noch niemand oben.</div>';
+                    '<span class="vam num">' + Math.round(x.vam) + ' ' + T('Hm/h') + '</span></div>';
+            }).join('') || '<div class="empty" style="padding:4px 0">' + T('Noch niemand oben.') + '</div>';
 
             return '<div class="climb"><div class="hd">' +
-                '<span class="ttl">Anstieg ' + c.no + '</span>' +
-                '<span class="meta num">+' + c.gain.toFixed(0) + ' Hm &middot; ' +
+                '<span class="ttl">' + T('Anstieg {n}', { n: c.no }) + '</span>' +
+                '<span class="meta num">+' + c.gain.toFixed(0) + ' ' + T('Hm') + ' &middot; ' +
                 fmtDist(c.len) + ' &middot; ' + (c.grade * 100).toFixed(1) + ' %</span>' +
                 '</div>' + rank + '</div>';
         });
         $('climbList').innerHTML = out.join('');
     }
 
-    /* ---------------- Kopfzeile / Hinweise ---------------- */
+    /* ---------------- Header / hints ---------------- */
     function renderNet(state, txt) {
         var d = $('netDot');
         d.className = state === 'online' ? 'on' : (state === 'off' ? '' : 'wait');
@@ -238,18 +236,18 @@ var UI = (function () {
         el.textContent = n;
     }
 
-    /* Ereignis in Worte. Nimmt die Auswertung mit, damit dieselbe Formulierung
-       fuer die Live-Fahrt und das Replay gilt. */
+    /* Event in words. Takes the analysis along so that the same wording
+       applies to the live ride and the replay. */
     function eventText(an, e) {
         function nm(id) { var r = an.riders[id]; return escapeHtml((r && r.name) || id); }
         switch (e.type) {
-            case 'pass':   return nm(e.id) + ' überholt ' + nm(e.over);
-            case 'attack': return nm(e.id) + ' tritt an – ' + e.gain + ' m gewonnen' +
+            case 'pass':   return T('{a} überholt {b}', { a: nm(e.id), b: nm(e.over) });
+            case 'attack': return T('{a} tritt an – {m} m gewonnen', { a: nm(e.id), m: e.gain }) +
                                   (e.surge ? ' (+' + e.surge + ' km/h)' : '');
-            case 'drop':   return nm(e.id) + (e.standing ? ' steht' : ' ist abgerissen') +
-                                  (e.gap ? ' – ' + fmtDist(e.gap) + ' zurück' : '');
-            case 'rejoin': return nm(e.id) + ' ist wieder dran';
-            case 'lead':   return nm(e.id) + ' übernimmt die Führung' + (e.from ? ' von ' + nm(e.from) : '');
+            case 'drop':   return (e.standing ? T('{a} steht', { a: nm(e.id) }) : T('{a} ist abgerissen', { a: nm(e.id) })) +
+                                  (e.gap ? ' – ' + T('{d} zurück', { d: fmtDist(e.gap) }) : '');
+            case 'rejoin': return T('{a} ist wieder dran', { a: nm(e.id) });
+            case 'lead':   return e.from ? T('{a} übernimmt die Führung von {b}', { a: nm(e.id), b: nm(e.from) }) : T('{a} übernimmt die Führung', { a: nm(e.id) });
             case 'msg':    return escapeHtml(e.name || nm(e.id)) + ': ' + Msg.html(e.q);
             default:       return e.type;
         }

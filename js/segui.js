@@ -1,11 +1,11 @@
 /* ============================================================
- * segui.js -- Oberflaeche fuer Segmente, Bestzeiten und Rekorde
+ * segui.js -- interface for segments, best times and records
  * ============================================================
- *   - Berge > Segmente: Liste mit Bestzeit, letzter Zeit und Verlauf je Segment
- *   - Berge > Rekorde:  schnellste 1/5/10/20/40 km, beste 5/20 Minuten, ...
- *   - Editor: einen Abschnitt einer gespeicherten Fahrt als Segment anlegen
- *   - Live-Banner im Tacho: Zeit auf dem Segment und Vorsprung/Rueckstand
- *     auf die Bestzeit, waehrend man faehrt
+ *   - Climbs > Segments: list with best time, last time and course per segment
+ *   - Climbs > Records:  fastest 1/5/10/20/40 km, best 5/20 minutes, ...
+ *   - Editor: create a section of a saved ride as a segment
+ *   - Live banner on the speedometer: time on the segment and lead/deficit
+ *     against the best time while riding
  * ============================================================ */
 
 var SegUI = (function () {
@@ -22,20 +22,20 @@ var SegUI = (function () {
         var s = Math.round(ms / 1000), m = Math.floor(s / 60);
         return m + ':' + String(s % 60).padStart(2, '0');
     }
-    function fmtDelta(ms) {                   // +8,3 s / −12,1 s
+    function fmtDelta(ms) {                   // +8.3 s / −12.1 s
         var sgn = ms < 0 ? '−' : '+', a = Math.abs(ms) / 1000;
-        return sgn + (a >= 60 ? fmt(Math.abs(ms)) : a.toFixed(1).replace('.', ',') + ' s');
+        return sgn + (a >= 60 ? fmt(Math.abs(ms)) : a.toFixed(1).replace('.', I18n.sep()) + ' s');
     }
     function fmtDate(t) { return Rides.fmtDate(t); }
 
     function setWorld(w) { state.world = (w === 'sim') ? 'sim' : 'real'; refresh(); }
     function worldSwitch() {
-        return '<div class="worldsw"><div class="seg" role="group" aria-label="Fahrten oder Simulation">' +
-            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>Fahrten</button>' +
-            '<button data-w="sim"' + (state.world === 'sim' ? ' class="on"' : '') + '>Simulation</button></div></div>';
+        return '<div class="worldsw"><div class="seg" role="group" aria-label="' + esc(T('Fahrten oder Simulation')) + '">' +
+            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>' + T('Fahrten') + '</button>' +
+            '<button data-w="sim"' + (state.world === 'sim' ? ' class="on"' : '') + '>' + T('Simulation') + '</button></div></div>';
     }
 
-    /* ---------------- Segmente ---------------- */
+    /* ---------------- Segments ---------------- */
     function renderSegments() {
         Segments.use(state.world);
         var segs = Segments.list();
@@ -44,22 +44,21 @@ var SegUI = (function () {
             var lb = b.efforts.length ? b.efforts[b.efforts.length - 1].t : b.created;
             return lb - la;
         });
-        var out = [worldSwitch(), '<button class="btn" id="segNew">Segment aus einer Fahrt anlegen</button>'];
-        if (state.world === 'sim') out.push('<div class="note">Simulationsfahrten zählen nicht für deine echten Bestzeiten – sie haben eigene Segmente.</div>');
+        var out = [worldSwitch(), '<button class="btn" id="segNew">' + T('Segment aus einer Fahrt anlegen') + '</button>'];
+        if (state.world === 'sim') out.push('<div class="note">' + T('Simulationsfahrten zählen nicht für deine echten Bestzeiten – sie haben eigene Segmente.') + '</div>');
         if (!segs.length) {
-            out.push('<div class="empty">Noch keine Segmente.<br>Anstiege werden nach jeder Fahrt automatisch erkannt und ' +
-                     'gespeichert. Eigene Abschnitte legst du mit dem Knopf oben an – ' +
-                     'auch aus importierten GPX-Dateien.</div>');
+            out.push('<div class="empty">' + T('Noch keine Segmente.') + '<br>' +
+                     T('Anstiege werden nach jeder Fahrt automatisch erkannt und gespeichert. Eigene Abschnitte legst du mit dem Knopf oben an – auch aus importierten GPX-Dateien.') + '</div>');
         }
         segs.forEach(function (seg) {
             var best = Segments.bestOf(seg), last = seg.efforts[seg.efforts.length - 1], open = !!state.open[seg.id];
             var body;
-            if (!best) body = 'Noch nicht gefahren.';
+            if (!best) body = T('Noch nicht gefahren.');
             else {
-                body = 'Bestzeit <span class="big">' + fmt(best.ms) + '</span> · ' + best.kmh.toFixed(1).replace('.', ',') + ' km/h · ' + fmtDate(best.t);
-                if (last && last !== best) body += '<br>Zuletzt ' + fmt(last.ms) + ' (<span class="' + (last.ms > best.ms ? 'neg' : 'pos') + '">' + fmtDelta(last.ms - best.ms) + '</span>)';
-                body += '<br>' + seg.efforts.length + (seg.efforts.length === 1 ? ' Fahrt' : ' Fahrten');
-                if (seg.gain > 0 && best.vam) body += ' · ' + Math.round(best.vam) + ' Hm/h';
+                body = T('Bestzeit') + ' <span class="big">' + fmt(best.ms) + '</span> · ' + best.kmh.toFixed(1).replace('.', I18n.sep()) + ' km/h · ' + fmtDate(best.t);
+                if (last && last !== best) body += '<br>' + T('Zuletzt') + ' ' + fmt(last.ms) + ' (<span class="' + (last.ms > best.ms ? 'neg' : 'pos') + '">' + fmtDelta(last.ms - best.ms) + '</span>)';
+                body += '<br>' + (seg.efforts.length === 1 ? T('{n} Fahrt', { n: 1 }) : T('{n} Fahrten', { n: seg.efforts.length }));
+                if (seg.gain > 0 && best.vam) body += ' · ' + Math.round(best.vam) + ' ' + T('Hm/h');
             }
             var eff = '';
             if (open && seg.efforts.length) {
@@ -67,20 +66,20 @@ var SegUI = (function () {
                     return '<div class="efrow' + (e === best ? ' pbrow' : '') + '"><span>' + fmtDate(e.t) + '</span>' +
                         '<span class="num">' + fmt(e.ms) + (e === best ? ' ★' : '') + '</span>' +
                         '<span class="num ' + (e.ms > best.ms ? 'neg' : 'pos') + '">' + (e === best ? '' : fmtDelta(e.ms - best.ms)) + '</span>' +
-                        '<span class="num">' + e.kmh.toFixed(1).replace('.', ',') + '</span></div>';
+                        '<span class="num">' + e.kmh.toFixed(1).replace('.', I18n.sep()) + '</span></div>';
                 }).join('');
             }
             out.push('<div class="segcard" data-id="' + seg.id + '">' +
                 '<div class="sh"><b>' + esc(seg.name) + '</b><span class="sm">' + UI.fmtDist(seg.len) +
-                (seg.gain > 0 ? ' · +' + Math.round(seg.gain) + ' Hm · ' + (seg.grade * 100).toFixed(1).replace('.', ',') + ' %' : '') + '</span></div>' +
+                (seg.gain > 0 ? ' · +' + Math.round(seg.gain) + ' ' + T('Hm') + ' · ' + (seg.grade * 100).toFixed(1).replace('.', I18n.sep()) + ' %' : '') + '</span></div>' +
                 '<div class="sb">' + body + '</div>' + eff +
-                '<div class="sa">' + (seg.efforts.length ? '<button data-act="open">' + (open ? 'Verlauf zu' : 'Verlauf') + '</button>' : '') +
-                '<button data-act="rename">Umbenennen</button><button data-act="del">Löschen</button></div></div>');
+                '<div class="sa">' + (seg.efforts.length ? '<button data-act="open">' + (open ? T('Verlauf zu') : T('Verlauf anzeigen')) + '</button>' : '') +
+                '<button data-act="rename">' + T('Umbenennen') + '</button><button data-act="del">' + T('Löschen') + '</button></div></div>');
         });
         $('segPane').innerHTML = out.join('');
     }
 
-    /* ---------------- Rekorde ---------------- */
+    /* ---------------- Records ---------------- */
     function renderRecords() {
         Segments.use(state.world);
         var st = Segments.bests(), out = [worldSwitch()], any = false;
@@ -91,17 +90,16 @@ var SegUI = (function () {
             if (!rec) return;
             any = true;
             var val, sub = '';
-            if (R.kind === 'time') { var L = +R.key.slice(1); val = fmt(rec.v); sub = (L / (rec.v / 1000) * 3.6).toFixed(1).replace('.', ',') + ' km/h'; }
-            else if (R.kind === 'dist') { val = UI.fmtDist(rec.v); sub = (rec.v / (R.win / 1000) * 3.6).toFixed(1).replace('.', ',') + ' km/h'; }
-            else if (R.kind === 'speed') val = (rec.v * 3.6).toFixed(1).replace('.', ',') + ' km/h';
-            else if (R.kind === 'gain') val = '+' + Math.round(rec.v) + ' Hm';
+            if (R.kind === 'time') { var L = +R.key.slice(1); val = fmt(rec.v); sub = (L / (rec.v / 1000) * 3.6).toFixed(1).replace('.', I18n.sep()) + ' km/h'; }
+            else if (R.kind === 'dist') { val = UI.fmtDist(rec.v); sub = (rec.v / (R.win / 1000) * 3.6).toFixed(1).replace('.', I18n.sep()) + ' km/h'; }
+            else if (R.kind === 'speed') val = (rec.v * 3.6).toFixed(1).replace('.', I18n.sep()) + ' km/h';
+            else if (R.kind === 'gain') val = '+' + Math.round(rec.v) + ' ' + T('Hm');
             else val = UI.fmtDist(rec.v);
-            out.push('<div class="recrow"><span class="rl">' + R.label + (fresh[R.key] ? '<span class="newb">NEU</span>' : '') +
+            out.push('<div class="recrow"><span class="rl">' + T(R.label) + (fresh[R.key] ? '<span class="newb">' + T('NEU') + '</span>' : '') +
                      '</span><span class="rv num">' + val + '</span><span class="rd">' + (sub ? sub + ' · ' : '') + esc(rec.rname) + ' · ' + fmtDate(rec.t) + '</span></div>');
         });
-        if (!any) out.push('<div class="empty">Noch keine Rekorde.<br>Sie entstehen automatisch aus jeder beendeten Fahrt – ' +
-                           'auch aus importierten GPX-Dateien (Gruppe → Gespeicherte Ausfahrten). ' +
-                           'Kürzere Fahrten als 1 km zählen nicht.</div>');
+        if (!any) out.push('<div class="empty">' + T('Noch keine Rekorde.') + '<br>' +
+                           T('Sie entstehen automatisch aus jeder beendeten Fahrt – auch aus importierten GPX-Dateien (Gruppe → Gespeicherte Ausfahrten). Kürzere Fahrten als 1 km zählen nicht.') + '</div>');
         $('recPane').innerHTML = out.join('');
     }
 
@@ -136,12 +134,12 @@ var SegUI = (function () {
             '<circle class="sdot" cx="' + X(xy[s.iA]) + '" cy="' + Y(xy[s.iA]) + '" r="5"/>' +
             '<circle class="sdot" cx="' + X(xy[s.iB]) + '" cy="' + Y(xy[s.iB]) + '" r="5"/>';
         var sec = pts.slice(s.iA, s.iB + 1), len = cr.cum[s.iB] - cr.cum[s.iA], dur = pts[s.iB].t - pts[s.iA].t;
-        $('seStats').textContent = UI.fmtDist(len) + ' · +' + Math.round(Track.gain(sec)) + ' Hm · ' +
-            (dur > 0 ? fmt(dur) + ' · ' + (len / (dur / 1000) * 3.6).toFixed(1).replace('.', ',') + ' km/h' : '');
+        $('seStats').textContent = UI.fmtDist(len) + ' · +' + Math.round(Track.gain(sec)) + ' ' + T('Hm') + ' · ' +
+            (dur > 0 ? fmt(dur) + ' · ' + (len / (dur / 1000) * 3.6).toFixed(1).replace('.', I18n.sep()) + ' km/h' : '');
         return { len: len };
     }
 
-    function keepOrder(changed) {                 // Anfang vor Ende, mindestens 200 m dazwischen
+    function keepOrder(changed) {                 // start before end, at least 200 m in between
         var total = cr.cum[cr.cum.length - 1] || 1, min = Math.min(400, 200 / total * 1000);
         var a = +$('seA').value, b = +$('seB').value;
         if (b - a < min) { if (changed === 'A') { $('seB').value = Math.min(1000, a + min); if (+$('seB').value - a < min) $('seA').value = Math.max(0, +$('seB').value - min); } else { $('seA').value = Math.max(0, b - min); if (b - +$('seA').value < min) $('seB').value = Math.min(1000, +$('seA').value + min); } }
@@ -152,7 +150,7 @@ var SegUI = (function () {
         if (!rec) return;
         cr.rec = rec; cr.pts = Segments.trackOf(rec); cr.cum = Track.cumulative(cr.pts);
         $('seA').value = 0; $('seB').value = 1000;
-        $('seName').value = 'Segment ' + (Segments.list().length + 1);
+        $('seName').value = T('Segment') + ' ' + (Segments.list().length + 1);
         $('seMsg').textContent = '';
         drawPreview();
     }
@@ -160,25 +158,25 @@ var SegUI = (function () {
     function openEditor() {
         Segments.use(state.world);
         var rides = Rides.list().filter(function (r) { return r.src !== 'plan' && Segments.worldOf(r.src) === state.world && r.n >= 20; });
-        if (!rides.length) { alert(state.world === 'sim' ? 'Es gibt noch keine gespeicherte Simulationsfahrt.' : 'Es gibt noch keine gespeicherte Fahrt. Segmente werden aus einer Fahrt herausgeschnitten.'); return; }
+        if (!rides.length) { alert(state.world === 'sim' ? T('Es gibt noch keine gespeicherte Simulationsfahrt.') : T('Es gibt noch keine gespeicherte Fahrt. Segmente werden aus einer Fahrt herausgeschnitten.')); return; }
         $('seRide').innerHTML = rides.map(function (r) { return '<option value="' + r.id + '">' + esc(r.name) + ' · ' + UI.fmtDist(r.dist) + '</option>'; }).join('');
         $('segEdit').hidden = false;
         loadRide(rides[0].id);
     }
 
     function saveEditor() {
-        var s = selection(), name = ($('seName').value || '').trim() || 'Segment';
-        if (s.iB <= s.iA) { $('seMsg').textContent = 'Anfang muss vor dem Ende liegen.'; return; }
+        var s = selection(), name = ($('seName').value || '').trim() || T('Segment');
+        if (s.iB <= s.iA) { $('seMsg').textContent = T('Anfang muss vor dem Ende liegen.'); return; }
         Segments.use(state.world);
         var seg = Segments.fromSection(cr.pts, s.iA, s.iB, name, 'custom', false);
-        if (seg.len < 150) { $('seMsg').textContent = 'Das Segment ist zu kurz (mindestens 150 m).'; return; }
+        if (seg.len < 150) { $('seMsg').textContent = T('Das Segment ist zu kurz (mindestens 150 m).'); return; }
         var found = Segments.addSegment(seg);
-        $('seMsg').textContent = '„' + name + '“ gespeichert – in ' + found + (found === 1 ? ' Fahrt' : ' Fahrten') + ' gefunden.';
+        $('seMsg').textContent = found === 1 ? T('„{name}“ gespeichert – in 1 Fahrt gefunden.', { name: name }) : T('„{name}“ gespeichert – in {n} Fahrten gefunden.', { name: name, n: found });
         refresh();
         setTimeout(function () { $('segEdit').hidden = true; }, 1100);
     }
 
-    /* ---------------- Live-Banner ---------------- */
+    /* ---------------- Live banner ---------------- */
     function startLive(world) { liveSeg = Segments.live(world); active = {}; toast = null; renderBanner(); }
     function stopLive() { liveSeg = null; active = {}; toast = null; renderBanner(); }
 
@@ -205,18 +203,18 @@ var SegUI = (function () {
             var e = toast.e;
             cls = e.isPB ? 'pb' : (e.delta > 0 ? 'behind' : 'ahead');
             html = '<b>' + esc(e.seg.name) + ' · ' + fmt(e.ms) + '</b> ' +
-                   (e.best === null ? '<div class="sub2">Erste Fahrt – die Zeit ist jetzt deine Bestzeit.</div>'
-                    : e.isPB ? Emo.img('🏆') + ' neue Bestzeit (' + fmtDelta(e.delta) + ')' : '<div class="sub2">' + fmtDelta(e.delta) + ' zur Bestzeit ' + fmt(e.best) + '</div>');
+                   (e.best === null ? '<div class="sub2">' + T('Erste Fahrt – die Zeit ist jetzt deine Bestzeit.') + '</div>'
+                    : e.isPB ? Emo.img('🏆') + ' ' + T('neue Bestzeit ({d})', { d: fmtDelta(e.delta) }) : '<div class="sub2">' + T('{d} zur Bestzeit {t}', { d: fmtDelta(e.delta), t: fmt(e.best) }) + '</div>');
         } else {
             var ids = Object.keys(active);
             if (ids.length) {
                 var a = active[ids[0]];
                 cls = a.delta == null ? '' : (a.delta <= 0 ? 'ahead' : 'behind');
                 html = '<b>▲ ' + esc(a.seg.name) + '</b> ' + fmt(a.elapsed || 0) +
-                       (a.best ? ' · Bestzeit ' + fmt(a.best) : '') +
-                       '<div class="sub2">' + (a.delta == null ? (a.best ? 'Vergleich ab 5 % der Strecke' : 'erste Fahrt auf diesem Segment')
-                           : (a.delta <= 0 ? 'vor der Bestzeit: ' : 'hinter der Bestzeit: ') + fmtDelta(a.delta).replace(/^[+−]/, '')) +
-                       ' · noch ' + UI.fmtDist(a.left !== undefined ? a.left : a.seg.len) + '</div>';
+                       (a.best ? ' · ' + T('Bestzeit') + ' ' + fmt(a.best) : '') +
+                       '<div class="sub2">' + (a.delta == null ? (a.best ? T('Vergleich ab 5 % der Strecke') : T('erste Fahrt auf diesem Segment'))
+                           : (a.delta <= 0 ? T('vor der Bestzeit: {d}', { d: fmtDelta(a.delta).replace(/^[+−]/, '') }) : T('hinter der Bestzeit: {d}', { d: fmtDelta(a.delta).replace(/^[+−]/, '') }))) +
+                       ' · ' + T('noch {d}', { d: UI.fmtDist(a.left !== undefined ? a.left : a.seg.len) }) + '</div>';
             }
         }
         el.hidden = !html;
@@ -224,7 +222,7 @@ var SegUI = (function () {
         if (html) el.innerHTML = html;
     }
 
-    /* ---------------- Verdrahtung ---------------- */
+    /* ---------------- Wiring ---------------- */
     function init() {
         function pane(id) {
             $(id).addEventListener('click', function (e) {
@@ -237,10 +235,10 @@ var SegUI = (function () {
                 Segments.use(state.world);
                 if (act === 'open') { state.open[id] = !state.open[id]; renderSegments(); }
                 else if (act === 'rename') {
-                    var seg = Segments.get(id), nn = prompt('Neuer Name für das Segment:', seg ? seg.name : '');
+                    var seg = Segments.get(id), nn = prompt(T('Neuer Name für das Segment:'), seg ? seg.name : '');
                     if (nn && nn.trim()) { Segments.rename(id, nn.trim().slice(0, 40)); renderSegments(); }
                 } else if (act === 'del') {
-                    if (confirm('Segment samt allen Zeiten löschen?')) { Segments.remove(id); renderSegments(); }
+                    if (confirm(T('Segment samt allen Zeiten löschen?'))) { Segments.remove(id); renderSegments(); }
                 }
             });
         }
@@ -250,7 +248,7 @@ var SegUI = (function () {
         $('seB').addEventListener('input', function () { keepOrder('B'); drawPreview(); });
         $('seSave').addEventListener('click', saveEditor);
         $('seCancel').addEventListener('click', function () { $('segEdit').hidden = true; });
-        setInterval(renderBanner, 1000);          // Banner laeuft ab, auch ohne neue Position
+        setInterval(renderBanner, 1000);          // banner expires, even without a new position
         refresh();
     }
 

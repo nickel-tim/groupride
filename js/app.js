@@ -1,66 +1,66 @@
 /* ============================================================
- * app.js -- Verdrahtung
+ * app.js -- wiring
  * ============================================================
- * Eine Eigenschaft ist wichtig zu verstehen: Es gibt KEINEN Server,
- * der die Wahrheit kennt. Jedes Handy baut seine eigene Streckenachse
- * und rechnet selbst. Die absoluten Bogenlaengen unterscheiden sich
- * deshalb von Geraet zu Geraet (jede Achse startet dort, wo dieses
- * Handy die erste Position gesehen hat) -- die DIFFERENZEN, und damit
- * Reihenfolge, Luecken und Bergzeiten, sind auf allen Geraeten gleich.
+ * One property is important to understand: there is NO server
+ * that knows the truth. Every phone builds its own route axis
+ * and computes on its own. The absolute arc lengths therefore differ
+ * from device to device (each axis starts where this phone saw
+ * its first position) -- the DIFFERENCES, and with them
+ * order, gaps and climb times, are the same on all devices.
  *
- * Der Preis: Bei Funkloechern koennen zwei Handys kurz
- * unterschiedliche Staende zeigen. Der Gewinn: kein Backend, keine
- * Registrierung, kein Datenabfluss.
+ * The price: with radio gaps two phones may briefly show
+ * different states. The gain: no backend, no
+ * registration, no data leakage.
  * ============================================================ */
 
 (function () {
     'use strict';
 
-    var SEND_MS   = 2000;     // Sendetakt: oefter braucht niemand, und der
-                              // oeffentliche Broker soll nicht leiden
+    var SEND_MS   = 2000;     // Send interval: nobody needs it more often, and the
+                              // public broker should not suffer
     var RENDER_MS = 200;
 
     var route = new Route();
     var an    = new Analytics(route);
 
-    var me = { id: null, name: null, colorIdx: 0, emoji: null };     // emoji: Nummer aus UI.EMOJIS oder null
+    var me = { id: null, name: null, colorIdx: 0, emoji: null };     // emoji: number from UI.EMOJIS or null
     var secret = null, key = null, topic = null;
     var running = false;
     var lastSend = 0;
-    var myFix = null;         // letzte eigene Position
-    var myTrack = [];         // fuer den GPX-Export
-    var coffeeStamps = [];    // Zeitpunkte eigener Kaffee-Nachrichten in dieser Fahrt (Liga-Kategorie)
+    var myFix = null;         // last own position
+    var myTrack = [];         // for the GPX export
+    var coffeeStamps = [];    // times of own coffee messages in this ride (league category)
     var seenEvents = 0, seenClimbs = 0;
     var relayUrl = null;
-    // Kartenansicht: "Alle" passt den Ausschnitt an die Gruppe an, "Ich" haelt
-    // dich in der Mitte; "Kurs" dreht die Karte so, dass deine Fahrtrichtung oben liegt.
-    var liveMap = null;                               // Karte (MapCtl), wird beim Laden aufgebaut
-    var lastMap = null;                               // letzter Stand fuer die Zeichenschleife
+    // Map view: "All" fits the section to the group, "Me" keeps
+    // you in the centre; "Heading" rotates the map so that your direction of travel is up.
+    var liveMap = null;                               // map (MapCtl), built on load
+    var lastMap = null;                               // last state for the drawing loop
 
-    // Geplante Route (Ueberlagerung): eine gespeicherte Fahrt/GPX-Strecke als Linie auf der Karte
+    // Planned route (overlay): a saved ride/GPX track as a line on the map
     //   { id, name, route (Route), overlay {name,len,pts,route}, climbs, gain }
     var plan = null;
-    var profMode = null;                              // 'all' | 'ahead' (null = automatisch)
-    var planHint = {};                                // letzte Position je Fahrer auf der Route
+    var profMode = null;                              // 'all' | 'ahead' (null = automatic)
+    var planHint = {};                                // last position per rider on the route
 
-    // Simulation: eigener Zustand, sie ersetzt GPS und Netz komplett
+    // Simulation: own state, it replaces GPS and network completely
     var sim = null, simTimer = null, simWarp = 1, simHeading = null, simSaved = false;
 
-    // Ghost: eine gespeicherte Fahrt als virtueller Mitfahrer (siehe ghost.js)
-    //   state: 'armed' wartet auf den Start, 'running' faehrt, danach faellt er weg
+    // Ghost: a saved ride as a virtual fellow rider (see ghost.js)
+    //   state: 'armed' waits for the start, 'running' rides, afterwards it drops away
     var ghost = null;
-    var GHOST_START_M = 40;       // so nah am Ghost-Start muss man sein, damit er losfaehrt
-    var GHOST_COLOR = '#9aa7ad';  // mittleres Grau: auf dunklem und hellem Grund lesbar
+    var GHOST_START_M = 40;       // you have to be this close to the ghost start for it to set off
+    var GHOST_COLOR = '#9aa7ad';  // mid grey: readable on dark and light backgrounds
 
     function $(id) { return document.getElementById(id); }
     function store(k, v) { try { if (v === undefined) return localStorage.getItem(k);
                                  localStorage.setItem(k, v); } catch (e) { return null; } }
 
-    /* ---------------- Identitaet ---------------- */
+    /* ---------------- Identity ---------------- */
     function initIdentity() {
         me.id = store('rid');
         if (!me.id) { me.id = Math.random().toString(36).slice(2, 10); store('rid', me.id); }
-        me.name = store('rname') || 'Fahrer ' + me.id.slice(0, 3);
+        me.name = store('rname') || T('Fahrer {id}', { id: me.id.slice(0, 3) });
         me.colorIdx = parseInt(store('rcol') || '0', 10) % UI.COLORS.length;
         var em = store('remoji');
         me.emoji = (em === null || em === '') ? null : UI.validEmoji(parseInt(em, 10));
@@ -69,9 +69,9 @@
 
     function myColor() { return UI.COLORS[me.colorIdx]; }
 
-    /* ---------------- Raum aus dem URL-Fragment ----------------
-       Das Fragment (hinter dem #) wird vom Browser NICHT an Server
-       gesendet. Der Schluessel bleibt deshalb zwischen den Handys. */
+    /* ---------------- Room from the URL fragment ----------------
+       The fragment (after the #) is NOT sent to servers by the browser.
+       The key therefore stays between the phones. */
     async function initRoom() {
         var frag = new URLSearchParams(location.hash.replace(/^#/, ''));
         secret = frag.get('k');
@@ -91,63 +91,60 @@
         renderNetNote();
     }
 
-    /* Der Relay MUSS im geteilten Link stehen: Wer auf dem oeffentlichen
-       Broker landet, waehrend andere den eigenen Relay nutzen, sieht
-       niemanden -- beide Wege sind getrennte Welten. */
+    /* The relay MUST be in the shared link: whoever ends up on the public
+       broker while others use their own relay sees
+       nobody -- the two ways are separate worlds. */
     function shareLink() {
         var q = new URLSearchParams(location.search);
         if (relayUrl) q.set('relay', relayUrl); else q.delete('relay');
         q.delete('sim');
+        q.delete('lang');                  // the language is each person's own choice, not part of the link
         var qs = q.toString();
         return location.origin + location.pathname + (qs ? '?' + qs : '') + location.hash;
     }
 
     function renderLinkNote() {
         $('linkNote').innerHTML =
-            'Wer diesen Link öffnet, ist in der Gruppe – ohne Installation, ohne Konto.' +
+            T('Wer diesen Link öffnet, ist in der Gruppe – ohne Installation, ohne Konto.') +
             '<br><br><code>' + UI.escapeHtml(shareLink()) + '</code>';
     }
 
     function renderNetNote() {
         var m = Net.mode();
         $('netNote').innerHTML = m === 'relay'
-            ? 'Eigener Relay: <code>' + UI.escapeHtml(relayUrl) + '</code>'
-            : 'Öffentlicher MQTT-Broker. Kein Konto nötig, aber auch keine ' +
-              'Verfügbarkeitsgarantie. Fällt einer aus, wird automatisch der nächste probiert.';
-        $('privacyNote').innerHTML =
-            '<b>Zur Vertraulichkeit:</b> Positionen verlassen das Handy nur ' +
-            'AES-GCM-verschlüsselt. Der Schlüssel steht hinter dem <code>#</code> der ' +
-            'Adresse und wird von Browsern nie an einen Server gesendet – der Broker ' +
-            'sieht ausschließlich Zufallsbytes. Wer den Link weitergibt, gibt allerdings ' +
-            'auch den Schlüssel weiter.<br><br><b>Straßenkarte:</b> Nur wenn du sie unter „Karte“ ' +
-            'einschaltest, lädt dein Handy Kartenbilder von tile.openstreetmap.org. Der Anbieter ' +
-            'sieht dann IP-Adresse und ungefähren Ausschnitt, nichts von der Gruppe.';
+            ? T('Eigener Relay:') + ' <code>' + UI.escapeHtml(relayUrl) + '</code>'
+            : T('Öffentlicher MQTT-Broker. Kein Konto nötig, aber auch keine Verfügbarkeitsgarantie. Fällt einer aus, wird automatisch der nächste probiert.');
+        $('privacyNote').innerHTML = T('<b>Zur Vertraulichkeit:</b> Positionen verlassen das Handy nur AES-GCM-verschlüsselt. Der Schlüssel steht hinter dem <code>#</code> der Adresse und wird von Browsern nie an einen Server gesendet – der Broker sieht ausschließlich Zufallsbytes. Wer den Link weitergibt, gibt allerdings auch den Schlüssel weiter.<br><br><b>Straßenkarte:</b> Nur wenn du sie unter „Karte“ einschaltest, lädt dein Handy Kartenbilder von tile.openstreetmap.org. Der Anbieter sieht dann IP-Adresse und ungefähren Ausschnitt, nichts von der Gruppe.');
     }
 
-    /* ---------------- Netz ---------------- */
+    /* ---------------- Network ---------------- */
+    /* Status line in the header: remember it, so that a language switch can write it again */
+    var lastNet = null;
+    function netStatus(state, key, vars) { lastNet = { s: state, k: key, v: vars }; UI.renderNet(state, T(key, vars)); }
+
     function startNet() {
         Net.start({
             topic: topic,
             relayUrl: relayUrl,
             onMessage: onWire,
             onState: function (s, detail) {
-                if (s === 'online')      UI.renderNet('online', 'verbunden');
-                else if (s === 'loading')  UI.renderNet('wait', 'lade Netzwerkteil …');
-                else if (s === 'connecting')UI.renderNet('wait', 'verbinde …');
-                else if (s === 'retry')    UI.renderNet('wait', 'nächster Broker …');
-                else if (s === 'error')    UI.renderNet('off', UI.escapeHtml(detail || 'Fehler'));
+                if (s === 'online')      netStatus('online', 'verbunden');
+                else if (s === 'loading')  netStatus('wait', 'lade Netzwerkteil …');
+                else if (s === 'connecting')netStatus('wait', 'verbinde …');
+                else if (s === 'retry')    netStatus('wait', 'nächster Broker …');
+                else if (s === 'error')  { lastNet = null; UI.renderNet('off', UI.escapeHtml(detail || T('Fehler'))); }
             }
         });
     }
 
     async function onWire(str) {
         var m = await Crypt.open(key, str);
-        // null = fremde Gruppe oder beschaedigt. Verwerfen, nicht melden.
+        // null = foreign group or corrupted. Discard, do not report.
         if (!m || !m.i || m.i === me.id) return;
-        if (m.q) { Msg.receive(m); return; }                      // Kurznachricht statt Position
+        if (m.q) { Msg.receive(m); return; }                      // short message instead of a position
         if (typeof m.la !== 'number' || typeof m.lo !== 'number') return;
 
-        var emo = UI.validEmoji(m.j);                        // unbekannte/ungueltige Nummer = kein Symbol
+        var emo = UI.validEmoji(m.j);                        // unknown/invalid number = no symbol
         Recorder.add(m.i, typeof m.n === 'string' ? m.n.slice(0, 14) : null, UI.COLORS[(m.c | 0) % UI.COLORS.length],
                      (typeof m.t === 'number') ? m.t : Date.now(), m.la, m.lo, (typeof m.e === 'number') ? m.e : null, emo);
         an.ingest(m.i, {
@@ -163,11 +160,11 @@
         });
     }
 
-    /* Kurznachricht senden: 'sent' | 'sim' | 'offline'. Der Kanal ist "einmal senden, keine
-       Bestaetigung" -- ein verlorenes "Halt!" waere schlimm, deshalb nach 1,5 s noch einmal;
-       die Nachrichten-ID sorgt dafuer, dass sie beim Empfaenger nur einmal zaehlt. */
+    /* Send a short message: 'sent' | 'sim' | 'offline'. The channel is "send once, no
+       confirmation" -- a lost "Stop!" would be bad, so once more after 1.5 s;
+       the message ID makes sure it only counts once at the receiver. */
     function sendMsgWire(code, mid) {
-        if (sim) return 'sim';                                     // in der Simulation geht nichts raus
+        if (sim) return 'sim';                                     // in the simulation nothing goes out
         if (!key || !running || !Net.online()) return 'offline';
         var payload = { i: me.id, n: me.name, c: me.colorIdx, t: Date.now(), q: code, mid: mid };
         if (me.emoji !== null) payload.j = me.emoji;
@@ -189,7 +186,7 @@
             a: c.accuracy !== null ? Math.round(c.accuracy) : null,
             t: myFix.timestamp || Date.now()
         };
-        if (me.emoji !== null) pkt.j = me.emoji;             // nur die Nummer; ohne Symbol bleibt die Meldung wie bisher
+        if (me.emoji !== null) pkt.j = me.emoji;             // only the number; without a symbol the report stays as before
         Crypt.seal(key, pkt).then(Net.publish);
     }
 
@@ -223,7 +220,7 @@
         if (now - lastSend >= SEND_MS) { lastSend = now; sendMine(); }
     }
 
-    /* ---------------- Renderloop ---------------- */
+    /* ---------------- Render loop ---------------- */
     function render() {
         var ord = an.tick(sim ? sim.now() : undefined);
         var mine = an.riders[me.id];
@@ -237,16 +234,16 @@
         for (var i = 0; i < ord.length; i++) if (ord[i].id === me.id) pos = i + 1;
         UI.renderRank(pos, ord.length);
 
-        // --- Kompass und Karte: gezeichnet in eigenen Schleifen (glatt, siehe smooth.js);
-        //     hier nur der aktuelle Stand fuer sie ---
+        // --- Compass and map: drawn in their own loops (smooth, see smooth.js);
+        //     here only the current state for them ---
         lastCompass = { ord: ord, heading: h.deg };
         ensureCompassLoop();
         lastMap = { ord: ord, heading: h.deg };
         if (isActive('map')) liveMap.ensureLoop();
         renderProfiles();
 
-        // --- Liste: Luecke immer relativ zu MIR, das ist die Zahl,
-        //     die man beim Fahren wissen will ---
+        // --- List: gap always relative to ME, that is the number
+        //     you want to know while riding ---
         var rows = ord.map(function (r) {
             var gapM = null, gapS = null;
             if (mine && mine.s !== null && r.s !== null && r.id !== me.id) {
@@ -262,7 +259,7 @@
         });
         UI.renderRiders(rows);
 
-        // --- Führungsarbeit ---
+        // --- Front work ---
         var tot = 0; ord.forEach(function (r) { if (!r.ghost) tot += r.frontMs; });
         UI.renderFrontWork(ord.filter(function (r) { return r.frontMs > 0 && !r.ghost; })
             .sort(function (a, b) { return b.frontMs - a.frontMs; })
@@ -271,11 +268,11 @@
                          frontMs: r.frontMs, share: tot ? r.frontMs / tot : 0 };
             }));
 
-        // --- Ereignisse ---
+        // --- Events ---
         UI.renderEvents(an.events.map(function (e) { return { t: e.t, type: e.type,
                                                               text: eventText(e) }; }));
 
-        // --- Berge ---
+        // --- Climbs ---
         UI.renderClimbs(an.climbs.map(function (c) {
             return { no: c.no, gain: c.gain || 0, len: c.len || 0, grade: c.grade || 0,
                      ranking: an.climbRanking(c).map(function (x) {
@@ -290,15 +287,15 @@
         if (an.climbs.length > seenClimbs && !isActive('climbs'))
             UI.badge('bdgClimbs', an.climbs.length - seenClimbs);
 
-        if (running && !Net.online()) UI.renderNet('wait', 'kein Netz – nur eigene Daten');
+        if (running && !Net.online()) netStatus('wait', 'kein Netz – nur eigene Daten');
     }
 
-    /* ---------------- Kompass ----------------
-       Wie die Karte: Positionen ~1x pro Sekunde, gezeichnet wird mit ~30 Bildern
-       (glatt, siehe smooth.js). Der Kompass rechnet in Distanz und Peilung von
-       DIR aus; beides kommt hier aus den geglaetteten Positionen, nicht aus den
-       rohen Meldungen -- sonst wackeln Punkte und Nadel im Sekundentakt und mit
-       dem GPS-Rauschen. */
+    /* ---------------- Compass ----------------
+       Like the map: positions ~1x per second, drawing happens with ~30 frames
+       (smooth, see smooth.js). The compass computes in distance and bearing from
+       DIR on; both come from the smoothed positions here, not from the
+       raw reports -- otherwise dots and needle wobble every second and with
+       the GPS noise. */
     var lastCompass = null, compassTrk = Smooth.create(), compassTmpFrame = null;
     var compassLoopOn = false, compassLoopT = 0;
 
@@ -308,7 +305,7 @@
             UI.renderCompass(mine, [], Smooth.heading(compassTrk, heading, now));
             return;
         }
-        // Bezugssystem der Meter: das der Route, sonst ein vorlaeufiges um dich
+        // Reference frame of the metres: that of the route, otherwise a provisional one around you
         if (!route.frame && !compassTmpFrame) compassTmpFrame = Geo.frame(mine.fLat, mine.fLon);
         var frame = route.frame || compassTmpFrame;
         Smooth.reset(compassTrk, frame);
@@ -327,7 +324,7 @@
             ord.forEach(function (r) {
                 var p = pos[r.id];
                 if (!p || r.id === me.id) return;
-                var dx = p.x - m.x, dy = p.y - m.y;      // x = Ost, y = Nord
+                var dx = p.x - m.x, dy = p.y - m.y;      // x = east, y = north
                 peers.push({
                     color: r.color || UI.COLORS[1], emoji: UI.emojiOf(r.emoji),
                     short: (r.name || r.id).slice(0, 6),
@@ -357,9 +354,8 @@
         try {
             $('qrBox').innerHTML = QR.svg(url);
         } catch (e) {
-            // Link zu lang fuer die groesste QR-Version (Relay-URL mit Riesenpfad)
-            $('qrBox').innerHTML = '<div class="empty">Der Link ist zu lang für einen QR-Code. ' +
-                                   'Bitte „Link zum Mitfahren teilen“ nutzen.</div>';
+            // Link too long for the largest QR version (relay URL with a huge path)
+            $('qrBox').innerHTML = '<div class="empty">' + T('Der Link ist zu lang für einen QR-Code. Bitte „Link zum Mitfahren teilen“ nutzen.') + '</div>';
         }
         $('qrOverlay').hidden = false;
     }
@@ -368,7 +364,7 @@
 
     /* ---------------- Simulation ---------------- */
     function simStart() {
-        if (running) { alert('Erst die laufende Ausfahrt beenden.'); return; }
+        if (running) { alert(T('Erst die laufende Ausfahrt beenden.')); return; }
         route = new Route(); an = new Analytics(route);
         seenEvents = 0; seenClimbs = 0;
         myTrack = []; simSaved = false; Recorder.reset(me.id);
@@ -379,11 +375,11 @@
                                colors: others.slice(0, 4) });
         simWarp = 1;
         $('simbar').hidden = false;
-        $('btnSim').textContent = 'Simulation beenden';
+        $('btnSim').textContent = T('Simulation beenden');
         $('btnSim').className = 'btn stop';
-        UI.renderNet('wait', 'Simulation – nichts wird gesendet');
-        /* Vorlauf: erst ab ~150 m Streckenachse sind Reihenfolge und Luecken
-           belastbar. Ohne ihn stuenden beim Start alle bei "0 m". */
+        netStatus('wait', 'Simulation – nichts wird gesendet');
+        /* Lead-in: only from ~150 m of route axis are order and gaps
+           reliable. Without it everybody would stand at "0 m" at the start. */
         simAdvance(25);
         syncSimBar();
         simTimer = setInterval(simTick, 1000);
@@ -396,20 +392,20 @@
         if (!simSaved && sim && sim.t >= 60) { simSaved = true; finishRecording('sim'); }
         armGhostAgain();
         sim = null; simHeading = null;
-        // Zustand der Simulation nicht in eine echte Ausfahrt mitnehmen
+        // Do not carry the simulation state over into a real ride
         route = new Route(); an = new Analytics(route);
         seenEvents = 0; seenClimbs = 0;
         $('simbar').hidden = true;
-        $('btnSim').textContent = 'Simulation starten';
+        $('btnSim').textContent = T('Simulation starten');
         $('btnSim').className = 'btn';
-        UI.renderNet('off', 'bereit – unter „Gruppe“ starten');
+        netStatus('off', 'bereit – unter „Gruppe“ starten');
         renderGhostUi();
         render();
     }
 
-    /* Jede Wall-Sekunde: warp simulierte Sekunden. Eine Meldung pro
-       simulierter Sekunde (1 Hz wie echtes GPS), damit die Auswertung
-       im Zeitraffer nicht anders rechnet als in Echtzeit. */
+    /* Every wall-clock second: warp simulated seconds. One report per
+       simulated second (1 Hz like real GPS), so that the analysis
+       in time lapse does not compute differently than in real time. */
     function simAdvance(n) {
         for (var i = 0; i < n && !sim.done; i++) {
             sim.step().forEach(function (m) {
@@ -444,13 +440,13 @@
         document.querySelectorAll('#simbar [data-warp]').forEach(function (b) {
             b.classList.toggle('on', +b.dataset.warp === simWarp);
         });
-        var km = (sim.meS() / 1000).toFixed(1), tot = (sim.length / 1000).toFixed(1);
+        var km = I18n.num(sim.meS() / 1000, 1), tot = I18n.num(sim.length / 1000, 1);
         $('simMsg').textContent = sim.done
-            ? 'Ziel erreicht – Simulation zu Ende. Beenden und neu starten zum Wiederholen.'
-            : 'Du: km ' + km + ' von ' + tot + ' · Zeit ' + UI.fmtDur(sim.t * 1000);
+            ? T('Ziel erreicht – Simulation zu Ende. Beenden und neu starten zum Wiederholen.')
+            : T('Du: km {a} von {b} · Zeit {t}', { a: km, b: tot, t: UI.fmtDur(sim.t * 1000) });
     }
 
-    /* ---------------- Aufzeichnung ---------------- */
+    /* ---------------- Recording ---------------- */
     function setRideMsg(t) { $('rideMsg').textContent = t || ''; }
 
     function finishRecording(src) {
@@ -458,52 +454,51 @@
         var cof = LigaMetrics.countCoffee(coffeeStamps);
         var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null, x: cof ? { coffee: cof } : null });
         Rides.clearDraft();
-        setRideMsg(r.ok ? '„' + r.rec.name + '“ gespeichert – ' + UI.fmtDist(r.rec.dist) + ', ' +
-                          UI.fmtDur(r.rec.dur) + '. Unten als Ghost verwendbar.'
+        setRideMsg(r.ok ? T('„{name}“ gespeichert – {d}, {t}. Unten als Ghost verwendbar.', { name: r.rec.name, d: UI.fmtDist(r.rec.dist), t: UI.fmtDur(r.rec.dur) })
                         : r.err);
         renderRides();
         if (r.ok) { analyseRide(r.rec); if (src === 'ride') LigaSync.rideSaved(r.rec); }
     }
 
-    /* Nach der Fahrt: Segmente finden, Bestzeiten und Rekorde nachfuehren. Laeuft in kleinen
-       Happen im Hintergrund (bei langen Fahrten einige Sekunden), Ergebnis in lastReport. */
+    /* After the ride: find segments, update best times and records. Runs in small
+       chunks in the background (a few seconds for long rides), result in lastReport. */
     var lastReport = null;
     function analyseRide(rec) {
         lastReport = null;
-        setRideMsg('„' + rec.name + '“ gespeichert. Auswertung läuft …');
+        setRideMsg(T('„{name}“ gespeichert. Auswertung läuft …', { name: rec.name }));
         return Segments.processRide(rec).then(function (rep) {
             lastReport = rep ? { rideId: rec.id, rep: rep } : null;
             if (rep) SegUI.setReport(rep);
-            var note = '„' + rec.name + '“ gespeichert';
+            var note = T('„{name}“ gespeichert', { name: rec.name });
             if (rep) {
                 var pb = rep.efforts.filter(function (e) { return e.isPB && !e.first; }).length;
                 var firsts = rep.efforts.filter(function (e) { return e.first; }).length;
-                if (pb) note += ' · ' + pb + ' neue Bestzeit' + (pb > 1 ? 'en' : '');
-                if (firsts) note += ' · ' + firsts + (firsts > 1 ? ' neue Segmente' : ' neues Segment');
-                if (rep.records.length) note += ' · ' + rep.records.length + ' Rekord' + (rep.records.length > 1 ? 'e' : '');
+                if (pb) note += ' · ' + (pb > 1 ? T('{n} neue Bestzeiten', { n: pb }) : T('1 neue Bestzeit'));
+                if (firsts) note += ' · ' + (firsts > 1 ? T('{n} neue Segmente', { n: firsts }) : T('1 neues Segment'));
+                if (rep.records.length) note += ' · ' + (rep.records.length > 1 ? T('{n} Rekorde', { n: rep.records.length }) : T('1 Rekord'));
             }
             setRideMsg(note + '.');
             if (typeof SegUI !== 'undefined') SegUI.refresh();
-            // Echte Fahrten: die Bilanz gleich zeigen. Simulationen nur auf Knopfdruck.
+            // Real rides: show the summary right away. Simulations only on button press.
             if (rec.src === 'ride' && rec.dur > 120000 && rec.dist > 500) openSummary(rec.id);
-        }, function (e) { setRideMsg('Auswertung fehlgeschlagen: ' + (e && e.message || e)); });
+        }, function (e) { setRideMsg(T('Auswertung fehlgeschlagen: {e}', { e: e && e.message || e })); });
     }
 
-    /* ---------------- Bilanz ---------------- */
+    /* ---------------- Summary ---------------- */
     var sumData = null;
     function openSummary(id) {
         $('sumOverlay').hidden = false; $('sumBusy').hidden = false; $('sumBody').innerHTML = ''; $('sumMsg').textContent = '';
         sumData = null;
-        Summary.forRide(id, function (f) { $('sumBusy').textContent = 'Bilanz wird berechnet … ' + Math.round(f * 100) + ' %'; }).then(function (d) {
+        Summary.forRide(id, function (f) { $('sumBusy').textContent = T('Bilanz wird berechnet … {p} %', { p: Math.round(f * 100) }); }).then(function (d) {
             sumData = d;
             $('sumBusy').hidden = true;
             $('sumBody').innerHTML = Summary.html(d);
             $('sumThumb').innerHTML = '<svg viewBox="0 0 340 190" preserveAspectRatio="xMidYMid meet">' + Summary.thumbSvg(d, 340, 190) + '</svg>';
-        }, function (e) { $('sumBusy').hidden = true; $('sumBody').textContent = 'Bilanz nicht möglich: ' + (e && e.message || e); });
+        }, function (e) { $('sumBusy').hidden = true; $('sumBody').textContent = T('Bilanz nicht möglich: {e}', { e: e && e.message || e }); });
     }
 
-    /* Entwurf alle 60 s: Faellt der Akku waehrend der Fahrt aus oder stuerzt
-       der Browser ab, ist die Fahrt beim naechsten Oeffnen nicht weg. */
+    /* Draft every 60 s: if the battery dies during the ride or the
+       browser crashes, the ride is not gone the next time it is opened. */
     function saveDraftNow() {
         if ((running || sim) && myTrack.length) Rides.saveDraft(sim ? 'sim' : 'ride', myTrack);
     }
@@ -515,8 +510,8 @@
         var pts = Rides.unpack(d);
         if (pts.length < Rides.MIN_POINTS) return;
         var r = Rides.save({ src: d.src || 'ride', pts: pts,
-                             name: 'Wiederhergestellt ' + Rides.fmtDate(pts[0].t) });
-        setRideMsg(r.ok ? 'Eine nicht beendete Fahrt wurde wiederhergestellt.' : r.err);
+                             name: T('Wiederhergestellt') + ' ' + Rides.fmtDate(pts[0].t) });
+        setRideMsg(r.ok ? T('Eine nicht beendete Fahrt wurde wiederhergestellt.') : r.err);
     }
 
     /* ---------------- Ghost ---------------- */
@@ -524,13 +519,13 @@
 
     function armGhost(id) {
         var rec = Rides.get(id);
-        if (!rec) { setRideMsg('Diese Ausfahrt ist nicht mehr gespeichert.'); return; }
+        if (!rec) { setRideMsg(T('Diese Ausfahrt ist nicht mehr gespeichert.')); return; }
         dropGhostRider();
         ghost = { rec: rec, g: Ghost.make(rec, ghostFactor()), state: 'armed', t0: null };
         renderGhostUi(); renderRides();
     }
 
-    // Beim Start einer neuen Fahrt/Simulation wartet der Ghost wieder am Start
+    // When a new ride/simulation starts, the ghost waits at the start again
     function armGhostAgain() {
         if (!ghost) return;
         dropGhostRider();
@@ -546,8 +541,8 @@
 
     function dropGhostRider() { if (an && an.riders && an.riders.ghost) delete an.riders.ghost; }
 
-    /* Ein Schritt: stamp = Zeitstempel der Meldung, clock = Ghost-Uhr in ms
-       (Echtzeit, oder Simulationszeit -- dann laeuft der Ghost im Zeitraffer mit). */
+    /* One step: stamp = timestamp of the report, clock = ghost clock in ms
+       (real time, or simulation time -- then the ghost runs along in time lapse). */
     function ghostStep(stamp, clock) {
         if (!ghost || ghost.state === 'done') return;
         if (ghost.state === 'armed') {
@@ -570,7 +565,7 @@
 
     function startGhostNow() {
         if (!ghost || ghost.state !== 'armed') return;
-        if (!running && !sim) { setRideMsg('Erst eine Ausfahrt oder die Simulation starten.'); return; }
+        if (!running && !sim) { setRideMsg(T('Erst eine Ausfahrt oder die Simulation starten.')); return; }
         ghost.state = 'running';
         ghost.t0 = sim ? sim.t * 1000 : Date.now();
         renderGhostUi();
@@ -580,9 +575,7 @@
         var st = $('ghostState'), now = $('btnGhostNow'), off = $('btnGhostOff');
         $('ghostPace').disabled = !!ghost && ghost.state === 'running';
         if (!ghost) {
-            st.innerHTML = 'Kein Ghost gewählt. Unter „Gespeicherte Ausfahrten“ eine Fahrt als ' +
-                           'Ghost wählen, dann fährt sie als grauer Mitfahrer mit – mit Rang, Lücke ' +
-                           'und Karte wie jeder andere.';
+            st.innerHTML = T('Kein Ghost gewählt. Unter „Gespeicherte Ausfahrten“ eine Fahrt als Ghost wählen, dann fährt sie als grauer Mitfahrer mit – mit Rang, Lücke und Karte wie jeder andere.');
             now.hidden = off.hidden = true;
             return;
         }
@@ -591,29 +584,40 @@
         if (ghost.state === 'armed') {
             var mine = an.riders[me.id], txt;
             if (!running && !sim) {
-                txt = 'wartet. Er startet, sobald du die Ausfahrt startest und am Startpunkt bist (' + GHOST_START_M + ' m).';
+                txt = T('wartet. Er startet, sobald du die Ausfahrt startest und am Startpunkt bist ({m} m).', { m: GHOST_START_M });
             } else if (mine && mine.lat !== null) {
                 var d = Geo.distance(mine.lat, mine.lon, ghost.g.start.lat, ghost.g.start.lon);
-                txt = 'wartet am Startpunkt – noch ' + UI.fmtDist(d) + ' entfernt. Er startet automatisch ab ' +
-                      GHOST_START_M + ' m.';
-            } else { txt = 'wartet auf deine Position.'; }
+                txt = T('wartet am Startpunkt – noch {d} entfernt. Er startet automatisch ab {m} m.', { d: UI.fmtDist(d), m: GHOST_START_M });
+            } else { txt = T('wartet auf deine Position.'); }
             st.innerHTML = 'Ghost ' + nm + ' ' + txt;
             now.hidden = !(running || sim);
         } else if (ghost.state === 'running') {
             var t = ((sim ? sim.t * 1000 : Date.now()) - ghost.t0) / 1000;
-            st.innerHTML = 'Ghost ' + nm + ' fährt: ' + UI.fmtDur(t * 1000) + ' von ' + UI.fmtDur(ghost.g.dur * 1000) + '.';
+            st.innerHTML = 'Ghost ' + nm + ' ' + T('fährt: {a} von {b}.', { a: UI.fmtDur(t * 1000), b: UI.fmtDur(ghost.g.dur * 1000) });
             now.hidden = true;
         } else {
-            st.innerHTML = 'Ghost ' + nm + ' ist nach ' + UI.fmtDur(ghost.doneAt * 1000) + ' im Ziel.';
+            st.innerHTML = 'Ghost ' + nm + ' ' + T('ist nach {t} im Ziel.', { t: UI.fmtDur(ghost.doneAt * 1000) });
             now.hidden = true;
         }
     }
 
-    /* ---------------- Geplante Route (Ueberlagerung) ----------------
-       Jede gespeicherte Strecke -- eigene Fahrt, GPX-Import, Trainingsplan -- laesst sich
-       als Linie unter die Karte legen. Es gibt keine Warnung bei Abweichung: die Linie
-       ist ein Wegweiser, keine Vorschrift. Mit einer Route kennt das Hoehenprofil auch
-       das Stueck VOR dem Fuehrenden (die Live-Achse endet ja bei ihm). */
+    /* Language switch: draw again what scripts have written into the page */
+    function relang() {
+        renderLinkNote(); renderNetNote();
+        if (lastNet) UI.renderNet(lastNet.s, T(lastNet.k, lastNet.v));
+        $('btnStart').textContent = running ? T('Ausfahrt beenden') : T('Ausfahrt starten');
+        $('btnSim').textContent = sim ? T('Simulation beenden') : T('Simulation starten');
+        renderRides(); renderGhostUi(); syncSimBar(); renderProfiles();
+        Msg.render(); liveMap.relabel(); SegUI.refresh(); LigaUI.relang(); ReplayUI.relang();
+        if (!$('sumOverlay').hidden && sumData) $('sumBody').innerHTML = Summary.html(sumData);
+        render();
+    }
+
+    /* ---------------- Planned route (overlay) ----------------
+       Every saved track -- own ride, GPX import, training plan -- can be put
+       under the map as a line. There is no warning on deviation: the line
+       is a signpost, not a rule. With a route the elevation profile also knows
+       the part AHEAD of the leader (the live axis ends at him, after all). */
     function setPlan(id) {
         var rec = Rides.get(id);
         if (!rec) { plan = null; return; }
@@ -633,12 +637,12 @@
     }
     function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); }
 
-    /* ---------------- Hoehenprofil ----------------
-       Mit Route: das Profil der ganzen Route, die Fahrer darauf projiziert (auch vor dem
-       Fuehrenden). Ohne: die Live-Achse, sie endet beim Fuehrenden. */
+    /* ---------------- Elevation profile ----------------
+       With a route: the profile of the whole route, the riders projected onto it (also ahead of
+       the leader). Without: the live axis, it ends at the leader. */
     function planS(r) {
         var pr = plan.route.project(r.fLat, r.fLon, planHint[r.id]);
-        if (!pr || pr.offset > 150) return null;            // weit ab der Route: nicht darauf zeigen
+        if (!pr || pr.offset > 150) return null;            // far off the route: do not point at it
         planHint[r.id] = pr.s;
         return Math.max(0, Math.min(plan.route.length(), pr.s));
     }
@@ -668,7 +672,7 @@
         if (onClimbs) {
             var i1 = Profile.render($('climbProfSvg'), inp);
             if (i1) $('climbProfInfo').textContent = Profile.describe(i1.next) ||
-                (plan ? 'Route „' + plan.name + '“ · ' + UI.fmtDist(plan.route.length()) + ' · +' + Math.round(plan.gain) + ' Hm' : '');
+                (plan ? T('Route „{name}“ · {d} · +{g} Hm', { name: plan.name, d: UI.fmtDist(plan.route.length()), g: Math.round(plan.gain) }) : '');
         }
         if (onMap) {
             var i2 = Profile.render($('mapProfSvg'), inp);
@@ -690,7 +694,7 @@
         if (typeof onSubShown === 'function') onSubShown(name);
     }
 
-    /* ---------------- Gespeicherte Ausfahrten ---------------- */
+    /* ---------------- Saved rides ---------------- */
     var SRC = { ride: 'gefahren', sim: 'Simulation', gpx: 'GPX', plan: 'Plan' };
 
     function renderRides() {
@@ -700,17 +704,16 @@
             return '<div class="ride" data-id="' + r.id + '">' +
                 '<div class="rt"><b>' + UI.escapeHtml(r.name) + '</b>' +
                 '<span class="rm">' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' +
-                (SRC[r.src] || r.src) + '</span></div>' +
-                '<div class="rb">' + (r.src === 'plan' ? '' : '<button data-act="replay">Replay</button><button data-act="sum">Bilanz</button>') +
-                '<button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? 'Ghost ✓' : 'Ghost') + '</button>' +
-                '<button data-act="route" class="' + (plan && plan.id === r.id ? 'on' : '') + '">' + (plan && plan.id === r.id ? 'Route ✓' : 'Route') + '</button>' +
-                '<button data-act="gpx">GPX</button><button data-act="del" aria-label="Löschen">✕</button></div></div>';
-        }).join('') || '<div class="empty">Noch nichts gespeichert. Jede beendete Ausfahrt und Simulation ' +
-                       'wird automatisch hier abgelegt.</div>';
+                T(SRC[r.src] || r.src) + '</span></div>' +
+                '<div class="rb">' + (r.src === 'plan' ? '' : '<button data-act="replay">' + T('Replay') + '</button><button data-act="sum">' + T('Bilanz') + '</button>') +
+                '<button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? T('Ghost') + ' ✓' : T('Ghost')) + '</button>' +
+                '<button data-act="route" class="' + (plan && plan.id === r.id ? 'on' : '') + '">' + (plan && plan.id === r.id ? T('Route') + ' ✓' : T('Route')) + '</button>' +
+                '<button data-act="gpx">GPX</button><button data-act="del" aria-label="' + T('Löschen') + '">✕</button></div></div>';
+        }).join('') || '<div class="empty">' + T('Noch nichts gespeichert. Jede beendete Ausfahrt und Simulation wird automatisch hier abgelegt.') + '</div>';
         if (l.length) {
-            $('rideList').insertAdjacentHTML('beforeend', '<div class="note">' + l.length +
-                (l.length === 1 ? ' Ausfahrt' : ' Ausfahrten') + ', rund ' + Rides.usage() +
-                ' KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.</div>');
+            $('rideList').insertAdjacentHTML('beforeend', '<div class="note">' +
+                (l.length === 1 ? T('1 Ausfahrt, rund {kb} KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.', { kb: Rides.usage() })
+                                : T('{n} Ausfahrten, rund {kb} KB – nur auf diesem Gerät. Der Browser kann sie löschen; „GPX“ sichert sie.', { n: l.length, kb: Rides.usage() })) + '</div>');
         }
         $('rideList').querySelectorAll('button').forEach(function (b) {
             b.addEventListener('click', function () {
@@ -724,7 +727,7 @@
                 else if (act === 'sum') openSummary(id);
                 else if (act === 'gpx') exportRide(id);
                 else if (act === 'del') {
-                    if (!confirm('Diese Ausfahrt löschen?')) return;
+                    if (!confirm(T('Diese Ausfahrt löschen?'))) return;
                     if (ghost && ghost.rec.id === id) dropGhost();
                     if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
                     var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
@@ -742,7 +745,7 @@
         download(rec.name.replace(/[^\w\-]+/g, '_') + '.gpx', Rides.gpx(rec.name, Rides.unpack(rec)), 'application/gpx+xml');
     }
 
-    /* Import: GPX (mit oder ohne Zeit) oder ein Trainingsplan als JSON. */
+    /* Import: GPX (with or without time) or a training plan as JSON. */
     async function importFile(file) {
         var text = await file.text(), res;
         try {
@@ -752,8 +755,8 @@
                     route = Rides.parseGpx(plan.gpx).pts;
                 } else {
                     var last = Rides.list()[0];
-                    if (!last) throw new Error('Der Plan hat keine Strecke. Erst eine GPX-Route importieren oder eine Fahrt aufzeichnen.');
-                    if (!confirm('Der Plan enthält keine Strecke. Als Strecke wird „' + last.name + '“ verwendet. Weiter?')) return;
+                    if (!last) throw new Error(T('Der Plan hat keine Strecke. Erst eine GPX-Route importieren oder eine Fahrt aufzeichnen.'));
+                    if (!confirm(T('Der Plan enthält keine Strecke. Als Strecke wird „{name}“ verwendet. Weiter?', { name: last.name }))) return;
                     route = Rides.unpack(Rides.get(last.id));
                 }
                 var pts = Rides.fromPlan(route, plan.segments);
@@ -764,7 +767,7 @@
                 if (g.timed) {
                     use = g.pts.filter(function (q) { return q.t !== null; });
                 } else {
-                    var v = parseFloat((prompt('Die Datei hat keine Zeitstempel. Mit welchem Tempo (km/h) soll der Ghost fahren?', '25') || '').replace(',', '.'));
+                    var v = parseFloat((prompt(T('Die Datei hat keine Zeitstempel. Mit welchem Tempo (km/h) soll der Ghost fahren?'), '25') || '').replace(',', '.'));
                     if (!(v > 0)) return;
                     use = Rides.withPace(g.pts, v);
                     name += ' @ ' + v + ' km/h';
@@ -772,13 +775,12 @@
                 res = Rides.save({ src: 'gpx', pts: use, name: name });
             }
         } catch (e) { setRideMsg(e.message || String(e)); return; }
-        setRideMsg(res.ok ? '„' + res.rec.name + '“ importiert – ' + UI.fmtDist(res.rec.dist) + ', ' +
-                            UI.fmtDur(res.rec.dur) + '.' : res.err);
+        setRideMsg(res.ok ? T('„{name}“ importiert – {d}, {t}.', { name: res.rec.name, d: UI.fmtDist(res.rec.dist), t: UI.fmtDur(res.rec.dur) }) : res.err);
         renderRides();
-        if (res.ok && res.rec.src === 'gpx') { analyseRide(res.rec); LigaSync.rideSaved(res.rec); }   // Segmente/Rekorde und Liga aus alten Fahrten
+        if (res.ok && res.rec.src === 'gpx') { analyseRide(res.rec); LigaSync.rideSaved(res.rec); }   // segments/records and league from old rides
     }
 
-    /* ---------------- Reiter ---------------- */
+    /* ---------------- Tabs ---------------- */
     function isActive(v) { return $('v-' + v).classList.contains('active'); }
 
     function showView(v) {
@@ -806,7 +808,7 @@
         setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1500);
     }
 
-    /* ---------------- Bedienung ---------------- */
+    /* ---------------- Controls ---------------- */
     function wire() {
         document.querySelectorAll('nav button').forEach(function (b) {
             b.addEventListener('click', function () { showView(b.dataset.v); });
@@ -821,15 +823,20 @@
             LigaUI.profileChanged();
         });
 
-        // Symbol: feste Auswahl, getippt wird nichts. "–" = keins.
+        // Symbol: fixed choice, nothing is typed. "–" = none.
         var ep = $('emojiPick');
         function drawEmojiPick() {
-            ep.innerHTML = '<button data-e="-1" class="' + (me.emoji === null ? 'sel' : '') + '" aria-label="Kein Symbol">–</button>' +
+            ep.innerHTML = '<button data-e="-1" class="' + (me.emoji === null ? 'sel' : '') + '" aria-label="' + T('Kein Symbol') + '">–</button>' +
                 UI.EMOJIS.map(function (e, i) {
-                    return '<button data-e="' + i + '" class="' + (me.emoji === i ? 'sel' : '') + '" aria-label="Symbol ' + (i + 1) + '">' + Emo.img(e) + '</button>';
+                    return '<button data-e="' + i + '" class="' + (me.emoji === i ? 'sel' : '') + '" aria-label="' + T('Symbol {n}', { n: i + 1 }) + '">' + Emo.img(e) + '</button>';
                 }).join('');
         }
         drawEmojiPick();
+        // Language: the button switches, everything dynamic is redrawn
+        function syncLangBtn() { $('btnLang').textContent = I18n.lang() === 'de' ? 'Sprache: Deutsch – auf English umstellen' : 'Language: English – switch to German'; }
+        $('btnLang').addEventListener('click', function () { I18n.set(I18n.lang() === 'de' ? 'en' : 'de'); });
+        I18n.onChange(function () { syncLangBtn(); drawEmojiPick(); relang(); });
+        syncLangBtn();
         ep.addEventListener('click', function (e) {
             var b = e.target.closest('button');
             if (!b) return;
@@ -838,7 +845,7 @@
             store('remoji', me.emoji === null ? '' : String(me.emoji));
             if (an.riders[me.id]) an.riders[me.id].emoji = me.emoji;
             drawEmojiPick();
-            sendMine();                                   // die anderen sehen es beim naechsten Takt
+            sendMine();                                   // the others see it at the next beat
             LigaUI.profileChanged();
         });
 
@@ -859,26 +866,26 @@
             sw.appendChild(b);
         });
 
-        /* Start MUSS aus einer Nutzergeste kommen: iOS gibt den
-           Kompass nur so frei, und Wake Lock ebenfalls. */
+        /* Start MUST come from a user gesture: iOS only releases the
+           compass that way, and Wake Lock as well. */
         $('btnStart').addEventListener('click', async function () {
             if (running) {
                 running = false;
                 Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
                 finishRecording('ride');
                 SegUI.stopLive();
-                armGhostAgain();          // Ghost wartet wieder am Start
-                this.textContent = 'Ausfahrt starten';
+                armGhostAgain();          // ghost waits at the start again
+                this.textContent = T('Ausfahrt starten');
                 this.className = 'btn go';
-                UI.renderNet('off', 'gestoppt');
+                netStatus('off', 'gestoppt');
                 return;
             }
             if (sim) simStop();
-            myTrack = []; coffeeStamps = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
+            myTrack = []; coffeeStamps = []; Recorder.reset(me.id);      // every ride is recorded individually
             SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
-            this.textContent = 'Ausfahrt beenden';
+            this.textContent = T('Ausfahrt beenden');
             this.className = 'btn stop';
 
             await Sensors.startCompass();
@@ -886,7 +893,7 @@
             var ok = Sensors.startGps(onFix, function (msg) {
                 UI.renderNet('off', UI.escapeHtml(msg));
             });
-            if (!ok) UI.renderNet('off', 'Kein GPS verfügbar');
+            if (!ok) netStatus('off', 'Kein GPS verfügbar');
             startNet();
             showView('tacho');
         });
@@ -898,14 +905,14 @@
                     await navigator.share({ title: 'Gruppenausfahrt', url: url });
                     return;
                 }
-            } catch (e) { /* abgebrochen */ }
+            } catch (e) { /* cancelled */ }
             try {
                 await navigator.clipboard.writeText(url);
-                this.textContent = 'Link kopiert';
+                this.textContent = T('Link kopiert');
                 var b = this;
-                setTimeout(function () { b.textContent = 'Link zum Mitfahren teilen'; }, 1800);
+                setTimeout(function () { b.textContent = T('Link zum Mitfahren teilen'); }, 1800);
             } catch (e) {
-                prompt('Diesen Link weitergeben:', url);
+                prompt(T('Diesen Link weitergeben:'), url);
             }
         });
 
@@ -937,9 +944,9 @@
         $('sumOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
         $('sumShare').addEventListener('click', function () {
             if (!sumData) return;
-            $('sumMsg').textContent = 'Bild wird erzeugt …';
+            $('sumMsg').textContent = T('Bild wird erzeugt …');
             Summary.share(sumData).then(function () { $('sumMsg').textContent = ''; },
-                                        function (e) { $('sumMsg').textContent = 'Teilen nicht möglich: ' + (e && e.message || e); });
+                                        function (e) { $('sumMsg').textContent = T('Teilen nicht möglich: {e}', { e: e && e.message || e }); });
         });
         document.querySelectorAll('[data-sub]').forEach(function (b) {
             b.addEventListener('click', function () { showSub(b.dataset.sub); });
@@ -970,7 +977,7 @@
         $('btnQr').addEventListener('click', showQr);
         $('btnQrClose').addEventListener('click', function () { $('qrOverlay').hidden = true; });
         $('qrOverlay').addEventListener('click', function (e) {
-            if (e.target === this) this.hidden = true;      // Klick neben die Karte schliesst
+            if (e.target === this) this.hidden = true;      // a click next to the map closes it
         });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') $('qrOverlay').hidden = true;
@@ -978,8 +985,7 @@
 
 
         $('btnNewRoom').addEventListener('click', function () {
-            if (!confirm('Neue Gruppe öffnen? Der alte Link funktioniert dann nicht mehr ' +
-                         'für dich, und die bisherige Auswertung wird verworfen.')) return;
+            if (!confirm(T('Neue Gruppe öffnen? Der alte Link funktioniert dann nicht mehr für dich, und die bisherige Auswertung wird verworfen.'))) return;
             location.hash = 'k=' + Crypt.newSecret();
             location.reload();
         });
@@ -1001,7 +1007,7 @@
         });
 
         $('btnGpx').addEventListener('click', function () {
-            if (!myTrack.length) { alert('Noch keine eigene Spur aufgezeichnet.'); return; }
+            if (!myTrack.length) { alert(T('Noch keine eigene Spur aufgezeichnet.')); return; }
             download('spur_' + new Date().toISOString().slice(0, 10) + '.gpx',
                      Rides.gpx('Gruppenausfahrt ' + new Date(myTrack[0].t).toISOString().slice(0, 10), myTrack),
                      'application/gpx+xml');
@@ -1010,7 +1016,7 @@
         $('btnRelay').addEventListener('click', function () {
             var v = ($('inRelay').value || '').trim();
             if (v && !/^wss:\/\//.test(v)) {
-                alert('Der Relay muss mit wss:// beginnen (verschlüsseltes WebSocket).');
+                alert(T('Der Relay muss mit wss:// beginnen (verschlüsseltes WebSocket).'));
                 return;
             }
             if (v) store('relay', v); else { try { localStorage.removeItem('relay'); } catch (e) {} }
@@ -1038,10 +1044,9 @@
         try {
             await initRoom();
         } catch (e) {
-            UI.renderNet('off', 'Verschlüsselung nicht verfügbar – ist die Seite ' +
-                                'über https:// geladen?');
+            netStatus('off', 'Verschlüsselung nicht verfügbar – ist die Seite über https:// geladen?');
         }
-        UI.renderNet('off', 'bereit – unter „Gruppe“ starten');
+        netStatus('off', 'bereit – unter „Gruppe“ starten');
         var gp = store('gpace');
         if (gp) $('ghostPace').value = gp;
         recoverDraft();
@@ -1051,7 +1056,7 @@
         if (store('mapprof') === '1') { $('mapProf').hidden = false; $('mapProfBtn').classList.add('on'); $('mapProfBtn').setAttribute('aria-pressed', 'true'); }
         syncProfMode();
         renderRides(); renderGhostUi(); liveMap.sync();
-        setInterval(function () {                        // Ghost in Echtzeit (die Simulation treibt ihn selbst)
+        setInterval(function () {                        // ghost in real time (the simulation drives it itself)
             if (running && !sim) ghostStep(Date.now(), Date.now());
             renderGhostUi();
         }, 1000);

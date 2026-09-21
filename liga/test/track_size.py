@@ -1,5 +1,5 @@
-"""Misst, wie gross eine 50-km-Fahrt (2 h, 1 Hz, GPS-Rauschen +-1,5 m) auf dem Server wird.
-Lauf: python3 liga/test/track_size.py"""
+"""Measures how large a 50 km ride (2 h, 1 Hz, GPS noise +-1.5 m) becomes on the server.
+Run: python3 liga/test/track_size.py"""
 import math, random, json, zlib, gzip
 random.seed(3)
 lat, lon, hd = 48.1, 11.5, 0.3

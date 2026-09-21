@@ -1,24 +1,24 @@
 /* ============================================================
- * liga-codec.js -- Track und Kacheln kompakt kodieren
+ * liga-codec.js -- encode track and tiles compactly
  * ============================================================
- * Diese Datei wird von der App UND vom Server (api/) benutzt -- gleiche Quelle, damit
- * beide Seiten nie auseinanderlaufen. Deshalb am Ende die CommonJS-Weiche.
+ * This file is used by the app AND by the server (api/) -- same source, so that
+ * the two sides never drift apart. Hence the CommonJS switch at the end.
  *
- * Track, Format 1 (vor gzip):
- *   varint n, varint startMs, varint flags (Bit 0: Hoehe vorhanden)
- *   je Punkt: zz dt (Zehntelsekunden seit vorigem), zz dlat, zz dlon (1e-5 Grad ~ 1,1 m),
- *             [zz dele (Dezimeter)]
- *   Der erste Punkt hat dt 0 und dlat/dlon/dele relativ zu 0 (also absolut).
- * varint: 7 Bit je Byte, hoechstes Bit = "es folgt noch eins". zz: Vorzeichen in Bit 0.
- * Alles mit normaler Arithmetik statt Bitoperationen, weil startMs (~1,7e12) nicht in 32 Bit passt.
+ * Track, format 1 (before gzip):
+ *   varint n, varint startMs, varint flags (bit 0: elevation present)
+ *   per point: zz dt (tenths of a second since the previous), zz dlat, zz dlon (1e-5 degree ~ 1.1 m),
+ *             [zz dele (decimetres)]
+ *   The first point has dt 0 and dlat/dlon/dele relative to 0 (i.e. absolute).
+ * varint: 7 bits per byte, highest bit = "one more follows". zz: sign in bit 0.
+ * Everything with normal arithmetic instead of bit operations, because startMs (~1.7e12) does not fit in 32 bits.
  *
- * Kacheln (Zoom 15, id = x * 32768 + y): sortiert, Differenzen als varint.
+ * Tiles (zoom 15, id = x * 32768 + y): sorted, differences as varint.
  * ============================================================ */
 
 var LigaCodec = (function () {
     'use strict';
 
-    var Q = 1e5;                 // Grad -> ganze Einheiten
+    var Q = 1e5;                 // degrees -> whole units
     var TILE_Z = 15;
 
     function zz(n) { return n >= 0 ? n * 2 : -n * 2 - 1; }
@@ -45,7 +45,7 @@ var LigaCodec = (function () {
     };
     Reader.prototype.s = function () { return unzz(this.u()); };
 
-    /* pts: [{t (ms), lat, lon, ele|null}] aufsteigend nach t  ->  Uint8Array (ungepackt) */
+    /* pts: [{t (ms), lat, lon, ele|null}] ascending by t  ->  Uint8Array (unpacked) */
     function pack(pts) {
         var w = new Writer(), n = pts.length, hasEle = false, i;
         for (i = 0; i < n; i++) if (pts[i].ele !== null && pts[i].ele !== undefined && !isNaN(pts[i].ele)) { hasEle = true; break; }
@@ -64,7 +64,7 @@ var LigaCodec = (function () {
         return w.bytes();
     }
 
-    /* Uint8Array -> { n, t0, hasEle, pts: [{t, lat, lon, ele}] }. maxN begrenzt, was gelesen wird. */
+    /* Uint8Array -> { n, t0, hasEle, pts: [{t, lat, lon, ele}] }. maxN limits what is read. */
     function unpack(bytes, maxN) {
         var r = new Reader(bytes), n = r.u(), t0 = r.u(), flags = r.u();
         if (n > (maxN || 200000)) throw new Error('Track zu lang');
@@ -77,7 +77,7 @@ var LigaCodec = (function () {
         return { n: n, t0: t0, hasEle: hasEle, pts: pts };
     }
 
-    /* ---- Kacheln ---- */
+    /* ---- Tiles ---- */
     function tileOf(lat, lon) {
         var n = 1 << TILE_Z, x = Math.floor((lon + 180) / 360 * n);
         var s = Math.sin(lat * Math.PI / 180);
@@ -106,7 +106,7 @@ var LigaCodec = (function () {
         return out;
     }
 
-    /* ---- Base64 (URL-sicher, ohne Auffuellung) ---- */
+    /* ---- Base64 (URL-safe, without padding) ---- */
     function toB64(bytes) {
         var s = '', CH = 0x8000;
         for (var i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
@@ -120,13 +120,13 @@ var LigaCodec = (function () {
         return out;
     }
 
-    /* ---- gzip (Browser und Worker haben CompressionStream) ---- */
+    /* ---- gzip (browser and worker have CompressionStream) ---- */
     function pipe(bytes, stream) {
         return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (b) { return new Uint8Array(b); });
     }
     function gzip(bytes) { return pipe(bytes, new CompressionStream('gzip')); }
     function gunzip(bytes, maxOut) {
-        // Schutz gegen Zip-Bomben: Ergebnis begrenzen
+        // Protection against zip bombs: limit the result
         var reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')).getReader(), parts = [], total = 0;
         function next() {
             return reader.read().then(function (r) {
@@ -144,7 +144,7 @@ var LigaCodec = (function () {
         return next();
     }
 
-    /* Komplett: Punkte -> gzip -> Base64, und zurueck */
+    /* Complete: points -> gzip -> Base64, and back */
     function encode(pts) { return gzip(pack(pts)).then(toB64); }
     function decode(b64, maxN) { return gunzip(fromB64(b64)).then(function (b) { return unpack(b, maxN); }); }
 

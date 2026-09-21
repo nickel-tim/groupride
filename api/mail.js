@@ -1,13 +1,28 @@
-/* mail.js -- Anmeldecode per E-Mail verschicken
+/* mail.js -- send the login code by e-mail
  *
- * Drei Modi, in dieser Reihenfolge:
- *   DEV_MAIL=1      Nur lokal (.dev.vars): der Code steht in der Antwort. NIE in Produktion setzen.
- *   RESEND_API_KEY  Versand ueber resend.com (Geheimnis, nicht im Repo). MAIL_FROM = Absender.
- *   sonst           503 -- ohne Versand gibt es keine Anmeldung.
+ * Three modes, in this order:
+ *   DEV_MAIL=1      Local only (.dev.vars): the code is in the response. NEVER set in production.
+ *   RESEND_API_KEY  Sending via resend.com (secret, not in the repo). MAIL_FROM = sender.
+ *   otherwise       503 -- without sending there is no login.
  */
 import { HttpError } from './util.js';
 
-export async function sendCode(env, email, code) {
+/* The mail is written in the language the app is set to ("de" or "en"). */
+const TEXTS = {
+    de: {
+        subject: code => 'Dein Anmeldecode: ' + code,
+        body: code => 'Dein Code für die Gruppenausfahrt-Liga: ' + code + '\n\n' +
+                      'Er gilt 10 Minuten. Falls du ihn nicht angefordert hast, ignoriere diese Mail einfach.\n'
+    },
+    en: {
+        subject: code => 'Your login code: ' + code,
+        body: code => 'Your code for the Gruppenausfahrt league: ' + code + '\n\n' +
+                      'It is valid for 10 minutes. If you did not request it, simply ignore this e-mail.\n'
+    }
+};
+
+export async function sendCode(env, email, code, lang) {
+    const tx = TEXTS[lang] || TEXTS.de;
     if (env.DEV_MAIL === '1') return { dev: true, code };
     if (!env.RESEND_API_KEY || !env.MAIL_FROM) {
         throw new HttpError(503, 'E-Mail-Versand ist auf dem Server nicht eingerichtet.');
@@ -18,9 +33,8 @@ export async function sendCode(env, email, code) {
         body: JSON.stringify({
             from: env.MAIL_FROM,
             to: [email],
-            subject: 'Dein Anmeldecode: ' + code,
-            text: 'Dein Code für die Gruppenausfahrt-Liga: ' + code + '\n\n' +
-                  'Er gilt 10 Minuten. Falls du ihn nicht angefordert hast, ignoriere diese Mail einfach.\n'
+            subject: tx.subject(code),
+            text: tx.body(code)
         })
     });
     if (!res.ok) throw new HttpError(502, 'E-Mail konnte nicht gesendet werden.');

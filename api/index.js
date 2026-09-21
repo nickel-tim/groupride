@@ -1,7 +1,7 @@
-/* index.js -- Liga-API (Cloudflare Worker)
+/* index.js -- league API (Cloudflare Worker)
  *
- * Nur /api/* landet hier (wrangler.jsonc: assets.run_worker_first). Alles andere liefert
- * Cloudflare direkt als statische Datei aus.
+ * Only /api/* ends up here (wrangler.jsonc: assets.run_worker_first). Everything else is served by
+ * Cloudflare directly as a static file.
  */
 import { HttpError, json, bad, q1 } from './util.js';
 import { authenticate, readSigned, startLogin, verifyLogin, myAccount, updateAccount, removeDevice, deleteAccount } from './auth.js';
@@ -10,7 +10,7 @@ import * as L from './leagues.js';
 
 const MAX_BODY = 512 * 1024;
 
-/* [Methode, Muster, Handler, { open: true }]  open = ohne bekanntes Konto (nur signiert) */
+/* [method, pattern, handler, { open: true }]  open = without a known account (signed only) */
 const ROUTES = [
     ['GET',    /^\/api\/health$/,                                   async ({ env }) => health(env), { anon: true }],
     ['POST',   /^\/api\/auth\/start$/,                              ({ env, key, body }) => startLogin(env, key, body), { open: true }],

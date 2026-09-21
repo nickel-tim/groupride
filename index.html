@@ -22,7 +22,7 @@
 
 <main>
 
-    <!-- ============ Tacho ============ -->
+    <!-- ============ Speedometer ============ -->
     <section class="view active" id="v-tacho">
         <div class="speedrow">
             <div style="display:flex;align-items:flex-end;gap:7px">
@@ -43,11 +43,11 @@
                 <circle class="cring faint" cx="0" cy="0" r="30"></circle>
                 <circle class="cring faint" cx="0" cy="0" r="62"></circle>
                 <circle class="cring" cx="0" cy="0" r="92"></circle>
-                <!-- unten beschriftet: oben sitzt die Fahrtrichtungsmarke -->
+                <!-- labelled at the bottom: the direction-of-travel marker sits at the top -->
                 <text class="clbl" x="3" y="34">30 m</text>
                 <text class="clbl" x="3" y="66">150 m</text>
                 <text class="clbl" x="3" y="96">500 m</text>
-                <!-- eigene Fahrtrichtung: immer oben (track-up) -->
+                <!-- own direction of travel: always up (track-up) -->
                 <polygon class="cnose" points="0,-99 -5,-89 5,-89"></polygon>
                 <text class="chead" x="0" y="8" text-anchor="middle" id="cCenter">DU</text>
                 <g id="cPeers"></g>
@@ -58,7 +58,7 @@
         <div class="quickrow" id="quickRow" aria-label="Schnellnachrichten an die Gruppe"></div>
     </section>
 
-    <!-- ============ Karte ============ -->
+    <!-- ============ Map ============ -->
     <section class="view" id="v-map">
         <div class="mapmount" id="liveMap"></div>
         <div class="profstrip" id="mapProf" hidden>
@@ -67,7 +67,7 @@
         </div>
     </section>
 
-    <!-- ============ Verlauf ============ -->
+    <!-- ============ Log ============ -->
     <section class="view scroll" id="v-log">
         <h2>Führungsarbeit</h2>
         <div id="frontWork"></div>
@@ -75,7 +75,7 @@
         <div id="eventList"></div>
     </section>
 
-    <!-- ============ Berge ============ -->
+    <!-- ============ Climbs ============ -->
     <section class="view scroll" id="v-climbs">
         <div class="subtabs">
             <div class="seg" role="tablist" aria-label="Berge und Rekorde">
@@ -102,7 +102,7 @@
         <div class="sub" id="sub-rec" hidden><div id="recPane"></div></div>
     </section>
 
-    <!-- ============ Gruppe ============ -->
+    <!-- ============ Group ============ -->
     <section class="view scroll" id="v-liga">
         <div class="ligaroot" id="ligaRoot"></div>
     </section>
@@ -152,6 +152,7 @@
 
         <h2>Anzeige</h2>
         <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
+        <button class="btn" id="btnLang"></button>
 
         <h2>Auswertung</h2>
         <button class="btn" id="btnExport">Ausfahrt als JSON sichern</button>
@@ -169,7 +170,7 @@
 
 </main>
 
-<!-- Regler der Simulation: in jeder Ansicht sichtbar, solange sie laeuft -->
+<!-- Simulation controls: visible in every view while it is running -->
 <div id="simbar" hidden>
     <span class="simtag">SIM</span>
     <div class="seg" role="group" aria-label="Zeitraffer">
@@ -195,7 +196,7 @@
     <button data-v="group">Gruppe</button>
 </nav>
 
-<!-- Nachrichten: eingehende Banner und Auswahl aller Kurznachrichten -->
+<!-- Messages: incoming banners and the selection of all short messages -->
 <div id="msgBanner" class="msgbanner" aria-live="assertive"></div>
 <div id="msgPanel" class="overlay" hidden>
     <div class="qrcard msgcard" role="dialog" aria-modal="true" aria-label="Nachricht an die Gruppe">
@@ -205,7 +206,7 @@
     </div>
 </div>
 
-<!-- Bilanz einer Ausfahrt -->
+<!-- Summary of a ride -->
 <div id="sumOverlay" class="overlay" hidden>
     <div class="qrcard sumcard" role="dialog" aria-modal="true" aria-label="Bilanz der Ausfahrt">
         <div id="sumBusy" class="note" hidden>Bilanz wird berechnet …</div>
@@ -216,7 +217,7 @@
     </div>
 </div>
 
-<!-- Segment anlegen: Abschnitt einer gespeicherten Fahrt waehlen -->
+<!-- Create a segment: choose a section of a saved ride -->
 <div id="segEdit" class="overlay" hidden>
     <div class="qrcard segedit" role="dialog" aria-modal="true" aria-label="Segment anlegen">
         <div class="qrttl">Segment anlegen</div>
@@ -236,7 +237,7 @@
     </div>
 </div>
 
-<!-- Replay: Gruppenfahrt noch einmal abspielen, Vollbild -->
+<!-- Replay: play a group ride back once more, full screen -->
 <div id="replay" class="replay" hidden>
     <div class="rp-head"><b id="rpTitle"></b><button id="rpClose" aria-label="Schließen">✕</button></div>
     <div class="mapmount" id="rpMap"></div>
@@ -260,8 +261,8 @@
     <div class="rp-riders" id="rpRiders"></div>
 </div>
 
-<!-- Einladung per QR-Code: Vollbild, damit die Kamera des anderen Handys
-     den Code auch auf Armlaenge sicher liest -->
+<!-- Invitation by QR code: full screen so that the other phone's camera
+     reads the code reliably even at arm's length -->
 <div id="qrOverlay" class="overlay" hidden>
     <div class="qrcard" role="dialog" aria-modal="true" aria-label="QR-Code zum Beitreten">
         <div class="qrttl">Zum Mitfahren scannen</div>
@@ -273,6 +274,8 @@
     </div>
 </div>
 
+<script src="js/i18n.js"></script>
+<script src="js/i18n-en.js"></script>
 <script src="js/geo.js"></script>
 <script src="js/track.js"></script>
 <script src="js/smooth.js"></script>

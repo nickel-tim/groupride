@@ -4,11 +4,11 @@
   "compatibility_date": "2026-01-01",
   "main": "api/index.js",
 
-  // Der Repo-Stamm ist das Asset-Verzeichnis; .assetsignore haelt Relay, Tests, Server-Code und Doku heraus.
+  // The repo root is the asset directory; .assetsignore keeps the relay, tests, server code and docs out.
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    // Statische Dateien kommen direkt von Cloudflare, der Worker laeuft nur fuer die API.
+    // Static files come directly from Cloudflare, the worker only runs for the API.
     "run_worker_first": ["/api/*"]
   },
 
@@ -21,7 +21,7 @@
     }
   ],
 
-  // Absender der Anmelde-Mails; die Domain muss bei Resend verifiziert sein.
-  // Geheimnisse (AUTH_SECRET, RESEND_API_KEY) stehen NICHT hier, sondern per: npx wrangler secret put <NAME>
+  // Sender of the login e-mails; the domain must be verified at Resend.
+  // Secrets (AUTH_SECRET, RESEND_API_KEY) are NOT stored here, but via: npx wrangler secret put <NAME>
   "vars": { "MAIL_FROM": "Groupride <login@nickeltim.de>" }
 }

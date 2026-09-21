@@ -1,23 +1,23 @@
-/* rides.js -- Fahrten hochladen, pruefen, lesen, loeschen, teilen
+/* rides.js -- upload, check, read, delete, share rides
  *
- * Der Server RECHNET NICHT NACH (10 ms CPU im Free Plan), er prueft nur, ob die Angaben
- * zum Track passen und ob die Fahrt glaubhaft ist. Die Kennzahlen kommen aus dem Browser.
+ * The server DOES NOT RECOMPUTE (10 ms CPU on the free plan), it only checks whether the data
+ * matches the track and whether the ride is credible. The metrics come from the browser.
  */
 import Codec from '../js/liga-codec.js';
 import Cats from '../js/liga-cats.js';
 import { bad, denied, missing, rejected, HttpError, q1, qa, run, stmt, cleanText } from './util.js';
 
 const MIN_POINTS = 40, MAX_POINTS = 40000, MIN_DUR_MS = 120000, MIN_DIST_M = 500;
-const MAX_JUMP_SPEED = 100;              // m/s zwischen zwei Punkten (bei Luecken <= 30 s)
-const MAX_AVG_SPEED = 20;                // m/s Bewegungsschnitt, 72 km/h
+const MAX_JUMP_SPEED = 100;              // m/s between two points (for gaps <= 30 s)
+const MAX_AVG_SPEED = 20;                // m/s moving average, 72 km/h
 const MAX_PER_DAY = 20;
 const MAX_AGE_MS = 400 * 86400000;
 const MAX_BODY = 400 * 1024;
-const MAX_STEPS = 12000;                 // so viele Punktpaare pruefen wir hoechstens (CPU-Budget)
+const MAX_STEPS = 12000;                 // this many point pairs we check at most (CPU budget)
 
 const RAD = Math.PI / 180, M_PER_DEG = 111320;
 
-/* Grobe Kennwerte des Tracks (gleichwinklige Naeherung, reicht fuer Plausibilitaet) */
+/* Rough characteristics of the track (equirectangular approximation, enough for plausibility) */
 function inspect(pts) {
     const n = pts.length, step = Math.max(1, Math.ceil(n / MAX_STEPS));
     let dist = 0, maxV = 0, moving = 0, bad = null;
@@ -35,7 +35,7 @@ function inspect(pts) {
 
 const VALUE_RULES = {
     gain:     (v, r) => v <= 12000 && v <= r.dist,
-    top:      (v) => v > 0 && v <= 30,                                   // > 108 km/h ist ein GPS-Fehler
+    top:      (v) => v > 0 && v <= 30,                                   // > 108 km/h is a GPS error
     avg20:    (v, r) => r.dist >= 20000 && v > 0 && v <= MAX_AVG_SPEED,
     t10k:     (v, r) => r.dist >= 10000 && v >= 10000 / MAX_AVG_SPEED * 1000 && v <= r.dur,
     t20k:     (v, r) => r.dist >= 20000 && v >= 20000 / MAX_AVG_SPEED * 1000 && v <= r.dur,
@@ -49,12 +49,12 @@ const VALUE_RULES = {
     coffee:   (v, r) => Number.isInteger(v) && v >= 0 && v <= Math.min(50, Math.floor(r.dur / 900000) + 1)
 };
 
-/* Unplausible Einzelwerte werden weggelassen (nicht die ganze Fahrt abgelehnt) */
+/* Implausible single values are left out (the whole ride is not rejected) */
 function cleanValues(values, ride) {
     const rows = [{ c: 'dist', v: ride.dist }, { c: 'time', v: ride.moving }, { c: 'rides', v: 1 }], dropped = [];
     for (const [k, raw] of Object.entries(values || {})) {
         const v = Number(raw);
-        if (['dist', 'time', 'rides'].includes(k)) continue;              // kommen aus der Fahrt selbst
+        if (['dist', 'time', 'rides'].includes(k)) continue;              // come from the ride itself
         if (!Cats.STORED.includes(k) || !VALUE_RULES[k]) { dropped.push(k); continue; }
         if (!Number.isFinite(v) || !VALUE_RULES[k](v, ride)) { dropped.push(k); continue; }
         rows.push({ c: k, v });
@@ -102,7 +102,7 @@ export async function uploadRide(env, auth, body) {
     const day = String(body.day || '');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Math.abs(dayNum(day) - start) > 2 * 86400000) throw bad('Datum passt nicht zur Startzeit.');
 
-    // dieselbe Fahrt aus App und GPX-Import darf nicht doppelt zaehlen
+    // the same ride from the app and a GPX import must not count twice
     const near = await qa(env.DB, 'SELECT start_ts, end_ts FROM rides WHERE account_id = ? AND start_ts < ? AND end_ts > ? LIMIT 8', a, end, start);
     for (const o of near) {
         const overlap = Math.min(end, o.end_ts) - Math.max(start, o.start_ts);
@@ -159,7 +159,7 @@ export async function rideTrack(env, auth, id) {
     return { fmt: t.fmt, track: t.data };
 }
 
-/* Nach einem Algorithmus-Update: Werte einer Fahrt ersetzen */
+/* After an algorithm update: replace the values of a ride */
 export async function putValues(env, auth, id, body) {
     const r = await ownRide(env, auth, id);
     const ride = { dist: r.dist_m, moving: r.moving_ms, dur: r.end_ts - r.start_ts };
@@ -175,7 +175,7 @@ export async function putValues(env, auth, id, body) {
     return { ok: true, dropped };
 }
 
-/* Kacheln des Kontos aus den verbliebenen Fahrten neu aufbauen (nach dem Loeschen einer Fahrt) */
+/* Rebuild the account's tiles from the remaining rides (after deleting a ride) */
 async function rebuildTiles(env, accountId) {
     const rows = await qa(env.DB, `SELECT r.start_ts s, t.tiles FROM rides r JOIN tracks t ON t.ride_id = r.id WHERE r.account_id = ? AND t.tiles IS NOT NULL`, accountId);
     const first = new Map();
@@ -200,7 +200,7 @@ export async function deleteRide(env, auth, id) {
     return { ok: true };
 }
 
-/* ---- Teilen: gekuerzte Kopie fuer die Mitglieder einer Liga ---- */
+/* ---- Sharing: trimmed copy for the members of a league ---- */
 export async function shareRide(env, auth, id, body) {
     const r = await ownRide(env, auth, id);
     const league = String(body.league || '');

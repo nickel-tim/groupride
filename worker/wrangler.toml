@@ -6,8 +6,8 @@ compatibility_date = "2026-01-01"
 name = "ROOM"
 class_name = "Room"
 
-# Free Plan: Durable Objects nur mit SQLite-Backend.
-# "new_classes" wuerde hier mit Fehler 10097 abgelehnt.
+# Free plan: Durable Objects only with the SQLite backend.
+# "new_classes" would be rejected here with error 10097.
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]

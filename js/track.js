@@ -1,20 +1,20 @@
 /* ============================================================
- * track.js -- Werkzeuge fuer eine Spur: [{t (ms), lat, lon, ele|null}]
+ * track.js -- tools for a track: [{t (ms), lat, lon, ele|null}]
  * ============================================================
- * Gemeinsame Grundlage fuer Segmente, Rekorde, Zusammenfassung und
- * Replay: Strecke, Tempo und Hoehenmeter einer Fahrt, alles aus den
- * Positionen mit Zeit. Nichts davon haengt an der Live-Auswertung.
+ * Shared basis for segments, records, summary and replay: distance,
+ * speed and elevation gain of a ride, all from the positions with
+ * time. None of it depends on the live analysis.
  * ============================================================ */
 
 var Track = (function () {
     'use strict';
 
-    /* Rauschen aus der Spur nehmen, bevor man ihre Laenge misst. Ein GPS-Fix
-       springt um +-4 m; bei 1 Hz addieren diese Zacken rund 20-25 % Weg dazu
-       (eine 6-km-Runde "ist" dann 7,4 km lang) -- das verfaelscht Distanz-
-       Rekorde, Segmentlaengen und Tempo. Gleitender Mittelwert ueber
-       2*half+1 Punkte auf Lat/Lon; Zeit und Hoehe bleiben unberuehrt.
-       Am Rand wird das Fenster kleiner, damit Anfang und Ende stehen bleiben. */
+    /* Take the noise out of a track before measuring its length. A GPS fix
+       jumps by +-4 m; at 1 Hz these spikes add roughly 20-25 % distance
+       (a 6 km lap "is" then 7.4 km long) -- which falsifies distance
+       records, segment lengths and speed. Moving average over
+       2*half+1 points on lat/lon; time and elevation stay untouched.
+       At the edges the window shrinks so that start and end stay put. */
     function smooth(pts, half) {
         var h = half === undefined ? 2 : half, n = pts.length, out = new Array(n);
         for (var i = 0; i < n; i++) {
@@ -25,7 +25,7 @@ var Track = (function () {
         return out;
     }
 
-    /* Kumulierte Strecke in Metern; cum[i] gehoert zu pts[i]. */
+    /* Cumulative distance in metres; cum[i] belongs to pts[i]. */
     function cumulative(pts) {
         var c = new Array(pts.length), d = 0;
         for (var i = 0; i < pts.length; i++) {
@@ -35,14 +35,14 @@ var Track = (function () {
         return c;
     }
 
-    /* Index i mit cum[i] <= d < cum[i+1] */
+    /* Index i with cum[i] <= d < cum[i+1] */
     function idxAt(cum, d) {
         var lo = 0, hi = cum.length - 1;
         while (lo < hi) { var m = (lo + hi + 1) >> 1; if (cum[m] <= d) lo = m; else hi = m - 1; }
         return lo;
     }
 
-    /* Zeit (ms) und Ort bei der Strecke d, linear zwischen den Punkten. */
+    /* Time (ms) and place at distance d, linear between the points. */
     function atDistance(pts, cum, d) {
         var n = pts.length;
         if (d <= 0) return { t: pts[0].t, lat: pts[0].lat, lon: pts[0].lon, ele: pts[0].ele };
@@ -53,7 +53,7 @@ var Track = (function () {
                  ele: (a.ele !== null && b.ele !== null) ? a.ele + f * (b.ele - a.ele) : a.ele };
     }
 
-    /* Ort zur Zeit t (ms), linear; null ausserhalb der Spur. */
+    /* Place at time t (ms), linear; null outside the track. */
     function atTime(pts, t) {
         var n = pts.length;
         if (!n || t < pts[0].t || t > pts[n - 1].t) return null;
@@ -64,9 +64,9 @@ var Track = (function () {
                  ele: (a.ele !== null && b.ele !== null) ? a.ele + f * (b.ele - a.ele) : a.ele, i: lo };
     }
 
-    /* Hoehenmeter: Achse aufbauen, Hoehe ueber 100 m glaetten (die rohe GPS-Hoehe
-       rauscht um mehrere Meter -- ohne Glaettung "steigt" jede Fahrt auf ebener
-       Strecke), dann nur die Anstiege summieren. */
+    /* Elevation gain: build the axis, smooth elevation over 100 m (raw GPS elevation
+       jitters by several metres -- without smoothing every ride on flat ground
+       "climbs"), then sum only the ascents. */
     function gain(pts) {
         var r = Route.fromPoints(pts, 10);
         if (r.pts.length < 3) return 0;
@@ -81,8 +81,8 @@ var Track = (function () {
         return g;
     }
 
-    /* Tempo ueber ein Zeitfenster (m/s), damit ein einzelner Ausreisser-Fix keine
-       Spitzengeschwindigkeit vortaeuscht. */
+    /* Speed over a time window (m/s), so that a single outlier fix does not
+       fake a top speed. */
     function topSpeed(pts, cum, windowMs) {
         var w = windowMs || 5000, best = 0, j = 0;
         for (var i = 0; i < pts.length; i++) {
@@ -93,7 +93,7 @@ var Track = (function () {
         return best;
     }
 
-    /* Bewegungszeit: Abschnitte unter 1 m/s (Ampel, Café) zaehlen nicht. */
+    /* Moving time: sections below 1 m/s (traffic light, café) do not count. */
     function movingMs(pts) {
         var ms = 0;
         for (var i = 1; i < pts.length; i++) {
@@ -114,7 +114,7 @@ var Track = (function () {
                  max: topSpeed(pts, cum), gain: gain(pts) };
     }
 
-    /* Punkte mit mindestens minM Abstand (Anfang und Ende bleiben). */
+    /* Points at least minM apart (start and end are kept). */
     function thin(pts, minM) {
         var out = [], last = null;
         for (var i = 0; i < pts.length; i++) {

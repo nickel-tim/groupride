@@ -1,18 +1,18 @@
 /* ============================================================
- * profile.js -- Hoehenprofil mit den Fahrern darauf
+ * profile.js -- elevation profile with the riders on it
  * ============================================================
- * Die Streckenachse "abgerollt": waagerecht die Strecke, senkrecht die
- * Hoehe, Anstiege farbig hinterlegt, jeder Fahrer als Punkt an seiner
- * Stelle. Auf einen Blick: wie weit ist der naechste Berg, wie steil,
- * und wie sehr ist die Gruppe gerade auseinandergezogen.
+ * The route axis "unrolled": distance horizontally, elevation
+ * vertically, climbs shaded in colour, every rider as a dot at his
+ * position. At a glance: how far is the next climb, how steep,
+ * and how spread out is the group right now.
  *
- * Mit einer geplanten Route (Ueberlagerung) zeigt das Profil die ganze
- * Strecke, auch VOR dem Fuehrenden. Ohne sie endet es beim Fuehrenden,
- * denn die Live-Achse entsteht erst beim Fahren.
+ * With a planned route (overlay) the profile shows the whole
+ * route, also AHEAD of the leader. Without it, it ends at the leader,
+ * because the live axis only comes into being while riding.
  *
  *   Profile.render(svg, {
  *     route, riders: [{id, name, color, s, self, ghost, stale}], climbs,
- *     meS, mode: 'all' | 'ahead', cursor: s (Meter) oder null
+ *     meS, mode: 'all' | 'ahead', cursor: s (metres) or null
  *   })  ->  { from, to, next: {dist, gain, len, grade, no, inside} | null }
  * ============================================================ */
 
@@ -20,13 +20,13 @@ var Profile = (function () {
     'use strict';
 
     var PAD_L = 34, PAD_R = 8, PAD_T = 12, PAD_B = 20;
-    var AHEAD_BACK = 400, AHEAD_FWD = 4000;         // Fenster im Modus "Voraus", Meter
+    var AHEAD_BACK = 400, AHEAD_FWD = 4000;         // window in "Ahead" mode, metres
     var STEPS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 
     function f(n) { return n.toFixed(1); }
     function esc(s) { return UI.escapeHtml(s); }
 
-    /* Naechster (oder aktueller) Anstieg ab der Stelle s */
+    /* Next (or current) climb from position s */
     function nextClimb(climbs, s) {
         var best = null;
         (climbs || []).forEach(function (c) {
@@ -50,11 +50,11 @@ var Profile = (function () {
 
         if (!route || len < 60 || route.pts.length < 3) {
             svg.innerHTML = '<text class="mempty" x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' +
-                            'Das Profil entsteht, sobald eine Strecke da ist.</text>';
+                            T('Das Profil entsteht, sobald eine Strecke da ist.') + '</text>';
             return { from: 0, to: 0, next: null };
         }
 
-        // Fenster
+        // Window
         var from = 0, to = len;
         var meS = (d.meS === null || d.meS === undefined) ? null : d.meS;
         if (d.mode === 'ahead' && meS !== null) {
@@ -65,7 +65,7 @@ var Profile = (function () {
         var pw = W - PAD_L - PAD_R, ph = H - PAD_T - PAD_B;
         function X(s) { return PAD_L + (s - from) / (to - from) * pw; }
 
-        // Hoehenlinie
+        // Elevation line
         var n = Math.max(20, Math.min(240, Math.floor(pw / 2))), xs = [], es = [], emin = Infinity, emax = -Infinity;
         for (var i = 0; i <= n; i++) {
             var s = from + (to - from) * i / n, e = route.eleAt(s);
@@ -73,16 +73,16 @@ var Profile = (function () {
             if (e !== null && e !== undefined) { if (e < emin) emin = e; if (e > emax) emax = e; }
         }
         if (emin === Infinity) {
-            svg.innerHTML = '<text class="mempty" x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">Keine Höhendaten.</text>';
+            svg.innerHTML = '<text class="mempty" x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' + T('Keine Höhendaten.') + '</text>';
             return { from: from, to: to, next: null };
         }
-        // Mindestens 40 m Spanne, sonst wird jeder Feldweg zum Gebirge
+        // At least 40 m of range, otherwise every farm track becomes a mountain range
         var span = Math.max(40, emax - emin), mid = (emax + emin) / 2;
         var lo = mid - span * 0.56, hi = mid + span * 0.62;
         function Y(e) { return PAD_T + (1 - (e - lo) / (hi - lo)) * ph; }
 
         var parts = [];
-        // Hintergrundlinien und Achsenbeschriftung
+        // Background lines and axis labels
         var yTop = Math.round(emax), yBot = Math.round(emin);
         parts.push('<line class="pgrid" x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + f(Y(emax)) + '" y2="' + f(Y(emax)) + '"/>');
         parts.push('<line class="pgrid" x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + f(Y(emin)) + '" y2="' + f(Y(emin)) + '"/>');
@@ -98,7 +98,7 @@ var Profile = (function () {
                        (stepM >= 1000 ? (t / 1000) + ' km' : t + ' m') + '</text>');
         }
 
-        // Flaeche und Linie
+        // Area and line
         var line = '', firstOk = -1;
         for (var j = 0; j <= n; j++) {
             if (es[j] === null || es[j] === undefined) continue;
@@ -107,7 +107,7 @@ var Profile = (function () {
         }
         parts.push('<path class="parea" d="' + line + 'L' + f(X(xs[n])) + ' ' + (H - PAD_B) + 'L' + f(X(xs[Math.max(0, firstOk)])) + ' ' + (H - PAD_B) + 'Z"/>');
 
-        // Anstiege
+        // Climbs
         (d.climbs || []).forEach(function (c) {
             if (c.sEnd < from || c.sStart > to) return;
             var a = Math.max(c.sStart, from), b = Math.min(c.sEnd, to), seg = '', first = null, lastX = null;
@@ -123,22 +123,22 @@ var Profile = (function () {
         });
         parts.push('<path class="pline" d="' + line + '"/>');
 
-        // Cursor (Replay/Segment-Auswahl)
+        // Cursor (replay/segment selection)
         if (d.cursor !== null && d.cursor !== undefined && d.cursor >= from && d.cursor <= to) {
             parts.push('<line class="pcursor" x1="' + f(X(d.cursor)) + '" x2="' + f(X(d.cursor)) + '" y1="' + PAD_T + '" y2="' + (H - PAD_B) + '"/>');
         }
-        (d.marks || []).forEach(function (m) {              // z. B. Anfang/Ende eines Segments
+        (d.marks || []).forEach(function (m) {              // e.g. start/end of a segment
             if (m.s < from || m.s > to) return;
             parts.push('<line class="pmark" x1="' + f(X(m.s)) + '" x2="' + f(X(m.s)) + '" y1="' + PAD_T + '" y2="' + (H - PAD_B) + '"/>');
         });
 
-        // Fahrer: du zuletzt, damit du oben liegst
+        // Riders: you last, so that you are on top
         var riders = (d.riders || []).filter(function (r) { return r.s !== null && r.s !== undefined; })
                      .sort(function (a, b) { return (a.self ? 1 : 0) - (b.self ? 1 : 0); });
         riders.forEach(function (r) {
             var col = r.color || '#93a7af', op = r.stale ? 0.4 : 1, ini = esc(((r.name || r.id) + '').charAt(0).toUpperCase());
-            var emo = (r.emoji && !r.ghost) ? r.emoji : '';    // Symbol statt Anfangsbuchstabe
-            if (r.s < from || r.s > to) {                     // ausserhalb: Pfeil am Rand
+            var emo = (r.emoji && !r.ghost) ? r.emoji : '';    // symbol instead of the initial letter
+            if (r.s < from || r.s > to) {                     // outside: arrow at the edge
                 var left = r.s < from, ex = left ? PAD_L + 6 : W - PAD_R - 6, ey = PAD_T + ph / 2;
                 parts.push('<g opacity="' + op + '"><polygon points="' + (left ? '0,-6 -7,0 0,6' : '0,-6 7,0 0,6') +
                            '" fill="' + col + '" transform="translate(' + f(ex) + ' ' + f(ey) + ')"/>' +
@@ -161,13 +161,12 @@ var Profile = (function () {
         return { from: from, to: to, next: nextClimb(d.climbs, meS === null ? 0 : meS) };
     }
 
-    /* Text unter dem Profil: der naechste Anstieg, in Worten */
+    /* Text below the profile: the next climb, in words */
     function describe(next) {
         if (!next) return '';
-        var g = Math.round(next.gain), pct = (next.grade * 100).toFixed(1).replace('.', ',');
-        if (next.inside) return 'Im Anstieg ' + next.no + ' · noch ' + UI.fmtDist(next.left) + ' · +' + g + ' Hm · ' + pct + ' %';
-        return 'Nächster Anstieg ' + next.no + ' in ' + UI.fmtDist(next.dist) + ' · ' + UI.fmtDist(next.len) +
-               ' · +' + g + ' Hm · ' + pct + ' %';
+        var g = Math.round(next.gain), pct = I18n.num(next.grade * 100, 1);
+        if (next.inside) return T('Im Anstieg {n} · noch {d} · +{g} Hm · {p} %', { n: next.no, d: UI.fmtDist(next.left), g: g, p: pct });
+        return T('Nächster Anstieg {n} in {d} · {l} · +{g} Hm · {p} %', { n: next.no, d: UI.fmtDist(next.dist), l: UI.fmtDist(next.len), g: g, p: pct });
     }
 
     return { render: render, nextClimb: nextClimb, describe: describe };

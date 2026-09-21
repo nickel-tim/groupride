@@ -1,15 +1,15 @@
 /* ============================================================
- * liga-metrics.js -- Liga-Kennzahlen einer gespeicherten Fahrt
+ * liga-metrics.js -- league metrics of a saved ride
  * ============================================================
- * Rechnet im Browser (der Server prueft nur, siehe api/rides.js) und baut den Upload:
- * Kennzahlen + kompakter Track + besuchte Kacheln.
+ * Computes in the browser (the server only checks, see api/rides.js) and builds the upload:
+ * metrics + compact track + visited tiles.
  *
- * ALGO: Version dieser Berechnung. Wird ein Wert hier verbessert, ALGO erhoehen -- der Server
- * merkt sich die Version je Fahrt, und die App kann aeltere Fahrten neu berechnen.
+ * ALGO: version of this computation. If a value is improved here, raise ALGO -- the server
+ * remembers the version per ride, and the app can recompute older rides.
  *
- * Nutzt vorhandene Bausteine: Track.stats (Strecke, Bewegungszeit, Hoehenmeter, Topspeed),
- * Segments.computeRecords (schnellste 10/20/40 km, beste Stunde) und die Gruppenauswertung
- * (Session) fuer Fuehrung, Antritte, Ausreisser und gemeinsames Fahren.
+ * Uses existing building blocks: Track.stats (distance, moving time, elevation gain, top speed),
+ * Segments.computeRecords (fastest 10/20/40 km, best hour) and the group analysis
+ * (Session) for front work, attacks, escapes and riding together.
  * ============================================================ */
 
 var LigaMetrics = (function () {
@@ -20,12 +20,12 @@ var LigaMetrics = (function () {
     var VAM_WINDOW = 300000;          // 5 min
     var VAM_MIN_GAIN = 40;            // m
     var VAM_MIN_GRADE = 0.03;
-    var VAM_MAX = 3000;               // darueber ist es Hoehenrauschen
+    var VAM_MAX = 3000;               // above this it is elevation noise
 
     function two(n) { return (n < 10 ? '0' : '') + n; }
     function dayOf(t) { var d = new Date(t); return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()); }
 
-    /* Punkte mit strikt steigender Zeit; sehr lange Fahrten ausduennen (Server: max. 40000) */
+    /* Points with strictly increasing time; thin out very long rides (server: max. 40000) */
     function clean(pts) {
         var out = [], last = -Infinity;
         for (var i = 0; i < pts.length; i++) {
@@ -42,8 +42,8 @@ var LigaMetrics = (function () {
         return out;
     }
 
-    /* Beste Steigrate (Hoehenmeter je Stunde) ueber 5 Minuten mit >= 3 % Steigung.
-       Hoehe wird ueber +-40 m Strecke gemittelt (rohe GPS-Hoehe rauscht um mehrere Meter). */
+    /* Best climbing rate (metres of elevation per hour) over 5 minutes with >= 3 % gradient.
+       Elevation is averaged over +-40 m of route (raw GPS elevation jitters by several metres). */
     function vam(pts) {
         var n = pts.length;
         if (n < 60) return null;
@@ -68,7 +68,7 @@ var LigaMetrics = (function () {
         return best > 0 && best <= VAM_MAX ? best : null;
     }
 
-    /* Werte, die nur eine Gruppenfahrt hat. -> Promise<{front, attacks, escape, together}> */
+    /* Values that only a group ride has. -> Promise<{front, attacks, escape, together}> */
     function groupValues(rec) {
         var g = Rides.getGroup(rec.id);
         if (!g) return Promise.resolve({});
@@ -87,7 +87,7 @@ var LigaMetrics = (function () {
         }, function () { return {}; });
     }
 
-    /* Kaffeepausen: hoechstens eine je 15 Minuten (sonst gewinnt, wer am meisten tippt) */
+    /* Coffee breaks: at most one per 15 minutes (otherwise whoever taps the most wins) */
     function coffee(rec) { return rec.x && rec.x.coffee > 0 ? Math.floor(rec.x.coffee) : 0; }
     function countCoffee(stamps) {
         var n = 0, last = -Infinity;
@@ -95,7 +95,7 @@ var LigaMetrics = (function () {
         return n;
     }
 
-    /* Alle Werte ausser den Gruppenwerten. Rein synchron, fuer Tests gut zugaenglich. */
+    /* All values except the group values. Purely synchronous, easily accessible for tests. */
     function values(pts) {
         var st = Track.stats(pts), sm = Track.smooth(pts, 2), rc = Segments.computeRecords(sm), v = {};
         if (st.gain > 0) v.gain = Math.round(st.gain);
@@ -110,12 +110,12 @@ var LigaMetrics = (function () {
         return { stats: st, values: v };
     }
 
-    /* Fahrt-ID auf dem Server: stabil je Konto und Startzeit, damit ein zweiter Upload harmlos ist */
+    /* Ride ID on the server: stable per account and start time, so that a second upload is harmless */
     function sidOf(accountId, rec) {
         return LigaApi.sha256hex(new TextEncoder().encode(accountId + '|' + rec.start)).then(function (h) { return 'r' + h.slice(0, 23); });
     }
 
-    /* rec: gespeicherte Fahrt (Rides.get) -> Promise<Upload-Koerper> */
+    /* rec: saved ride (Rides.get) -> Promise<upload body> */
     function build(rec, accountId) {
         var pts = clean(Rides.unpack(rec));
         if (pts.length < 40) return Promise.reject(new Error('Zu wenige Punkte.'));
@@ -133,7 +133,7 @@ var LigaMetrics = (function () {
         });
     }
 
-    /* Kopie fuer Mitglieder: Anfang und Ende (trim Meter) weg */
+    /* Copy for members: start and end (trim metres) removed */
     function trimmed(rec, trim) {
         var pts = clean(Rides.unpack(rec)), cum = Track.cumulative(pts), tot = cum[cum.length - 1];
         var a = 0, b = pts.length - 1;

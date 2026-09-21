@@ -1,20 +1,20 @@
 /* ============================================================
- * emoji.js -- Emoji als Bilder, nicht als Schrift
+ * emoji.js -- emoji as images, not as a font
  * ============================================================
- * Ob ein Emoji erscheint, haengt sonst von einer Schrift des Systems ab.
- * Fehlt sie (manche Linux-Systeme, Browser in WSL, Kioske), bleiben Kaestchen
- * oder Luecken. Deshalb liefert die App die benoetigten Symbole selbst mit:
- * 33 kleine SVG-Grafiken, zusammen rund 40 KB, ueberall gleich.
+ * Whether an emoji shows up otherwise depends on a system font.
+ * If it is missing (some Linux systems, browsers in WSL, kiosks), boxes
+ * or gaps remain. That is why the app ships the symbols it needs itself:
+ * 33 small SVG graphics, about 40 KB together, identical everywhere.
  *
- * Grafiken: Twemoji (github.com/jdecked/twemoji, urspruenglich Twitter),
- * Copyright 2020 Twitter, Inc. und Mitwirkende, Lizenz CC-BY 4.0
- * (https://creativecommons.org/licenses/by/4.0/). Unveraendert uebernommen,
- * nur Leerraum entfernt.
+ * Graphics: Twemoji (github.com/jdecked/twemoji, originally Twitter),
+ * Copyright 2020 Twitter, Inc. and contributors, licence CC-BY 4.0
+ * (https://creativecommons.org/licenses/by/4.0/). Adopted unchanged,
+ * only whitespace removed.
  *
- *   Emo.img('🐢')        -> <img>-Element als Text (HTML)
- *   Emo.svg('🐢', x, y, groesse) -> <image>-Element (in einem SVG), um (x, y) zentriert
- *   Emo.uri('🐢')        -> data:-Adresse (z. B. fuer das Bilder-Export)
- * Ein unbekanntes Zeichen kommt unveraendert zurueck (dann greift wieder die Schrift).
+ *   Emo.img('🐢')        -> <img> element as text (HTML)
+ *   Emo.svg('🐢', x, y, size) -> <image> element (inside an SVG), centred on (x, y)
+ *   Emo.uri('🐢')        -> data: address (e.g. for the image export)
+ * An unknown character comes back unchanged (then the font takes over again).
  * ============================================================ */
 
 var Emo = (function () {
@@ -57,7 +57,7 @@ var Emo = (function () {
     };
 
     var cache = {};
-    function norm(ch) { return String(ch).replace(/\uFE0F/g, ''); }        // Variantenwahl ignorieren
+    function norm(ch) { return String(ch).replace(/\uFE0F/g, ''); }        // ignore variation selectors
 
     function uri(ch) {
         var k = norm(ch);

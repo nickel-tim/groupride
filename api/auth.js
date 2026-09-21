@@ -1,12 +1,12 @@
-/* auth.js -- Anmeldung
+/* auth.js -- login
  *
- * Jede Anfrage traegt eine Signatur des Geraeteschluessels (ECDSA P-256):
- *   X-Key  oeffentlicher Schluessel (roh, base64url)
- *   X-Ts   Zeit in ms, muss innerhalb von 5 min liegen
- *   X-Sig  Signatur (r||s, base64url) ueber  METHODE \n PFAD?QUERY \n TS \n SHA256(Body)
- * Es gibt keine Cookies und keine Sitzungen: geht der Schluessel verloren (Browserdaten
- * geloescht), meldet man sich per E-Mail-Code neu an und bekommt einen neuen Schluessel
- * fuer dasselbe Konto.
+ * Every request carries a signature of the device key (ECDSA P-256):
+ *   X-Key  public key (raw, base64url)
+ *   X-Ts   time in ms, must be within 5 min
+ *   X-Sig  signature (r||s, base64url) over  METHOD \n PATH?QUERY \n TS \n SHA256(body)
+ * There are no cookies and no sessions: if the key is lost (browser data
+ * cleared), you log in again by e-mail code and get a new key
+ * for the same account.
  */
 import { bad, HttpError, q1, qa, run, stmt, sha256hex, hmacHex, b64uToBytes, randomId, safeEqual, cleanText, enc } from './util.js';
 import { sendCode } from './mail.js';
@@ -34,7 +34,7 @@ export async function readSigned(request, env, bodyBytes) {
     return key;
 }
 
-/* Signatur pruefen und das Konto zum Schluessel laden. */
+/* Verify the signature and load the account belonging to the key. */
 export async function authenticate(request, env, bodyBytes, opts = {}) {
     const pubkey = await readSigned(request, env, bodyBytes);
     const row = await q1(env.DB,
@@ -71,8 +71,8 @@ export async function startLogin(env, pubkey, body) {
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
     await run(env.DB, 'INSERT INTO login_codes(email_hash, pubkey, code_hash, expires_at, created_at) VALUES (?,?,?,?,?)',
         eh, pubkey, await codeHash(env, eh, pubkey, code), now + CODE_TTL, now);
-    const sent = await sendCode(env, email, code);
-    // Antwort verraet nicht, ob es zur Adresse schon ein Konto gibt.
+    const sent = await sendCode(env, email, code, body.lang === 'en' ? 'en' : 'de');
+    // The answer does not reveal whether an account already exists for the address.
     return sent.dev ? { ok: true, devCode: sent.code } : { ok: true };
 }
 
@@ -104,14 +104,14 @@ export async function verifyLogin(env, pubkey, body) {
         acc = { id, name, emoji, color };
         created = true;
     }
-    // Ein Schluessel gehoert genau einem Konto. Existiert er schon anderswo, wird er umgehaengt.
+    // A key belongs to exactly one account. If it already exists elsewhere, it is moved over.
     await run(env.DB, `INSERT INTO devices(pubkey, account_id, label, created_at, last_seen) VALUES (?,?,?,?,?)
                        ON CONFLICT(pubkey) DO UPDATE SET account_id = excluded.account_id, last_seen = excluded.last_seen`,
         pubkey, acc.id, cleanText(body.label, 40) || null, now, now);
     return { ok: true, created, account: { id: acc.id, name: acc.name, emoji: acc.emoji, color: acc.color } };
 }
 
-/* ---- Konto ---- */
+/* ---- Account ---- */
 export async function myAccount(env, auth) {
     const devices = await qa(env.DB, 'SELECT pubkey, label, created_at, last_seen FROM devices WHERE account_id = ? ORDER BY created_at', auth.account.id);
     return {
@@ -136,8 +136,8 @@ export async function removeDevice(env, auth, shortId) {
     return { ok: true };
 }
 
-/* Konto samt allem loeschen. Ligen, die er verwaltet, gehen an das dienstaelteste Mitglied;
-   ist er allein, wird die Liga geloescht. */
+/* Delete the account with everything. Leagues he administers go to the longest-standing member;
+   if he is alone, the league is deleted. */
 export async function deleteAccount(env, auth) {
     const id = auth.account.id;
     const owned = await qa(env.DB, 'SELECT id FROM leagues WHERE admin_id = ?', id);
@@ -147,7 +147,7 @@ export async function deleteAccount(env, auth) {
         ops.push(next ? stmt(env.DB, 'UPDATE leagues SET admin_id = ? WHERE id = ?', next.account_id, l.id)
                       : stmt(env.DB, 'DELETE FROM leagues WHERE id = ?', l.id));
     }
-    // Segmente, die er angelegt hat, bleiben der Liga erhalten
+    // Segments he created remain with the league
     ops.push(stmt(env.DB, 'UPDATE league_segments SET created_by = (SELECT admin_id FROM leagues WHERE id = league_segments.league_id) WHERE created_by = ?', id));
     ops.push(stmt(env.DB, 'DELETE FROM accounts WHERE id = ?', id));
     await env.DB.batch(ops);

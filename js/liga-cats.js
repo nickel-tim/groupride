@@ -1,21 +1,21 @@
 /* ============================================================
- * liga-cats.js -- Katalog der Liga-Kategorien
+ * liga-cats.js -- catalogue of the league categories
  * ============================================================
- * Eine Quelle fuer App UND Server (api/): Name, Rechenart und Anzeige.
+ * One source for the app AND the server (api/): name, way of computing and display.
  *
- * agg  Wie die Rangliste aus den Fahrten des Zeitraums zusammenrechnet:
- *      sum      Summe aller Fahrt-Werte
- *      max/min  bester Einzelwert (min = kleiner ist besser, Zeiten)
- *      days     Anzahl verschiedener Kalendertage mit einer Fahrt
- *      streak   laengste Folge aufeinanderfolgender Tage mit >= 5 km
- *      dayMax   Tagessumme, davon das Maximum
- *      explore  neue Kacheln im Zeitraum (kommt aus account_tiles)
- *      kom      Punkte aus Liga-Segmenten der Art "Anstieg"
- *      seg      Zeit auf einem Liga-Segment (Schluessel "seg:<id>")
- * src  Aus welchen gespeicherten Werten die Rangliste gelesen wird (Standard: der Schluessel selbst)
- * unit Anzeige: km | dur | kmh | m | count | time | points
- * team true = summierbar, taugt fuer Team-Ziele
- * grp  true = gibt es nur, wenn die Fahrt in einer Gruppe aufgezeichnet wurde
+ * agg  How the ranking is computed from the rides of the period:
+ *      sum      sum of all ride values
+ *      max/min  best single value (min = smaller is better, times)
+ *      days     number of distinct calendar days with a ride
+ *      streak   longest run of consecutive days with >= 5 km
+ *      dayMax   daily sum, of which the maximum
+ *      explore  new tiles in the period (comes from account_tiles)
+ *      kom      points from league segments of the kind "climb"
+ *      seg      time on a league segment (key "seg:<id>")
+ * src  From which stored values the ranking is read (default: the key itself)
+ * unit Display: km | dur | kmh | m | count | time | points
+ * team true = summable, suitable for team goals
+ * grp  true = only exists if the ride was recorded in a group
  * ============================================================ */
 
 var LigaCats = (function () {
@@ -51,7 +51,7 @@ var LigaCats = (function () {
         { key: 'explore',   label: 'Entdecken (neue Kacheln)',   grp: 'Entdecken', agg: 'explore', unit: 'count', team: true }
     ];
 
-    // Von der App je Fahrt gemeldete Werte (die Tabelle ride_values). Der Rest wird abgeleitet.
+    // Values reported by the app per ride (the table ride_values). The rest is derived.
     var STORED = ['dist', 'time', 'gain', 'rides', 'top', 'avg20', 't10k', 't20k', 't40k', 'avg1h', 'vam',
                   'front', 'attacks', 'escape', 'together', 'coffee'];
 
@@ -66,9 +66,9 @@ var LigaCats = (function () {
     }
     function valid(key) { return !!get(key); }
     function srcOf(c) { return c.src || c.key; }
-    function smaller(c) { return c.agg === 'min' || c.agg === 'seg'; }         // kleiner ist besser
+    function smaller(c) { return c.agg === 'min' || c.agg === 'seg'; }         // smaller is better
 
-    /* ---- Anzeige ---- */
+    /* ---- Display ---- */
     function two(n) { return (n < 10 ? '0' : '') + n; }
     function fmtDur(ms) {
         var s = Math.round(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
@@ -78,7 +78,7 @@ var LigaCats = (function () {
         var s = Math.round(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
         return h ? h + ':' + two(m) + ':' + two(r) : m + ':' + two(r);
     }
-    function num(v, d) { return v.toFixed(d).replace('.', ','); }
+    function num(v, d) { return v.toFixed(d).replace('.', typeof I18n !== 'undefined' ? I18n.sep() : ','); }   // I18n exists only in the app
     function format(key, v) {
         var c = get(key);
         if (v === null || v === undefined || isNaN(v)) return '–';
@@ -89,11 +89,11 @@ var LigaCats = (function () {
             case 'kmh':    return num(v * 3.6, 1) + ' km/h';
             case 'm':      return Math.round(v) + ' m';
             case 'mh':     return Math.round(v) + ' m/h';
-            case 'points': return Math.round(v) + ' P.';
+            case 'points': return Math.round(v) + ' ' + (typeof T !== 'undefined' ? T('P.') : 'P.');       // T exists only in the app
             default:       return String(Math.round(v));
         }
     }
-    /* Unterschied fuer den Tacho ("+12,4 km") */
+    /* Difference for the speedometer ("+12.4 km") */
     function formatDelta(key, d) {
         var s = d < 0 ? '−' : '+';
         return s + format(key, Math.abs(d)).replace(' P.', '');

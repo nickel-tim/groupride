@@ -369,3 +369,21 @@ Die Daten liegen bei Cloudflare, nicht Ende-zu-Ende verschlüsselt.
 **Einrichten (für dich als Betreiber):** [liga/DEPLOY.md](liga/DEPLOY.md). Ohne diese Schritte zeigt die App
 „Die Liga gibt es auf diesem Server nicht". Hintergrund und Entscheidungen: [liga/PLAN.md](liga/PLAN.md).
 
+---
+
+## Sprache: Deutsch / English
+
+Unter **Gruppe → Anzeige** schaltet der Knopf „Sprache“ zwischen Deutsch und Englisch um. Die Wahl wird auf dem
+Gerät gemerkt; der Startzustand ist Deutsch. Mit `?lang=en` (oder `?lang=de`) im Link geht es auch direkt.
+Der Gruppenlink zum Teilen enthält die Sprache absichtlich nicht – jeder wählt selbst.
+
+Übersetzt ist alles, was die App anzeigt: alle Ansichten, Meldungen, Bilanz (auch das Bild), Replay, Liga, Fehlermeldungen
+des Liga-Servers und die Anmelde-Mail (sie wird in der Sprache der App verschickt). Zahlen und Datumsangaben folgen der
+Sprache (12,4 km / 12.4 km). Gespeicherte Ausfahrten behalten den Namen, den sie beim Speichern bekommen haben.
+
+**Für Entwickler:** Der deutsche Text ist der Schlüssel. Im Code steht `T('Nicht verbunden')`, mit Platzhaltern
+`T('noch {n} Tage', { n: 3 })`; die englischen Texte stehen in `js/i18n-en.js`. Fehlt ein Eintrag, bleibt der deutsche Text
+stehen – nichts geht kaputt. Der statische Text von `index.html` wird automatisch erfasst und braucht keine Markierung.
+`python3 test/i18n_check.py` (mit laufendem `wrangler dev`) findet fehlende und überzählige Einträge, klickt im englischen
+Modus durch alle Ansichten und meldet Texte ohne Übersetzung oder mit deutschen Wörtern.
+

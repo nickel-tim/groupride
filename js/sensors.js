@@ -1,32 +1,32 @@
 /* ============================================================
- * sensors.js -- GPS, Kurs, Display wachhalten
+ * sensors.js -- GPS, heading, keeping the display awake
  * ============================================================
- * Der Kurs ist hier der interessante Teil.
+ * The heading is the interesting part here.
  *
- * Man wuerde reflexhaft den Magnetometer nehmen. Auf dem Fahrrad ist
- * das die schlechtere Wahl: Die meisten Handyhalterungen am Lenker
- * sind MAGNETISCH, und Lenker, Vorbau und Bremszuege sind Stahl. Der
- * Kompass zeigt dann verlaesslich falsch -- teils um 90 Grad und mehr.
+ * The reflex would be to use the magnetometer. On a bicycle that is
+ * the worse choice: most handlebar phone mounts are MAGNETIC, and
+ * handlebar, stem and brake cables are steel. The compass then points
+ * reliably wrong -- sometimes by 90 degrees and more.
  *
- * coords.heading aus dem GNSS-Chip hat dieses Problem nicht: Es kommt
- * aus der Doppler-Verschiebung, ist also rein kinematisch. Der Preis
- * ist, dass es nur bei Bewegung existiert.
+ * coords.heading from the GNSS chip does not have this problem: it comes
+ * from the Doppler shift, so it is purely kinematic. The price is
+ * that it only exists while moving.
  *
- * Also: oberhalb von HEAD_MIN_SPEED das GPS, darunter der Magnetometer
- * als Rueckfall. Genau umgekehrt zur naiven Erwartung.
+ * So: above HEAD_MIN_SPEED the GPS, below it the magnetometer
+ * as a fallback. Exactly the opposite of the naive expectation.
  * ============================================================ */
 
 var Sensors = (function () {
     'use strict';
 
-    var HEAD_MIN_SPEED = 2.5;    // m/s, darueber ist GPS-Kurs verlaesslich
+    var HEAD_MIN_SPEED = 2.5;    // m/s, above this the GPS heading is reliable
 
     var onPos = null, onErr = null;
     var watchId = null;
     var wakeLock = null;
 
-    var magHeading = null;       // Grad, aus dem Magnetometer
-    var gpsHeading = null;       // Grad, aus dem GNSS-Chip
+    var magHeading = null;       // degrees, from the magnetometer
+    var gpsHeading = null;       // degrees, from the GNSS chip
     var lastSpeed  = 0;
     var magSource  = 'keiner';
 
@@ -34,7 +34,7 @@ var Sensors = (function () {
     function startGps(cb, errCb) {
         onPos = cb; onErr = errCb;
         if (!navigator.geolocation) {
-            if (onErr) onErr('Dieser Browser hat keine Geolocation-API.');
+            if (onErr) onErr(T('Dieser Browser hat keine Geolocation-API.'));
             return false;
         }
         watchId = navigator.geolocation.watchPosition(function (pos) {
@@ -45,11 +45,10 @@ var Sensors = (function () {
             }
             if (onPos) onPos(pos);
         }, function (e) {
-            var msg = 'GPS-Fehler';
-            if (e.code === 1) msg = 'Standortfreigabe verweigert. In den ' +
-                                    'Browser-Einstellungen fuer diese Seite erlauben.';
-            else if (e.code === 2) msg = 'Kein GPS-Empfang.';
-            else if (e.code === 3) msg = 'GPS antwortet nicht (Timeout).';
+            var msg = T('GPS-Fehler');
+            if (e.code === 1) msg = T('Standortfreigabe verweigert. In den Browser-Einstellungen für diese Seite erlauben.');
+            else if (e.code === 2) msg = T('Kein GPS-Empfang.');
+            else if (e.code === 3) msg = T('GPS antwortet nicht (Timeout).');
             if (onErr) onErr(msg);
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
         return true;
@@ -61,8 +60,8 @@ var Sensors = (function () {
     }
 
     /* ---------- Magnetometer ----------
-       Muss aus einer Nutzergeste heraus angefragt werden (iOS 13+),
-       sonst lehnt Safari stillschweigend ab. */
+       Must be requested from a user gesture (iOS 13+),
+       otherwise Safari silently refuses. */
     async function startCompass() {
         try {
             if (typeof DeviceOrientationEvent !== 'undefined' &&
@@ -74,7 +73,7 @@ var Sensors = (function () {
             magSource = 'abgelehnt'; return false;
         }
 
-        // Absolute Orientierung, wo verfuegbar (Android/Chrome)
+        // Absolute orientation where available (Android/Chrome)
         if ('ondeviceorientationabsolute' in window) {
             window.addEventListener('deviceorientationabsolute', handleOrient, true);
             magSource = 'absolut';
@@ -88,18 +87,18 @@ var Sensors = (function () {
     function handleOrient(e) {
         var h = null;
         if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
-            // iOS: bereits Grad im Uhrzeigersinn ab magnetisch Nord
+            // iOS: already degrees clockwise from magnetic north
             h = e.webkitCompassHeading;
             magSource = 'iOS';
         } else if (typeof e.alpha === 'number' && e.alpha !== null) {
-            // W3C: alpha zaehlt GEGEN den Uhrzeigersinn ab Nord
+            // W3C: alpha counts COUNTER-clockwise from north
             h = 360 - e.alpha;
             if (e.absolute === true) magSource = 'absolut';
         }
         if (h === null) return;
 
-        /* Bildschirmdrehung herausrechnen: im Querformat zeigt die
-           Geraeteachse 90 Grad neben der Blickrichtung. */
+        /* Factor out the screen rotation: in landscape the
+           device axis points 90 degrees away from the viewing direction. */
         var angle = 0;
         if (screen.orientation && typeof screen.orientation.angle === 'number') {
             angle = screen.orientation.angle;
@@ -109,20 +108,20 @@ var Sensors = (function () {
         magHeading = (h + angle + 360) % 360;
     }
 
-    /* Der effektive Kurs plus die Quelle, damit die App ehrlich
-       anzeigen kann, worauf die Pfeile beruhen. */
+    /* The effective heading plus the source, so that the app can honestly
+       show what the arrows are based on. */
     function heading() {
         if (lastSpeed >= HEAD_MIN_SPEED && gpsHeading !== null) {
             return { deg: gpsHeading, src: 'GPS' };
         }
-        if (magHeading !== null) return { deg: magHeading, src: 'Kompass' };
-        if (gpsHeading !== null) return { deg: gpsHeading, src: 'GPS (alt)' };
+        if (magHeading !== null) return { deg: magHeading, src: T('Kompass') };
+        if (gpsHeading !== null) return { deg: gpsHeading, src: T('GPS (alt)') };
         return { deg: null, src: magSource === 'abgelehnt' ? 'verweigert' : '--' };
     }
 
-    /* ---------- Display wachhalten ----------
-       Ohne das sperrt das Handy nach Sekunden, und in vielen Browsern
-       stirbt damit auch der GPS-Strom. */
+    /* ---------- Keeping the display awake ----------
+       Without it the phone locks after seconds, and in many browsers
+       the GPS stream dies with it. */
     async function keepAwake(on) {
         try {
             if (!('wakeLock' in navigator)) return false;
@@ -137,7 +136,7 @@ var Sensors = (function () {
         } catch (e) { return false; }
     }
 
-    // Nach dem Zurueckholen aus dem Hintergrund ist die Sperre weg
+    // After coming back from the background the lock is gone
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible' && wakeLock === null) keepAwake(true);
     });

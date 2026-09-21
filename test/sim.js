@@ -1,48 +1,48 @@
 /* ============================================================
- * sim.js -- simulierte Gruppenausfahrt mit bekannter Wahrheit
+ * sim.js -- simulated group ride with a known truth
  * ============================================================
- * Prueft die Kernlogik gegen Ground Truth:
- *   - Reihenfolge trotz GPS-Rauschen
- *   - Ueberholvorgaenge ohne Ping-Pong
- *   - Serpentine bricht die Projektion nicht
- *   - Bergerkennung: Anzahl, Hoehengewinn, Rangliste
- *   - Fuehrungsarbeit summiert sich plausibel
- *   - Abriss wird erkannt
+ * Checks the core logic against ground truth:
+ *   - order despite GPS noise
+ *   - overtaking without ping-pong
+ *   - hairpin does not break the projection
+ *   - climb detection: number, elevation gain, ranking
+ *   - front work adds up plausibly
+ *   - drop is detected
  * ============================================================ */
 
 global.Geo       = require('../js/geo.js');
 global.Route     = require('../js/route.js');
 global.Analytics = require('../js/analytics.js');
 
-/* ---------- reproduzierbarer Zufall ---------- */
+/* ---------- reproducible randomness ---------- */
 var seed = 20260920;
 function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
 function gauss(s) { return s * Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd()); }
 
-/* ---------- Mittellinie bauen ----------------
-   Strasse mit Kurven, einer Serpentine (180 Grad) und zwei Bergen. */
+/* ---------- Build the centre line ----------------
+   Road with bends, a hairpin (180 degrees) and two climbs. */
 function eleAt(s) {
     if (s < 1000) return 100;
-    if (s < 1600) return 100 + (s - 1000) * 0.10;        // Berg 1: +60 m, 10 %
+    if (s < 1600) return 100 + (s - 1000) * 0.10;        // Climb 1: +60 m, 10 %
     if (s < 2200) return 160;
-    if (s < 3000) return 160 + (s - 2200) * 0.06;        // Berg 2: +48 m, 6 %
-    return 208 - (s - 3000) * 0.04;                      // Abfahrt
+    if (s < 3000) return 160 + (s - 2200) * 0.06;        // Climb 2: +48 m, 6 %
+    return 208 - (s - 3000) * 0.04;                      // Descent
 }
 
-/* Serpentine als echte Kehre: 180 Grad ueber einen Bogen mit 30 m
-   Radius (Bogenlaenge pi*R = 94 m). Damit liegen Hin- und Rueckweg
-   ca. 60 m auseinander -- so sieht eine Alpenkehre wirklich aus.
-   Eine Richtungsumkehr OHNE Seitenversatz waere deckungsgleiche
-   Strasse und damit ein unloesbares Problem, kein Testfall. */
+/* Hairpin as a real bend: 180 degrees over an arc with 30 m
+   radius (arc length pi*R = 94 m). That puts the outbound and return legs
+   about 60 m apart -- that is what an Alpine hairpin really looks like.
+   A reversal of direction WITHOUT lateral offset would be congruent
+   road and thereby an unsolvable problem, not a test case. */
 var HP_START = 1200, HP_LEN = 94;
 function headingAt(s) {
-    var h = 40 + 25 * Math.sin(s / 700);                  // sanfte Kurven
+    var h = 40 + 25 * Math.sin(s / 700);                  // gentle bends
     if (s <= HP_START) return h;
     if (s >= HP_START + HP_LEN) return h + 180;
     return h + 180 * (s - HP_START) / HP_LEN;
 }
 
-var LAT0 = 47.8021, LON0 = 11.0912;               // irgendwo im Voralpenland
+var LAT0 = 47.8021, LON0 = 11.0912;               // somewhere in the Alpine foothills
 var center = [];
 (function buildCenter() {
     var lat = LAT0, lon = LON0, s = 0, step = 2;
@@ -67,15 +67,15 @@ function atS(s) {
              ele: p.ele + f * (q.ele - p.ele) };
 }
 
-/* ---------- Fahrer ----------
-   Geschwindigkeit haengt an der Steigung; jeder hat eigene Staerken. */
+/* ---------- Riders ----------
+   Speed depends on the gradient; everyone has their own strengths. */
 function grade(s) { return (eleAt(s + 25) - eleAt(s - 25)) / 50; }
 
 var riders = [
-    { id: 'a', name: 'Anna',  flat: 9.2, climbSkill: 1.35, s: 40 },   // Bergziege
-    { id: 'b', name: 'Ben',   flat: 10.4, climbSkill: 0.78, s: 20 },  // Flachland-Motor
-    { id: 'c', name: 'Carla', flat: 9.4, climbSkill: 1.02, s: 30 },   // konstant
-    { id: 'd', name: 'Dirk',  flat: 8.2, climbSkill: 0.70, s: 10 }    // reisst ab
+    { id: 'a', name: 'Anna',  flat: 9.2, climbSkill: 1.35, s: 40 },   // mountain goat
+    { id: 'b', name: 'Ben',   flat: 10.4, climbSkill: 0.78, s: 20 },  // flatland engine
+    { id: 'c', name: 'Carla', flat: 9.4, climbSkill: 1.02, s: 30 },   // constant
+    { id: 'd', name: 'Dirk',  flat: 8.2, climbSkill: 0.70, s: 10 }    // gets dropped
 ];
 
 function speedOf(r, s, t) {
@@ -83,8 +83,8 @@ function speedOf(r, s, t) {
     var v = r.flat;
     if (g > 0.005) v = r.flat * r.climbSkill * Math.max(0.3, 1 - g * 7);
     else if (g < -0.005) v = r.flat * (1 - g * 4);
-    if (r.id === 'b' && s > 900 && s < 1100) v *= 1.5;      // Ben tritt vor dem Berg an
-    if (r.id === 'd' && t > 260) v *= 0.55;                  // Dirk baut ein
+    if (r.id === 'b' && s > 900 && s < 1100) v *= 1.5;      // Ben attacks before the climb
+    if (r.id === 'd' && t > 260) v *= 0.55;                  // Dirk cracks
     return Math.max(1.5, v);
 }
 
@@ -92,20 +92,20 @@ function speedOf(r, s, t) {
 var route = new Route();
 var an = new Analytics(route);
 var T0 = Date.now() - 600000;
-var dt = 1;                     // 1 Hz, wie echtes GPS
+var dt = 1;                     // 1 Hz, like real GPS
 var trueOrderChecks = 0, orderOk = 0;
 var trueCross = 0;
 var prevTrueSign = {};
 
 for (var t = 0; t <= 520; t += dt) {
-    // wahre Positionen fortschreiben
+    // advance the true positions
     riders.forEach(function (r) { r.s += speedOf(r, r.s, t) * dt; });
 
-    // verrauschte Meldungen einspeisen
+    // feed in noisy reports
     riders.forEach(function (r) {
         var c = atS(r.s);
         var h = headingAt(r.s) * Geo.D2R;
-        // Rauschen: entlang und quer zur Fahrtrichtung, je ~4 m
+        // Noise: along and across the direction of travel, ~4 m each
         var along = gauss(4), cross = gauss(4);
         var dN = along * Math.cos(h) - cross * Math.sin(h);
         var dE = along * Math.sin(h) + cross * Math.cos(h);
@@ -113,7 +113,7 @@ for (var t = 0; t <= 520; t += dt) {
         var lon = c.lon + dE / Geo.metersPerDegLon(c.lat);
         an.ingest(r.id, {
             lat: lat, lon: lon,
-            ele: c.ele + gauss(6),              // GPS-Hoehe ist grob
+            ele: c.ele + gauss(6),              // GPS elevation is coarse
             speed: speedOf(r, r.s, t) + gauss(0.2),
             acc: 6, t: T0 + t * 1000, name: r.name
         });
@@ -121,7 +121,7 @@ for (var t = 0; t <= 520; t += dt) {
 
     an.tick(T0 + t * 1000);
 
-    // --- Pruefung Reihenfolge (nur wenn die Wahrheit eindeutig ist) ---
+    // --- Check order (only when the truth is unambiguous) ---
     var truth = riders.slice().sort(function (x, y) { return y.s - x.s; });
     var clear = true;
     for (var i = 1; i < truth.length; i++) {
@@ -133,10 +133,10 @@ for (var t = 0; t <= 520; t += dt) {
         if (det === truth.map(function (r) { return r.id; }).join('')) orderOk++;
     }
 
-    /* --- wahre Kreuzungen zaehlen ---
-       Erst ab WARMUP, denn solange die Achse kuerzer als 150 m ist,
-       schweigt der Detektor bewusst. Frueher zu zaehlen wuerde ihm
-       Startartefakte als "verpasst" anrechnen. */
+    /* --- count true crossings ---
+       Only from WARMUP on, because as long as the axis is shorter than 150 m,
+       the detector deliberately stays silent. Counting earlier would charge it
+       start-up artefacts as "missed". */
     for (var p = 0; t >= 45 && p < riders.length; p++) {
         for (var q = p + 1; q < riders.length; q++) {
             var A = riders[p], B = riders[q];
@@ -151,7 +151,7 @@ for (var t = 0; t <= 520; t += dt) {
     }
 }
 
-/* ---------- Auswertung ---------- */
+/* ---------- Evaluation ---------- */
 function pct(a, b) { return b ? (100 * a / b).toFixed(1) + ' %' : 'n/a'; }
 
 console.log('=== Reihenfolge ===');
@@ -214,7 +214,7 @@ riders.forEach(function (r) {
 });
 console.log('groesster Querabstand:', maxOff.toFixed(1), 'm (Rauschen ~4 m -> plausibel)');
 
-/* ---------- harte Zusicherungen ---------- */
+/* ---------- hard assertions ---------- */
 var fails = [];
 if (orderOk / trueOrderChecks < 0.95) fails.push('Reihenfolge unter 95 % korrekt');
 if (an.climbs.length !== 2) fails.push('Bergerkennung: ' + an.climbs.length + ' statt 2');

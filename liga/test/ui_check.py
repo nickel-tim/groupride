@@ -1,11 +1,11 @@
-"""Ende-zu-Ende-Test der Liga-Oberflaeche im echten Chrome gegen einen laufenden Worker.
+"""End-to-end test of the league interface in a real Chrome against a running worker.
 
   Terminal 1:  npx wrangler d1 migrations apply groupride --local -c liga/wrangler.dev.jsonc
                npx wrangler dev -c liga/wrangler.dev.jsonc
-  Terminal 2:  python3 liga/test/ui_check.py           (Playwright + Chrome noetig)
+  Terminal 2:  python3 liga/test/ui_check.py           (needs Playwright + Chrome)
 
-Zwei "Handys" (getrennte Browser-Kontexte): Anna legt eine Liga an, Ben tritt per Link bei.
-Bilder landen in test/debug/liga-*.png.
+Two "phones" (separate browser contexts): Anna creates a league, Ben joins via link.
+Images end up in test/debug/liga-*.png.
 """
 import os, sys, time, json, random
 from playwright.sync_api import sync_playwright
@@ -124,12 +124,12 @@ with sync_playwright() as p:
     A.click('#ligaRow'); A.wait_for_timeout(700)
     row2 = A.inner_text('#ligaRow')
     check('Tippen wechselt die Kategorie', row2 != row and row2.split('\n')[0] != row.split('\n')[0], (row, row2))
-    # live: eine laufende Fahrt zaehlt sofort mit (Kilometer werden zum Stand addiert)
+    # live: a ride in progress counts immediately (kilometres are added to the standing)
     A.evaluate("LigaSync.setTacho({league: LigaSync.tacho().league, cat: 'dist'})"); A.evaluate("LigaSync.fetchStanding().then(LigaUI.tachoTick)"); A.wait_for_timeout(700)
     live = A.evaluate("""() => { const el = document.getElementById('ligaRow'); return el.innerText; }""")
     check('Tacho-Zeile nach Rueckwechsel wieder Kilometer', 'Kilometer' in live or 'KILOMETER' in live.upper(), live)
 
-    # Ben liegt 30 km hinter Anna. Eine laufende Fahrt zaehlt sofort mit, Ueberholen wird gemeldet.
+    # Ben is 30 km behind Anna. A ride in progress counts immediately, overtaking is reported.
     B.evaluate("LigaSync.setTacho({league: LigaSync.leagues()[0].id, cat: 'dist'})"); B.evaluate("LigaSync.fetchStanding()"); B.wait_for_timeout(900)
     B.evaluate("LigaUI._tachoRender({dist: 10000, moving: 1})"); rb = B.inner_text('#ligaRow')
     check('Ben liegt hinter Anna (Abstand schrumpft mit der laufenden Fahrt)', 'Anna' in rb and '▲' in rb and 'Du 69' in rb, rb)
@@ -209,7 +209,7 @@ with sync_playwright() as p:
     check('Konto geloescht: Anmeldung wieder sichtbar', B.evaluate("LigaApi.account()") is None)
 
     print('\n--- Fehler auf den Seiten')
-    # Anna hat absichtlich eine ungueltige Adresse geschickt: genau dieser eine 400er ist erwartet
+    # Anna deliberately sent an invalid address: exactly this one 400 is expected
     for n, e, erlaubt in (('Anna', errA, 1), ('Ben', errB, 0)):
         rest = [x for x in e if 'status of 400' not in x]
         check(n + ': keine JavaScript-Fehler', not rest and len(e) - len(rest) <= erlaubt, e[:3])

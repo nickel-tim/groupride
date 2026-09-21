@@ -1,4 +1,4 @@
-/* leagues.js -- Ligen: anlegen, beitreten, einstellen, Ranglisten, Ruhmeshalle, Segmente */
+/* leagues.js -- leagues: create, join, configure, rankings, hall of fame, segments */
 import Codec from '../js/liga-codec.js';
 import Cats from '../js/liga-cats.js';
 import { bad, denied, missing, rejected, HttpError, q1, qa, run, stmt, cleanText, parseJson, randomId, sha256hex, safeEqual } from './util.js';
@@ -8,7 +8,7 @@ import * as B from './boards.js';
 const MAX_MEMBERS = 50, MAX_LEAGUES_OWNED = 20, MAX_LEAGUES_JOINED = 30, MAX_SEGMENTS = 30;
 const UNITS = ['once', 'day', 'week', 'month', 'year'];
 
-/* ---- Einstellungen pruefen ---- */
+/* ---- Check settings ---- */
 function cleanCats(list) {
     if (!Array.isArray(list)) throw bad('Kategorien fehlen.');
     const out = [...new Set(list.map(String))].filter(k => Cats.valid(k));
@@ -60,7 +60,7 @@ async function loadLeague(env, id) {
     if (!l) throw missing('Liga nicht gefunden.');
     return l;
 }
-/* Mitglied? Sonst 404 (verraet nicht, ob es die Liga gibt) */
+/* Member? Otherwise 404 (does not reveal whether the league exists) */
 async function memberOf(env, auth, id) {
     const l = await q1(env.DB, `SELECT l.* FROM leagues l JOIN memberships m ON m.league_id = l.id WHERE l.id = ? AND m.account_id = ?`, String(id || ''), auth.account.id);
     if (!l) throw missing('Liga nicht gefunden.');
@@ -80,7 +80,7 @@ function publicLeague(l, me) {
     };
 }
 
-/* ---- anlegen / beitreten ---- */
+/* ---- create / join ---- */
 export async function createLeague(env, auth, body) {
     const owned = await q1(env.DB, 'SELECT COUNT(*) n FROM leagues WHERE admin_id = ?', auth.account.id);
     if (owned.n >= MAX_LEAGUES_OWNED) throw new HttpError(429, 'Du verwaltest schon zu viele Ligen.');
@@ -118,7 +118,7 @@ export async function myLeagues(env, auth) {
     return { leagues: rows.map(l => ({ ...publicLeague(l, auth.account.id), period: periodAt(l, Date.now()) })) };
 }
 
-/* ---- Einstellungen ---- */
+/* ---- Settings ---- */
 export async function patchLeague(env, auth, id, body) {
     const l = await adminOf(env, auth, id);
     const timeChange = ['unit', 'every', 'start_ts', 'end_ts', 'tz'].some(k => body[k] !== undefined && String(body[k]) !== String(l[k]));
@@ -168,14 +168,14 @@ export async function deleteLeague(env, auth, id) {
     return { ok: true };
 }
 
-/* ---- Ansichten ---- */
+/* ---- Views ---- */
 function pickPeriod(league, now, startParam) {
     if (startParam) {
         const per = periodAt(league, Number(startParam));
         if (!per) throw bad('Diesen Zeitraum gibt es nicht.');
         return per;
     }
-    // Zeitraum, in dem "jetzt" liegt. Vor dem Start der erste, nach dem Ende einer einmaligen Liga der einzige.
+    // The period in which "now" lies. Before the start the first one, after the end of a one-off league the only one.
     return periodAt(league, now) || periodByIndex(league, 0);
 }
 
@@ -231,7 +231,7 @@ export async function leagueHall(env, auth, id) {
     return B.hall(env.DB, league);
 }
 
-/* ---- Segmente ---- */
+/* ---- Segments ---- */
 export async function createSegment(env, auth, id, body) {
     const league = await memberOf(env, auth, id);
     const n = await q1(env.DB, 'SELECT COUNT(*) n FROM league_segments WHERE league_id = ?', id);
@@ -264,7 +264,7 @@ export async function deleteSegment(env, auth, id, sid) {
     return { ok: true };
 }
 
-/* Der Client meldet die Zeiten seiner eigenen Fahrten auf dem Segment. Der Server prueft nur die Zugehoerigkeit. */
+/* The client reports the times of its own rides on the segment. The server only checks membership. */
 export async function putEfforts(env, auth, id, sid, body) {
     await memberOf(env, auth, id);
     if (!await q1(env.DB, 'SELECT 1 x FROM league_segments WHERE id = ? AND league_id = ?', sid, id)) throw missing('Segment nicht gefunden.');

@@ -1,17 +1,17 @@
 /* ============================================================
- * relay.js -- Cloudflare Worker als WebSocket-Relay
+ * relay.js -- Cloudflare Worker as a WebSocket relay
  * ============================================================
- * Absichtlich dumm: verteilt Bytes an alle anderen im selben Raum und
- * speichert nichts. Lesen kann er ohnehin nichts -- die Nutzlast ist
- * schon auf dem Handy AES-GCM-verschluesselt, der Schluessel steht im
- * URL-Fragment und erreicht nie einen Server.
+ * Deliberately dumb: distributes bytes to everybody else in the same room and
+ * stores nothing. It cannot read anything anyway -- the payload is
+ * already AES-GCM-encrypted on the phone, the key is in the
+ * URL fragment and never reaches a server.
  *
- * Hibernation-API (ctx.acceptWebSocket): Zwischen zwei Nachrichten
- * darf Cloudflare das Objekt aus dem Speicher werfen, die Verbindungen
- * bleiben trotzdem offen. Das haelt die abgerechnete Laufzeit klein --
- * wichtig im Free Plan.
+ * Hibernation API (ctx.acceptWebSocket): between two messages
+ * Cloudflare may evict the object from memory, the connections
+ * stay open nevertheless. That keeps the billed runtime small --
+ * important on the free plan.
  *
- * Deployment: siehe DEPLOY.md
+ * Deployment: see DEPLOY.md
  * ============================================================ */
 
 import { DurableObject } from 'cloudflare:workers';
@@ -23,16 +23,16 @@ export class Room extends DurableObject {
         }
         const pair = new WebSocketPair();
         const client = pair[0], server = pair[1];
-        this.ctx.acceptWebSocket(server);      // hibernierbar
+        this.ctx.acceptWebSocket(server);      // hibernatable
         return new Response(null, { status: 101, webSocket: client });
     }
 
     async webSocketMessage(ws, message) {
-        // Groessenbremse gegen versehentliche Fluten
+        // Size brake against accidental floods
         if (typeof message === 'string' && message.length > 4096) return;
         for (const other of this.ctx.getWebSockets()) {
-            if (other === ws) continue;             // kein Echo an den Absender
-            try { other.send(message); } catch (e) { /* Socket schon zu */ }
+            if (other === ws) continue;             // no echo to the sender
+            try { other.send(message); } catch (e) { /* Socket already closed */ }
         }
     }
 
@@ -56,7 +56,7 @@ export default {
                 { headers: { 'content-type': 'text/plain; charset=utf-8' } });
         }
 
-        // Die Raum-ID ist bereits ein Hash aus dem Gruppenschluessel.
+        // The room ID is already a hash of the group key.
         const room = (url.searchParams.get('room') || 'default').slice(0, 128);
         const stub = env.ROOM.get(env.ROOM.idFromName(room));
         return stub.fetch(request);

@@ -1,30 +1,29 @@
 /* ============================================================
- * simmode.js -- Simulation zum Ausprobieren, ohne Handy auf dem Rad
+ * simmode.js -- simulation for trying things out, without a phone on the bike
  * ============================================================
- * Vier virtuelle Mitfahrer auf einer Testrunde (Kurven, zwei
- * Serpentinen, drei Anstiege), du bist der fuenfte. Alles laeuft
- * lokal: kein GPS, kein Netz, nichts wird gesendet.
+ * Four virtual fellow riders on a test lap (bends, two
+ * hairpins, three climbs), you are the fifth. Everything runs
+ * locally: no GPS, no network, nothing is sent.
  *
- * Die Positionen gehen durch DENSELBEN Weg wie echte Meldungen
- * (Analytics.ingest), samt GPS-Rauschen von rund 4 m. So zeigen
- * Tacho, Karte, Verlauf und Berge genau das, was sie auch bei einer
- * echten Ausfahrt zeigen wuerden -- inklusive der Fehler, die das
- * Rauschen macht.
+ * The positions go through the SAME path as real reports
+ * (Analytics.ingest), including GPS noise of about 4 m. So the
+ * speedometer, map, log and climbs show exactly what they would show on a
+ * real ride -- including the errors the noise causes.
  *
- * Zum Spielen: deine Leistung regeln, "Antritt" druecken (Ueberholen,
- * Luecke aufreissen, abgehaengt werden), Zeitraffer hochschalten.
- * Die Runde ist dieselbe wie in test/sim.js, dort mit Ground Truth
- * gegen die Auswertung geprueft.
+ * To play: regulate your power, press "Attack" (overtake, open
+ * a gap, get dropped), turn up the time lapse.
+ * The lap is the same as in test/sim.js, where it is checked with ground truth
+ * against the analysis.
  * ============================================================ */
 
 var SimMode = (function () {
     'use strict';
 
-    var LAT0 = 47.8021, LON0 = 11.0912;      // irgendwo im Voralpenland
-    var END  = 6000;                         // m, Ziel
+    var LAT0 = 47.8021, LON0 = 11.0912;      // somewhere in the Alpine foothills
+    var END  = 6000;                         // m, finish
     var HP1  = 1200, HP2 = 3700, HP_LEN = 94;
 
-    /* Hoehenprofil: drei Anstiege (+60 m / 10 %, +48 m / 6 %, +40 m / 8 %) */
+    /* Elevation profile: three climbs (+60 m / 10 %, +48 m / 6 %, +40 m / 8 %) */
     function eleAt(s) {
         if (s < 1000) return 100;
         if (s < 1600) return 100 + (s - 1000) * 0.10;
@@ -36,9 +35,9 @@ var SimMode = (function () {
         return 200 - (s - 5100) * 0.05;
     }
 
-    /* Serpentinen als echte Kehren: 180 Grad ueber einen Bogen mit 30 m
-       Radius. Eine Richtungsumkehr OHNE Seitenversatz waere deckungs-
-       gleiche Strasse -- ein unloesbares Problem, kein Testfall. */
+    /* Hairpins as real bends: 180 degrees over an arc with 30 m
+       radius. A reversal of direction WITHOUT lateral offset would be congruent
+       road -- an unsolvable problem, not a test case. */
     function headingAt(s) {
         var h = 40 + 25 * Math.sin(s / 700);
         var turn = 0;
@@ -81,8 +80,8 @@ var SimMode = (function () {
 
     function grade(s) { return (eleAt(s + 25) - eleAt(s - 25)) / 50; }
 
-    /* Jeder hat eigene Staerken: Anna klettert, Ben ist der Flachland-
-       Motor (und tritt vor dem ersten Berg an), Dirk baut irgendwann ein. */
+    /* Everyone has their own strengths: Anna climbs, Ben is the flatland
+       engine (and attacks before the first climb), Dirk cracks at some point. */
     function speedOf(r, s, t) {
         var g = grade(s);
         var v = r.flat;
@@ -93,7 +92,7 @@ var SimMode = (function () {
         return Math.max(1.5, v);
     }
 
-    /* opts: { meId, meName, meColor, colors: [4 Farben fuer die anderen] } */
+    /* opts: { meId, meName, meColor, colors: [4 colours for the others] } */
     function create(opts) {
         if (!center) buildCenter();
         var colors = opts.colors;
@@ -106,23 +105,23 @@ var SimMode = (function () {
             { key: 'dirk', id: 'sim-dirk',  name: 'Dirk',  color: colors[3], emoji: 14, flat: 8.2,  climb: 0.70, s: 10 }
         ];
         var sim = {
-            t: 0,                 // simulierte Sekunden
+            t: 0,                 // simulated seconds
             t0: Date.now(),
-            effort: 1.0,          // Faktor auf DEIN Tempo
-            boostUntil: 0,        // simulierte Sekunde, bis zu der der Antritt haelt
+            effort: 1.0,          // factor on YOUR speed
+            boostUntil: 0,        // simulated second until which the attack lasts
             done: false,
             length: END
         };
 
         sim.now = function () { return sim.t0 + sim.t * 1000; };
 
-        /* Ein paar Kurznachrichten der Mitfahrer, damit man die Anzeige ausprobieren kann. */
+        /* A few short messages from the fellow riders so that you can try out the display. */
         var script = [ { at: 40,  who: 'sim-ben',   n: 'Ben',   j: 2,  q: 'ok' },
                        { at: 110, who: 'sim-dirk',  n: 'Dirk',  j: 14, q: 'wait' },
                        { at: 190, who: 'sim-anna',  n: 'Anna',  j: 1,  q: 'coffee' },
                        { at: 270, who: 'sim-carla', n: 'Carla', j: 12, q: 'danger' } ];
         var sentIdx = 0;
-        /* Nachrichten, die seit dem letzten Aufruf faellig wurden (Zeitraffer springt ueber mehrere). */
+        /* Messages that have become due since the last call (time lapse jumps over several). */
         sim.dueMessages = function () {
             var out = [];
             while (sentIdx < script.length && script[sentIdx].at <= sim.t) {
@@ -135,7 +134,7 @@ var SimMode = (function () {
         sim.attack = function () { sim.boostUntil = sim.t + 15; };
         sim.boosting = function () { return sim.t < sim.boostUntil; };
 
-        /* Eine Sekunde fortschreiben; liefert die Meldungen aller Fahrer. */
+        /* Advance one second; returns the reports of all riders. */
         sim.step = function () {
             if (sim.done) return [];
             sim.t += 1;
@@ -148,7 +147,7 @@ var SimMode = (function () {
                 var c = atS(r.s);
                 var hd = headingAt(r.s);
                 var h = hd * Geo.D2R;
-                var along = gauss(4), cross = gauss(4);      // GPS-Rauschen
+                var along = gauss(4), cross = gauss(4);      // GPS noise
                 out.push({
                     id: r.id, name: r.name, color: r.color, emoji: r.emoji, me: !!r.me,
                     lat: c.lat + (along * Math.cos(h) - cross * Math.sin(h)) / Geo.metersPerDegLat(c.lat),
@@ -159,7 +158,7 @@ var SimMode = (function () {
                     acc: 6, t: sim.now()
                 });
             });
-            if (riders.some(function (r) { return r.s >= END; })) sim.done = true;   // Fuehrender im Ziel
+            if (riders.some(function (r) { return r.s >= END; })) sim.done = true;   // leader at the finish
             return out;
         };
 

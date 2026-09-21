@@ -1,7 +1,7 @@
-/* Rauchtest im echten Browser: laedt die Seite, speist Positionen ein
-   und prueft, dass die Oberflaeche traegt und keine JS-Fehler fallen.
-   Das Netz ist in dieser Umgebung blockiert -- genau richtig, denn so
-   wird gleich mitgeprueft, ob die App ohne Netz sauber weiterlaeuft. */
+/* Smoke test in a real browser: loads the page, feeds in positions
+   and checks that the interface holds up and no JS errors occur.
+   The network is blocked in this environment -- exactly right, because that
+   also checks whether the app carries on cleanly without a network. */
 const { chromium } = require('playwright');
 const http = require('http');
 const fs = require('fs');
@@ -23,7 +23,7 @@ const server = http.createServer((req, res) => {
   await new Promise(r => server.listen(8099, r));
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   const ctx = await browser.newContext({
-    viewport: { width: 390, height: 844 },      // iPhone-artig, Hochformat
+    viewport: { width: 390, height: 844 },      // iPhone-like, portrait
     deviceScaleFactor: 2,
     permissions: ['geolocation'],
     geolocation: { latitude: 47.8021, longitude: 11.0912, accuracy: 5 },
@@ -38,20 +38,20 @@ const server = http.createServer((req, res) => {
   await page.goto('http://localhost:8099/index.html');
   await page.waitForTimeout(600);
 
-  // Raumschluessel muss im Fragment angelegt worden sein
+  // The room key must have been created in the fragment
   const hash = await page.evaluate(() => location.hash);
   console.log('Fragment angelegt :', /^#k=[\w-]{20,}/.test(hash) ? 'ja' : 'NEIN  ' + hash);
 
-  // Topic muss aus dem Schluessel abgeleitet worden sein (Crypto laeuft)
+  // The topic must have been derived from the key (crypto works)
   const linkOk = await page.evaluate(() =>
       document.getElementById('linkNote').textContent.includes('#k='));
   console.log('Teilen-Link       :', linkOk ? 'ok' : 'FEHLT');
 
-  // Start (Nutzergeste)
+  // Start (user gesture)
   await page.click('#btnStart');
   await page.waitForTimeout(400);
 
-  // Eine kleine Fahrt einspeisen: 12 Positionen nach Nordost
+  // Feed in a short ride: 12 positions towards the north-east
   let lat = 47.8021, lon = 11.0912;
   for (let i = 0; i < 12; i++) {
     lat += 0.00013; lon += 0.00010;
@@ -74,13 +74,13 @@ const server = http.createServer((req, res) => {
   console.log('Kursquelle        :', state.head);
   console.log('Start-Knopf       :', state.startBtn);
 
-  // Reiter durchklicken -- deckt Renderfehler in den anderen Ansichten auf
+  // Click through the tabs -- reveals rendering errors in the other views
   for (const v of ['log', 'climbs', 'group', 'tacho']) {
     await page.click(`nav button[data-v="${v}"]`);
     await page.waitForTimeout(220);
   }
 
-  // Sonnenmodus
+  // Sun mode
   await page.click('nav button[data-v="group"]');
   await page.click('#btnTheme');
   await page.waitForTimeout(250);
@@ -89,7 +89,7 @@ const server = http.createServer((req, res) => {
   await page.click('#btnTheme');
   await page.waitForTimeout(200);
 
-  // Bildschirmfotos
+  // Screenshots
   await page.click('nav button[data-v="tacho"]');
   await page.waitForTimeout(300);
   await page.screenshot({ path: 'test/shot-tacho.png' });
@@ -97,7 +97,7 @@ const server = http.createServer((req, res) => {
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'test/shot-gruppe.png' });
 
-  // Waagerechtes Scrollen darf es nicht geben
+  // Horizontal scrolling must not exist
   const hScroll = await page.evaluate(() =>
       document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   console.log('Querscrollen      :', hScroll ? 'JA (Fehler)' : 'nein');

@@ -1,14 +1,14 @@
 /* ============================================================
- * liga-id.js -- Geraeteschluessel fuer die Liga
+ * liga-id.js -- device key for the league
  * ============================================================
- * Ein ECDSA-P-256-Schluesselpaar pro Geraet, im Browser erzeugt. Der private Schluessel ist
- * NICHT auslesbar (extractable = false) und liegt in IndexedDB; er verlaesst das Geraet nie.
- * Jede Anfrage an die Liga wird damit signiert (siehe api/auth.js).
+ * One ECDSA P-256 key pair per device, generated in the browser. The private key is
+ * NOT readable (extractable = false) and lives in IndexedDB; it never leaves the device.
+ * Every request to the league is signed with it (see api/auth.js).
  *
- * Gehen die Browserdaten verloren, ist der Schluessel weg -- das Konto nicht: man meldet sich
- * per E-Mail-Code neu an und bekommt einen neuen Schluessel fuer dasselbe Konto.
+ * If the browser data is lost, the key is gone -- the account is not: you log in
+ * again by e-mail code and get a new key for the same account.
  *
- * Ohne IndexedDB (privates Fenster) haelt die App den Schluessel nur bis zum Neuladen.
+ * Without IndexedDB (private window) the app keeps the key only until reload.
  * ============================================================ */
 
 var LigaId = (function () {
@@ -39,13 +39,13 @@ var LigaId = (function () {
     function load() { return idb('readonly', function (s) { return s.get(KEY); }).catch(function () { return null; }); }
     function put(v) { return idb('readwrite', function (s) { return s.put(v, KEY); }).catch(function () {}); }
 
-    /* Vorhandenen Schluessel laden, ohne einen neuen zu erzeugen. -> {priv, pub} | null */
+    /* Load an existing key without generating a new one. -> {priv, pub} | null */
     function peek() {
         if (mem) return Promise.resolve(mem);
         return load().then(function (v) { if (v && v.priv && v.pub) mem = v; return mem; });
     }
 
-    /* Schluessel holen, sonst erzeugen. */
+    /* Get the key, otherwise generate one. */
     function ensure() {
         if (mem) return Promise.resolve(mem);
         if (pending) return pending;
@@ -61,7 +61,7 @@ var LigaId = (function () {
         return pending;
     }
 
-    /* Text signieren -> base64url (r||s, 64 Byte) */
+    /* Sign text -> base64url (r||s, 64 bytes) */
     function sign(text) {
         return ensure().then(function (k) {
             return crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, k.priv, new TextEncoder().encode(text));

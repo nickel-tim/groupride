@@ -1,8 +1,8 @@
-// NUR ZUM LOKALEN AUSPROBIEREN (nie deployen).
+// FOR LOCAL TRYING-OUT ONLY (never deploy).
 //   npx wrangler d1 migrations apply groupride --local -c liga/wrangler.dev.jsonc
 //   npx wrangler dev -c liga/wrangler.dev.jsonc
-// Startet die App samt Liga-API auf http://localhost:8787 mit einer lokalen Datenbank.
-// DEV_MAIL=1: der Anmeldecode steht direkt in der Antwort, es wird keine Mail verschickt.
+// Starts the app including the league API on http://localhost:8787 with a local database.
+// DEV_MAIL=1: the login code is right in the response, no mail is sent.
 {
   "name": "groupride-dev",
   "main": "../api/index.js",

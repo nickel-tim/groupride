@@ -1,24 +1,24 @@
 /* ============================================================
- * recorder.js -- die ganze Gruppe mitschreiben (fuer Replay, Zusammenfassung)
+ * recorder.js -- record the whole group (for replay, summary)
  * ============================================================
- * Zeichnet jeden Fahrer auf, den die App sieht: dich selbst und alle, deren
- * Meldungen ankommen. Ohne diese Aufzeichnung gaebe es nachher nur DEINE
- * Spur -- und keine Gruppenfahrt zum Abspielen.
+ * Records every rider the app sees: you and everyone whose reports
+ * arrive. Without this recording there would afterwards be only YOUR
+ * track -- and no group ride to play back.
  *
- * Kompakt, weil localStorage klein ist (~5 MB): eine Meldung alle 2 s,
- * Position auf ~1 m gerundet, alles als Differenz zur vorigen Meldung in
- * ganzen Zahlen. Rund 12 Byte je Punkt statt 35: drei Stunden mit fuenf
- * Fahrern sind etwa 170 KB. Der Ghost wird nicht aufgezeichnet.
+ * Compact, because localStorage is small (~5 MB): one report every 2 s,
+ * position rounded to ~1 m, everything as a difference to the previous
+ * report in whole numbers. Around 12 bytes per point instead of 35: three
+ * hours with five riders are about 170 KB. The ghost is not recorded.
  *
  * Format: { v:1, me, riders: [ { id, n, c, t0, d:[dt, dlat, dlon, dele, ...] } ] }
- *   dt   in Zehntelsekunden, dlat/dlon in 1e-5 Grad (~1,1 m), dele in Dezimetern
- *   Der erste Punkt steht ausgeschrieben in t0/la0/lo0/e0.
+ *   dt   in tenths of a second, dlat/dlon in 1e-5 degrees (~1.1 m), dele in decimetres
+ *   The first point is written out in t0/la0/lo0/e0.
  * ============================================================ */
 
 var Recorder = (function () {
     'use strict';
 
-    var MIN_GAP = 1800;                 // ms zwischen zwei gespeicherten Punkten je Fahrer
+    var MIN_GAP = 1800;                 // ms between two stored points per rider
     var data = {};                      // id -> { n, c, pts: [{t, lat, lon, ele}] }
     var meId = null;
 
@@ -32,7 +32,7 @@ var Recorder = (function () {
         if (emoji !== undefined) r.j = emoji;
         var last = r.pts[r.pts.length - 1];
         if (last && t - last.t < MIN_GAP) return;
-        if (last && t <= last.t) return;            // Zeit muss weiterlaufen
+        if (last && t <= last.t) return;            // time must keep moving forward
         r.pts.push({ t: t, lat: lat, lon: lon, ele: (ele === null || ele === undefined || isNaN(ele)) ? null : ele });
     }
 

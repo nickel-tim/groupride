@@ -1,5 +1,5 @@
-"""Prueft die Liga-Kennzahlen (js/liga-metrics.js) mit Fahrten, deren Ergebnis man kennt.
-Kein Server noetig:  python3 liga/test/metrics_check.py
+"""Checks the league metrics (js/liga-metrics.js) with rides whose result is known.
+No server needed:  python3 liga/test/metrics_check.py
 """
 import http.server, threading, functools, os, sys
 from playwright.sync_api import sync_playwright
@@ -22,7 +22,7 @@ with sync_playwright() as p:
       const flat = LigaMetrics.values(mk(8, 0, 900));
       const noEle = LigaMetrics.values(mk(3, 0.06, 900, null));
       return { climb: climb.values, flat: flat.values, noEle: noEle.values }; }""")
-    # 6 % bei 3 m/s = 0,18 m/s = 648 m/h
+    # 6 % at 3 m/s = 0.18 m/s = 648 m/h
     check('6 % Steigung, 3 m/s: Steigrate ~648 m/h', abs(r['climb'].get('vam', 0) - 648) < 40, r['climb'])
     check('Hoehenmeter ~ 6 % von 2700 m = 162', abs(r['climb'].get('gain', 0) - 162) < 20, r['climb'])
     check('Flachstueck: keine Steigrate', 'vam' not in r['flat'], r['flat'])

@@ -1,21 +1,20 @@
 /* ============================================================
- * crypto.js -- Ende-zu-Ende-Verschluesselung der Positionen
+ * crypto.js -- end-to-end encryption of the positions
  * ============================================================
- * Warum ueberhaupt: Im Standardbetrieb laeuft der Austausch ueber
- * einen OEFFENTLICHEN MQTT-Broker. Wer das Topic kennt, liest mit.
- * Deshalb verlaesst keine Position das Handy im Klartext.
+ * Why at all: in standard operation the exchange runs over a PUBLIC
+ * MQTT broker. Anyone who knows the topic can listen in. That is why
+ * no position leaves the phone in plain text.
  *
- * Der Schluessel steht im URL-Fragment (hinter dem #). Fragmente
- * werden von Browsern NICHT an Server gesendet -- der Broker, dein
- * Webspace und jedes Log dazwischen sehen ihn also nie. Wer den Link
- * hat, ist in der Gruppe; wer ihn nicht hat, sieht auf dem Broker nur
- * Rauschen.
+ * The key lives in the URL fragment (after the #). Browsers do NOT
+ * send fragments to servers -- the broker, your web host and every log
+ * in between never see it. Whoever has the link is in the group;
+ * whoever does not sees only noise on the broker.
  *
- * Aus einem einzigen Geheimnis werden zwei Dinge getrennt abgeleitet:
- *   Raum-ID (= MQTT-Topic)  aus HKDF-Info "room"
- *   AES-Schluessel          aus HKDF-Info "key"
- * Getrennte Ableitung, damit die oeffentlich sichtbare Raum-ID
- * nichts ueber den Schluessel verraet.
+ * Two things are derived separately from a single secret:
+ *   room ID (= MQTT topic)  from HKDF info "room"
+ *   AES key                 from HKDF info "key"
+ * Separate derivation so that the publicly visible room ID
+ * reveals nothing about the key.
  * ============================================================ */
 
 var Crypt = (function () {
@@ -44,7 +43,7 @@ var Crypt = (function () {
         return b64urlEncode(b);
     }
 
-    /* HKDF-SHA256 -- getrennte Ableitung pro Verwendungszweck. */
+    /* HKDF-SHA256 -- separate derivation per purpose. */
     async function derive(secretB64, info, bits) {
         var raw = b64urlDecode(secretB64);
         var base = await crypto.subtle.importKey('raw', raw, 'HKDF', false, ['deriveBits']);
@@ -57,7 +56,7 @@ var Crypt = (function () {
 
     async function roomId(secretB64) {
         var b = await derive(secretB64, 'room', 96);
-        return b64urlEncode(b);                      // 16 Zeichen, URL-tauglich
+        return b64urlEncode(b);                      // 16 characters, URL-safe
     }
 
     async function aesKey(secretB64) {
@@ -66,9 +65,9 @@ var Crypt = (function () {
                                        ['encrypt', 'decrypt']);
     }
 
-    /* Jede Nachricht bekommt eine frische IV. AES-GCM authentifiziert
-       zusaetzlich -- manipulierte Pakete schlagen beim Entschluesseln
-       fehl statt stillschweigend Unsinn zu liefern. */
+    /* Every message gets a fresh IV. AES-GCM additionally authenticates --
+       tampered packets fail on decryption instead of silently
+       yielding nonsense. */
     async function seal(key, obj) {
         var iv = new Uint8Array(12);
         crypto.getRandomValues(iv);
@@ -87,7 +86,7 @@ var Crypt = (function () {
             var pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
             return JSON.parse(dec.decode(pt));
         } catch (e) {
-            return null;        // fremde Gruppe oder beschaedigt: einfach ignorieren
+            return null;        // foreign group or corrupted: just ignore
         }
     }
 

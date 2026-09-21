@@ -1,82 +1,82 @@
 /* ============================================================
- * analytics.js -- was auf einer Gruppenausfahrt wirklich zaehlt
+ * analytics.js -- what really counts on a group ride
  * ============================================================
- * Alles hier baut auf der Bogenlaenge s aus route.js auf.
- * Ohne gemeinsame Achse gaebe es keine dieser Zahlen.
+ * Everything here builds on the arc length s from route.js.
+ * Without a shared axis none of these numbers would exist.
  *
- *   Reihenfolge      nach s sortieren
- *   Fuehrungsarbeit  Zeit als order[0], plus einzelne Ablosungen
- *   Ueberholvorgang  Vorzeichenwechsel von (sA - sB), entprellt
- *   Antritt          jemand gewinnt >15 m auf die Gruppe in <20 s
- *   Bergsprint       Steigungsintervall der Achse + Zeit je Fahrer darin
- *   Abgerissen       Luecke zur Spitze ueber Schwelle / steht
+ *   order            sort by s
+ *   front work       time as order[0], plus individual hand-overs
+ *   overtaking       sign change of (sA - sB), debounced
+ *   attack           somebody gains >15 m on the group in <20 s
+ *   climb sprint     gradient interval of the axis + time per rider in it
+ *   dropped          gap to the front above a threshold / standing still
  *
- * Entprellung ist hier nicht Kosmetik: GPS-Rauschen von +-3 m
- * erzeugt sonst im Sekundentakt Fantasie-Ueberholmanoever
- * zwischen zwei Fahrern, die nebeneinander rollen.
+ * Debouncing is not cosmetics here: GPS noise of +-3 m otherwise
+ * produces phantom overtaking manoeuvres every second between two
+ * riders rolling side by side.
  * ============================================================ */
 
 var Analytics = (function () {
     'use strict';
 
-    // --- Ueberholen ---
-    var PASS_DEADBAND = 8;       // m, innerhalb davon gilt: gleichauf
-    var PASS_SUSTAIN  = 3000;    // ms, so lange muss die neue Lage halten
+    // --- Overtaking ---
+    var PASS_DEADBAND = 8;       // m, within this counts as: level
+    var PASS_SUSTAIN  = 3000;    // ms, the new situation has to hold this long
 
-    // --- Antritt ---
-    var ATTACK_GAIN   = 15;      // m Vorsprungsgewinn auf den Schnitt
-    var ATTACK_WIN    = 20000;   // ms Fenster
-    var ATTACK_COOLDOWN = 45000; // ms, nicht dauerhaft neu melden
+    // --- Attack ---
+    var ATTACK_GAIN   = 15;      // m of lead gained on the average
+    var ATTACK_WIN    = 20000;   // ms window
+    var ATTACK_COOLDOWN = 45000; // ms, do not report again permanently
 
-    // --- Berge ---
-    var CLIMB_START   = 0.030;   // 3 % Steigung startet
-    var CLIMB_END     = 0.010;   // unter 1 % endet
-    /* CLIMB_END_RUN ist Hysterese IM RAUM: ein kurzer Rauschdip in der
-       Steigung darf einen Anstieg nicht beenden, sonst zerfaellt ein
-       Berg in ein Dutzend Schnipsel. */
-    var CLIMB_END_RUN = 120;     // m, so lange muss es flach bleiben
-    var CLIMB_MIN_GAIN= 12;      // m Hoehengewinn
-    var CLIMB_MIN_LEN = 200;     // m Laenge
-    var GRADE_WIN     = 150;     // m, Fenster fuer die Steigungsmessung
+    // --- Climbs ---
+    var CLIMB_START   = 0.030;   // 3 % gradient starts
+    var CLIMB_END     = 0.010;   // below 1 % ends
+    /* CLIMB_END_RUN is hysteresis IN SPACE: a short noise dip in the
+       gradient must not end a climb, otherwise a
+       mountain falls apart into a dozen fragments. */
+    var CLIMB_END_RUN = 120;     // m, it has to stay flat this long
+    var CLIMB_MIN_GAIN= 12;      // m of elevation gain
+    var CLIMB_MIN_LEN = 200;     // m of length
+    var GRADE_WIN     = 150;     // m, window for the gradient measurement
 
-    // --- Abriss ---
-    var DROP_GAP      = 200;     // m zur Spitze
+    // --- Dropped ---
+    var DROP_GAP      = 200;     // m to the front
     var STOP_SPEED    = 1.5;     // m/s
     var STOP_TIME     = 30000;   // ms
 
-    // --- Liga-Kennzahlen ---
-    var SOLO_GAP      = 50;      // m Vorsprung auf den Zweiten: das zaehlt als "Ausreisser"
-    var TOGETHER_GAP  = 100;     // m: so nah an einem anderen Fahrer gilt als "gemeinsam gefahren"
+    // --- League metrics ---
+    var SOLO_GAP      = 50;      // m of lead on the second rider: that counts as an "escape"
+    var TOGETHER_GAP  = 100;     // m: this close to another rider counts as "riding together"
 
-    var STALE_MS      = 15000;   // ohne Update gilt ein Fahrer als veraltet
-    var GONE_MS       = 180000;  // danach ganz raus
+    var STALE_MS      = 15000;   // without an update a rider counts as stale
+    var GONE_MS       = 180000;  // after that, out completely
 
-    /* Positionsglaettung. Rohe Fixes wackeln um +-4 m; genau dieses
-       Wackeln erzeugt die Fantasie-Ueberholmanoever. Die Verzoegerung
-       (ca. 20 m bei 10 m/s) trifft ALLE Fahrer gleich und aendert die
-       Reihenfolge deshalb nicht -- sie verschiebt nur die Achse als
-       Ganzes ein wenig nach hinten. */
+    /* Position smoothing. Raw fixes wobble by +-4 m; exactly this
+       wobble produces the phantom overtaking manoeuvres. The delay
+       (about 20 m at 10 m/s) hits ALL riders equally and therefore does not change the
+       order -- it merely shifts the axis as a whole
+       a little backwards. */
     var POS_TAU       = 2.0;     // s
 
-    /* Antritt: nicht "ist dauerhaft stärker", sondern "beschleunigt
-       jetzt". Deshalb zwei Bedingungen gleichzeitig. */
-    var ATTACK_SURGE  = 1.5;     // m/s Tempozuwachs gegenueber eigenem Schnitt
-    var ATTACK_REF    = 30000;   // ms Referenzfenster fuer diesen Schnitt
+    /* Attack: not "is permanently stronger" but "is accelerating
+       now". Hence two conditions at the same time. */
+    var ATTACK_SURGE  = 1.5;     // m/s speed gain compared to own average
+    var ATTACK_REF    = 30000;   // ms reference window for this average
 
-    /* Abriss mit Hysterese, sonst flattert es im Sekundentakt. */
-    var REJOIN_GAP    = 120;     // m, erst darunter gilt man als zurueck
+    /* Dropped with hysteresis, otherwise it flickers every second. */
+    var REJOIN_GAP    = 120;     // m, only below this does one count as back
 
-    /* Routensetzer-Wechsel: erst wenn jemand klar vorne ist, sonst
-       wechselt die Zustaendigkeit im GPS-Rauschen hin und her -- und
-       genau das erzeugt den Zickzack, den der Setzer verhindern soll. */
-    var HANDOVER      = 25;      // m Vorsprung vor dem Routenende
-    var SETTER_TIMEOUT= 10000;   // ms ohne Meldung -> Achse uebernehmen
+    /* Route setter change: only when somebody is clearly in front, otherwise
+       responsibility flips back and forth in the GPS noise -- and
+       exactly that produces the zigzag the setter is meant to prevent. */
+    var HANDOVER      = 25;      // m lead over the end of the route
+    var SETTER_TIMEOUT= 10000;   // ms without a report -> take over the axis
 
     function A(route) {
         this.route   = route;
         this.riders  = {};
         this.events  = [];
-        this.stints  = [];      // Ablosungen: {id, tStart, tEnd, ms, meters}
+        this.stints  = [];      // hand-overs: {id, tStart, tEnd, ms, meters}
         this.climbs  = [];
         this.pairs   = {};
         this.setterId = null;
@@ -93,14 +93,14 @@ var Analytics = (function () {
             this.riders[id] = {
                 id: id, name: null, color: null, emoji: null,
                 lat: null, lon: null, ele: null, acc: null,
-                fLat: null, fLon: null,   // geglaettete Position
+                fLat: null, fLon: null,   // smoothed position
                 s: null, offset: null, speed: 0, heading: null,
                 t: 0, lastSeen: 0,
                 frontMs: 0, maxSpeed: 0,
-                soloRun: 0, soloMax: 0,   // Zeit an der Spitze mit >= SOLO_GAP Vorsprung: laufend / laengste
-                togetherM: 0,             // Meter, die ein anderer Fahrer in der Naehe war
-                hist: [],                 // {t, s} fuer Bergzeiten
-                vHist: [],                // {t, v} fuer Antritts-Erkennung
+                soloRun: 0, soloMax: 0,   // time at the front with >= SOLO_GAP lead: running / longest
+                togetherM: 0,             // metres during which another rider was nearby
+                hist: [],                 // {t, s} for climb times
+                vHist: [],                // {t, v} for attack detection
                 stoppedSince: null,
                 dropped: false,
                 lastAttack: 0,
@@ -110,13 +110,13 @@ var Analytics = (function () {
         return this.riders[id];
     };
 
-    /* ---- Position einarbeiten ------------------------------------ */
+    /* ---- Taking a position in ------------------------------------ */
     A.prototype.ingest = function (id, p) {
         var r = this.rider(id);
         if (this.startedAt === null) this.startedAt = p.t;
         if (p.name) r.name = p.name;
         if (p.color) r.color = p.color;
-        if (p.emoji !== undefined) r.emoji = p.emoji;       // Nummer aus UI.EMOJIS oder null
+        if (p.emoji !== undefined) r.emoji = p.emoji;       // number from UI.EMOJIS or null
 
         var dtS = (r.t && p.t > r.t) ? (p.t - r.t) / 1000 : 0;
 
@@ -129,7 +129,7 @@ var Analytics = (function () {
         r.lastSeen = Date.now();
         if (r.speed > r.maxSpeed) r.maxSpeed = r.speed;
 
-        // --- Position glaetten ---
+        // --- Smooth the position ---
         if (r.fLat === null || dtS === 0 || dtS > 10) {
             r.fLat = p.lat; r.fLon = p.lon;
         } else {
@@ -138,11 +138,11 @@ var Analytics = (function () {
             r.fLon = k * r.fLon + (1 - k) * p.lon;
         }
 
-        /* --- Routensetzer bestimmen ---
-           Nur EIN Fahrer verlaengert die Achse (siehe route.js: sonst
-           faltet sie sich). Uebernommen wird sie, wenn jemand klar
-           vorne ist, oder wenn der bisherige Setzer nicht mehr sendet
-           (Handy leer, Funkloch) -- sonst stuende die Achse still. */
+        /* --- Determine the route setter ---
+           Only ONE rider extends the axis (see route.js: otherwise it
+           folds up). It is taken over when somebody is clearly
+           in front, or when the previous setter no longer transmits
+           (phone empty, radio gap) -- otherwise the axis would stand still. */
         if (this.route.pts.length === 0) {
             this.setterId = id;
         } else if (this.setterId !== id) {
@@ -154,9 +154,9 @@ var Analytics = (function () {
             }
         }
 
-        // Achse pflegen bzw. darauf projizieren -- mit der geglaetteten
-        // Position, sonst zackt die Polylinie und die Segmentrichtung
-        // wird unbrauchbar.
+        // Maintain the axis or project onto it -- with the smoothed
+        // position, otherwise the polyline zigzags and the segment direction
+        // becomes useless.
         var pr = this.route.consider(r.fLat, r.fLon, r.ele, r.s,
                                      this.setterId === id, id);
         if (pr) {
@@ -164,11 +164,11 @@ var Analytics = (function () {
             r.offset = pr.offset;
         }
 
-        // Tempoverlauf fuer die Antritts-Erkennung
+        // Speed history for attack detection
         r.vHist.push({ t: p.t, v: r.speed });
         if (r.vHist.length > 600) r.vHist.splice(0, 200);
 
-        // Verlauf fuer Bergzeiten -- dezimiert, damit es nicht ausufert
+        // History for climb times -- thinned out so that it does not run wild
         if (r.s !== null) {
             var h = r.hist;
             var lastH = h.length ? h[h.length - 1] : null;
@@ -178,7 +178,7 @@ var Analytics = (function () {
             }
         }
 
-        // Stillstand
+        // Standstill
         if (r.speed < STOP_SPEED) {
             if (r.stoppedSince === null) r.stoppedSince = p.t;
         } else {
@@ -186,7 +186,7 @@ var Analytics = (function () {
         }
     };
 
-    /* ---- aktive Fahrer, sortiert von vorne nach hinten ----------- */
+    /* ---- active riders, sorted from front to back ----------- */
     A.prototype.order = function () {
         var now = Date.now();
         var out = [];
@@ -204,7 +204,7 @@ var Analytics = (function () {
         return Date.now() - r.lastSeen > STALE_MS;
     };
 
-    /* ---- periodische Auswertung --------------------------------- */
+    /* ---- periodic evaluation --------------------------------- */
     A.prototype.tick = function (now) {
         now = now || Date.now();
         var dt = this.lastTick === null ? 0 : now - this.lastTick;
@@ -214,10 +214,10 @@ var Analytics = (function () {
         var ord = this.order();
         if (!ord.length) return ord;
 
-        // --- Fuehrungsarbeit + Ablosungen ---
+        // --- Front work + hand-overs ---
         var lead = ord[0];
         if (dt) lead.frontMs += dt;
-        // Ausreisser und gemeinsames Fahren: erst wenn die Achse lang genug ist (wie bei Ueberholungen)
+        // Escape and riding together: only once the axis is long enough (as with overtaking)
         if (dt && this.route.length() > 150) {
             var solo = ord.length > 1 && lead.s - ord[1].s >= SOLO_GAP;
             for (var q = 0; q < ord.length; q++) {
@@ -248,25 +248,25 @@ var Analytics = (function () {
             this.leaderStartS = lead.s;
         }
 
-        /* Aufwaermphase: solange die Achse noch kurz ist, sind die
-           s-Werte nicht belastbar. Wer hier schon Ueberholvorgaenge
-           meldet, produziert reine Startartefakte. */
+        /* Warm-up phase: as long as the axis is still short, the
+           s values are not reliable. Whoever reports overtaking here
+           produces pure start-up artefacts. */
         var warm = this.route.length() > 150;
 
-        // --- Ueberholvorgaenge ---
+        // --- Overtaking ---
         if (warm) this._detectPasses(ord, now);
 
-        // --- Antritte ---
+        // --- Attacks ---
         if (warm) this._detectAttacks(ord, now);
 
-        // --- Abriss ---
+        // --- Dropped ---
         for (var i = 0; i < ord.length; i++) {
             var r = ord[i];
             var gapToLead = lead.s - r.s;
             var standing = r.stoppedSince !== null && (r.t - r.stoppedSince) > STOP_TIME;
-            /* Hysterese: abgerissen ab DROP_GAP, zurueck erst unter
-               REJOIN_GAP. Mit einer einzigen Schwelle flattert der
-               Zustand im Sekundentakt, sobald jemand genau dort pendelt. */
+            /* Hysteresis: dropped from DROP_GAP, back only below
+               REJOIN_GAP. With a single threshold the
+               state flickers every second as soon as somebody hovers exactly there. */
             var nowDropped = r.dropped
                 ? (gapToLead > REJOIN_GAP || (standing && r !== lead))
                 : ((gapToLead > DROP_GAP) || (standing && ord.length > 1 && r !== lead));
@@ -280,7 +280,7 @@ var Analytics = (function () {
             r.dropped = nowDropped;
         }
 
-        // --- Berge (nicht jede Runde, das kostet) ---
+        // --- Climbs (not every round, that costs) ---
         if (now - this.lastClimbScan > 8000) {
             this.lastClimbScan = now;
             this._scanClimbs();
@@ -298,12 +298,12 @@ var Analytics = (function () {
         return data;
     };
 
-    /* ---- Ueberholen, entprellt ---------------------------------- */
+    /* ---- Overtaking, debounced ---------------------------------- */
     A.prototype._detectPasses = function (ord, now) {
         for (var i = 0; i < ord.length; i++) {
             for (var j = i + 1; j < ord.length; j++) {
                 var a = ord[i], b = ord[j];
-                // kanonische Paarreihenfolge, damit das Vorzeichen stabil ist
+                // canonical pair order so that the sign is stable
                 var first = a.id < b.id ? a : b;
                 var second = a.id < b.id ? b : a;
                 var key = first.id + '|' + second.id;
@@ -316,14 +316,14 @@ var Analytics = (function () {
                 if (diff > PASS_DEADBAND) sign = 1;
                 else if (diff < -PASS_DEADBAND) sign = -1;
 
-                if (sign === 0) continue;          // gleichauf: nichts entscheiden
+                if (sign === 0) continue;          // level: decide nothing
 
                 if (sign !== st.cand) {
                     st.cand = sign;
                     st.since = now;
                     continue;
                 }
-                // Kandidat haelt sich lange genug?
+                // Does the candidate hold long enough?
                 if (now - st.since < PASS_SUSTAIN) continue;
 
                 if (st.sign !== 0 && st.sign !== sign) {
@@ -336,7 +336,7 @@ var Analytics = (function () {
         }
     };
 
-    /* ---- Antritt: Vorsprungsgewinn auf den Gruppenschnitt -------- */
+    /* ---- Attack: lead gain on the group average -------- */
     A.prototype._detectAttacks = function (ord, now) {
         if (ord.length < 2) return;
         var mean = 0;
@@ -346,7 +346,7 @@ var Analytics = (function () {
         for (var k = 0; k < ord.length; k++) {
             var r = ord[k];
             if (now - r.lastAttack < ATTACK_COOLDOWN) continue;
-            // s relativ zum Schnitt, vor ATTACK_WIN und jetzt
+            // s relative to the average, before ATTACK_WIN and now
             var relNow = r.s - mean;
             var past = this._sAt(r, r.t - ATTACK_WIN);
             if (past === null) continue;
@@ -360,10 +360,10 @@ var Analytics = (function () {
             var relPast = past - meanPast;
             if (relNow - relPast < ATTACK_GAIN) continue;
 
-            /* Zweite Bedingung: der Fahrer muss JETZT schneller sein als
-               er selbst zuletzt war. Ohne das meldet jeder Bergfahrer
-               auf jeder Steigung dauernd "Antritt", nur weil er
-               konstant staerker ist -- das ist kein Antritt. */
+            /* Second condition: the rider has to be faster NOW than
+               he himself was recently. Without it every climber
+               permanently reports an "attack" on every gradient, just because he is
+               consistently stronger -- that is not an attack. */
             var vNow = this._vMean(r, r.t - 8000, r.t);
             var vRef = this._vMean(r, r.t - ATTACK_REF, r.t - 10000);
             if (vNow === null || vRef === null) continue;
@@ -378,7 +378,7 @@ var Analytics = (function () {
         }
     };
 
-    /* Mittleres Tempo eines Fahrers im Zeitfenster [t0, t1]. */
+    /* Mean speed of a rider in the time window [t0, t1]. */
     A.prototype._vMean = function (r, t0, t1) {
         var sum = 0, cnt = 0;
         for (var i = r.vHist.length - 1; i >= 0; i--) {
@@ -389,7 +389,7 @@ var Analytics = (function () {
         return cnt ? sum / cnt : null;
     };
 
-    /* Bogenlaenge eines Fahrers zum Zeitpunkt t, linear interpoliert. */
+    /* Arc length of a rider at time t, linearly interpolated. */
     A.prototype._sAt = function (r, t) {
         var h = r.hist;
         if (!h.length) return null;
@@ -406,16 +406,16 @@ var Analytics = (function () {
         return p.s + f * (q.s - p.s);
     };
 
-    /* Zeitpunkt, zu dem ein Fahrer die Bogenlaenge sTarget aufwaerts
-       passiert hat -- die LETZTE solche Kreuzung vor beforeT.
+    /* Time at which a rider passed the arc length sTarget going up
+       -- the LAST such crossing before beforeT.
 
-       Bewusst die letzte, nicht die erste: Solange die Achse noch
-       waechst, extrapoliert project() ueber das Routenende hinaus und
-       kann kurzzeitig ueberschiessen. Die erste Kreuzung ist dann ein
-       Artefakt aus der Aufwaermphase -- damit "gewinnt" der schwaechste
-       Fahrer den Berg in 30 Sekunden. Die letzte Kreuzung ist die
-       echte Auffahrt (und bei zwei Runden ueber denselben Berg die
-       aktuelle). */
+       Deliberately the last, not the first: as long as the axis is still
+       growing, project() extrapolates beyond the end of the route and
+       may briefly overshoot. The first crossing is then an
+       artefact of the warm-up phase -- with it the weakest
+       rider "wins" the climb in 30 seconds. The last crossing is the
+       real ascent (and with two laps over the same climb the
+       current one). */
     A.prototype._tCross = function (r, sTarget, beforeT) {
         var h = r.hist, res = null;
         for (var i = 1; i < h.length; i++) {
@@ -429,7 +429,7 @@ var Analytics = (function () {
         return res;
     };
 
-    /* ---- Steigungen auf der Achse finden ------------------------ */
+    /* ---- Finding gradients on the axis ------------------------ */
     A.prototype._scanClimbs = function () {
         var rt = this.route;
         rt.smoothElevation();
@@ -473,8 +473,8 @@ var Analytics = (function () {
             if (g2 >= CLIMB_MIN_GAIN && l2 >= CLIMB_MIN_LEN) found.push(cur);
         }
 
-        // Bestehende Berge anhand von sStart wiedererkennen, damit die
-        // gemessenen Zeiten nicht bei jedem Scan verloren gehen.
+        // Recognise existing climbs by sStart so that the
+        // measured times are not lost on every scan.
         var merged = [];
         for (var f = 0; f < found.length; f++) {
             var nf = found[f];
@@ -497,9 +497,9 @@ var Analytics = (function () {
         this.climbs = merged;
     };
 
-    /* ---- Zeiten der Fahrer auf jedem Berg ----------------------- */
-    /* Anstiege einer fertigen Achse finden (ohne Fahrer), z. B. einer
-       geplanten Route: Laenge, Hoehengewinn und Steigung sind danach gesetzt. */
+    /* ---- Riders' times on each climb ----------------------- */
+    /* Find the climbs of a finished axis (without riders), e.g. of a
+       planned route: length, elevation gain and gradient are set afterwards. */
     A.prototype.scanClimbs = function () {
         this._scanClimbs();
         this._scoreClimbs();
@@ -515,20 +515,20 @@ var Analytics = (function () {
 
             for (var id in this.riders) {
                 var r = this.riders[id];
-                if (r.s === null || r.s < cl.sEnd) continue;   // noch nicht oben
+                if (r.s === null || r.s < cl.sEnd) continue;   // not at the top yet
                 if (cl.times[id] && cl.times[id].done) continue;
                 var tOut = this._tCross(r, cl.sEnd, null);
                 if (tOut === null) continue;
                 var tIn  = this._tCross(r, cl.sStart, tOut);
                 if (tIn === null || tOut <= tIn) continue;
                 var dur = tOut - tIn;
-                /* Plausibilitaet: bergauf ist niemand mit 20 m/s
-                   unterwegs und niemand langsamer als Schieben. */
+                /* Plausibility: nobody climbs at 20 m/s
+                   and nobody slower than pushing. */
                 var avgMs = cl.len / (dur / 1000);
                 if (avgMs > 20 || avgMs < 0.5) continue;
                 cl.times[id] = {
                     ms: dur,
-                    vam: cl.gain / (dur / 3600000),        // Hoehenmeter pro Stunde
+                    vam: cl.gain / (dur / 3600000),        // metres of elevation per hour
                     avg: cl.len / (dur / 1000),            // m/s
                     done: true
                 };
@@ -536,7 +536,7 @@ var Analytics = (function () {
         }
     };
 
-    /* ---- Rangliste eines Berges --------------------------------- */
+    /* ---- Ranking of a climb --------------------------------- */
     A.prototype.climbRanking = function (climb) {
         var out = [];
         for (var id in climb.times) {
@@ -547,7 +547,7 @@ var Analytics = (function () {
         return out;
     };
 
-    /* ---- Luecken zwischen benachbarten Fahrern ------------------ */
+    /* ---- Gaps between neighbouring riders ------------------ */
     A.prototype.gaps = function (ord) {
         var out = [];
         for (var i = 1; i < ord.length; i++) {
@@ -559,7 +559,7 @@ var Analytics = (function () {
         return out;
     };
 
-    /* ---- Zusammenfassung fuer den Export ------------------------ */
+    /* ---- Summary for the export ------------------------ */
     A.prototype.summary = function () {
         var self = this;
         var ord = this.order();

@@ -1,16 +1,16 @@
 /* ============================================================
- * replayui.js -- Gruppenfahrt noch einmal abspielen
+ * replayui.js -- play a group ride back once more
  * ============================================================
- * Vollbild: Karte, Hoehenprofil, Zeitleiste und die Rangliste zu jedem
- * Zeitpunkt. Die Fahrt laeuft durch dieselbe Auswertung wie live
- * (session.js) -- Rang, Luecken, Ueberholvorgaenge und Antritte sind
- * also nicht nachgestellt, sondern zum jeweiligen Zeitpunkt berechnet.
+ * Full screen: map, elevation profile, timeline and the ranking at every
+ * point in time. The ride runs through the same analysis as live
+ * (session.js) -- rank, gaps, overtaking and attacks are
+ * therefore not re-enacted but computed at the respective point in time.
  *
- * Vor- und Zurueckspulen: Vorwaerts wird die Auswertung einfach weiter-
- * gerechnet; rueckwaerts muss sie von vorn neu aufgebaut werden (die
- * Achse und die Anstiege entstehen ja erst beim Fahren). Bei langen
- * Fahrten dauert das einen Moment, deshalb rechnet sie in kleinen
- * Happen im Hintergrund und zeigt "berechne ..." solange.
+ * Seeking forward and backward: going forward the analysis simply keeps
+ * computing; going backward it has to be rebuilt from the start (the
+ * axis and the climbs only come into being while riding). For long
+ * rides that takes a moment, so it computes in small chunks
+ * in the background and shows "computing ..." meanwhile.
  * ============================================================ */
 
 var ReplayUI = (function () {
@@ -32,8 +32,8 @@ var ReplayUI = (function () {
         if (!rec) return null;
         var g = Rides.getGroup(rideId);
         if (g) return { rec: rec, session: new Session(Recorder.unpack(g)) };
-        // keine Gruppe aufgezeichnet: nur die eigene Fahrt
-        return { rec: rec, session: Session.solo(Rides.unpack(rec), 'me', 'Du', UI.COLORS[0]) };
+        // no group recorded: only your own ride
+        return { rec: rec, session: Session.solo(Rides.unpack(rec), 'me', T('Du'), UI.COLORS[0]) };
     }
 
     function open(rideId) {
@@ -44,16 +44,16 @@ var ReplayUI = (function () {
             ctl = MapCtl.mount($('rpMap'), {
                 prefix: 'rp', persist: false,
                 isActive: isOpen,
-                hasRoute: function () { return true; },          // "Route" = die ganze Strecke im Bild
+                hasRoute: function () { return true; },          // "Route" = the whole route in the picture
                 getData: function () {
                     if (!sess) return null;
                     var mine = sess.an.riders[sess.meId];
                     return { route: sess.route, riders: sess.an.order(), meId: sess.meId,
                              climbs: sess.an.climbs, heading: mine ? mine.heading : null,
                              overlay: null, axisFit: true,
-                             /* Glaetten nur, solange abgespielt wird: Bleibt das Replay stehen
-                                (Pause, Ende, Spulen), waere weiterschieben falsch -- der Punkt
-                                schoebe sich bis zu 2,6 s ueber die echte Position hinaus. */
+                             /* Smooth only while playing: if the replay stands still
+                                (pause, end, seeking), moving on would be wrong -- the dot
+                                would push up to 2.6 s beyond the real position. */
                              smooth: playing };
                 }
             });
@@ -64,9 +64,9 @@ var ReplayUI = (function () {
         sess.reset();
         speed = 10; syncSpeed(); syncPlay();
         $('rpSlider').value = 0;
-        // erst bis kurz nach dem Start vorrechnen, damit die Karte nicht leer ist
+        // first compute only up to shortly after the start, so that the map is not empty
         target = sess.t0 + 15000;
-        ctl.reset(); ctl.opt.follow = false; ctl.opt.fitRoute = true; ctl.sync();      // erst die ganze Strecke zeigen
+        ctl.reset(); ctl.opt.follow = false; ctl.opt.fitRoute = true; ctl.sync();      // first show the whole route
         ctl.ensureLoop();
         loop(performance.now());
         return true;
@@ -86,7 +86,7 @@ var ReplayUI = (function () {
         document.querySelectorAll('[data-rs]').forEach(function (b) { b.classList.toggle('on', +b.dataset.rs === speed); });
     }
 
-    /* Zeit t (ms) ansteuern: vorwaerts weiterrechnen, rueckwaerts neu aufbauen. */
+    /* Steer to time t (ms): going forward keep computing, going backward rebuild. */
     function seekTo(t) {
         t = Math.max(sess.t0, Math.min(sess.t1, t));
         if (t < sess.tCur) { sess.reset(); events = []; }
@@ -99,7 +99,7 @@ var ReplayUI = (function () {
         var dt = lastTs ? Math.min(100, ts - lastTs) : 16;
         lastTs = ts;
 
-        // Abspielen: die Ziel-Zeit laeuft mit der gewaehlten Geschwindigkeit weiter
+        // Playing: the target time keeps running at the chosen speed
         if (playing && target === null) {
             var nt = sess.tCur + dt * speed;
             if (nt >= sess.t1) { nt = sess.t1; playing = false; syncPlay(); }
@@ -113,7 +113,7 @@ var ReplayUI = (function () {
         }
         $('rpBusy').hidden = !busy;
 
-        // Anzeige: Schieberegler, Zeit, Liste (5x pro Sekunde reicht)
+        // Display: slider, time, list (5x per second is enough)
         var total = Math.max(1, sess.t1 - sess.t0), frac = (sess.tCur - sess.t0) / total;
         if (!$('rpSlider').dragging) $('rpSlider').value = Math.round(Math.max(0, Math.min(1, frac)) * 1000);
         $('rpTime').textContent = fmtClock(sess.tCur - sess.t0) + ' / ' + fmtClock(total);
@@ -130,17 +130,17 @@ var ReplayUI = (function () {
                 '<span class="rk num">' + (i + 1) + '</span>' +
                 (UI.emojiOf(r.emoji) ? '<span class="rdot em" style="background:' + (r.color || '#93a7af') + '">' + Emo.img(UI.emojiOf(r.emoji)) + '</span>'
                                      : '<span class="rdot" style="background:' + (r.color || '#93a7af') + '"></span>') +
-                '<span class="rn">' + UI.escapeHtml(r.name || r.id) + (r.dropped ? ' <i class="tag drop">ABGERISSEN</i>' : '') + '</span>' +
+                '<span class="rn">' + UI.escapeHtml(r.name || r.id) + (r.dropped ? ' <i class="tag drop">' + T('ABGERISSEN') + '</i>' : '') + '</span>' +
                 '<span class="rs num">' + (r.speed > 0.3 ? Math.round(UI.kmh(r.speed)) : '–') + '</span>' +
                 '<span class="rg num">' + (gap === null ? '' : '−' + UI.fmtDist(gap)) + '</span></div>';
         });
-        $('rpRiders').innerHTML = rows.join('') || '<div class="empty">Noch niemand unterwegs.</div>';
+        $('rpRiders').innerHTML = rows.join('') || '<div class="empty">' + T('Noch niemand unterwegs.') + '</div>';
 
-        // letztes Ereignis in Worten
+        // last event in words
         var ev = an.events[an.events.length - 1];
         $('rpEvent').innerHTML = ev ? '<span class="tm num">' + UI.fmtDur(ev.t - sess.t0) + '</span> ' + UI.eventText(an, ev) : '';
 
-        // Profil (Live-Achse der Session)
+        // Profile (live axis of the session)
         var riders = ord.map(function (r) {
             return { id: r.id, name: r.name, color: r.color, emoji: UI.emojiOf(r.emoji), s: r.s, self: r.id === sess.meId, stale: an.isStale(r) };
         });
@@ -153,7 +153,7 @@ var ReplayUI = (function () {
         $('rpClose').addEventListener('click', close);
         $('rpPlay').addEventListener('click', function () {
             if (!sess) return;
-            if (!playing && sess.tCur >= sess.t1) seekTo(sess.t0);      // am Ende: von vorn
+            if (!playing && sess.tCur >= sess.t1) seekTo(sess.t0);      // at the end: from the start
             playing = !playing; syncPlay();
         });
         document.querySelectorAll('[data-rs]').forEach(function (b) {
@@ -175,6 +175,9 @@ var ReplayUI = (function () {
         });
     }
 
-    return { open: open, close: close, wire: wire, isOpen: isOpen,
+    /* Language switch: the toolbar of the replay map is built once */
+    function relang() { if (ctl && ctl.relabel) ctl.relabel(); }
+
+    return { open: open, close: close, wire: wire, isOpen: isOpen, relang: relang,
              _state: function () { return { sess: sess, playing: playing, target: target, speed: speed }; } };
 })();

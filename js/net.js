@@ -1,21 +1,21 @@
 /* ============================================================
- * net.js -- Transport: oeffentlicher MQTT-Broker ODER eigener Relay
+ * net.js -- transport: public MQTT broker OR own relay
  * ============================================================
- * Zwei Wege, gleiche Schnittstelle:
+ * Two ways, same interface:
  *
- *   mqtt   Oeffentlicher Broker ueber WSS. Kein Account, kein Deploy.
- *          Nutzlast ist verschluesselt (crypto.js), der Broker sieht
- *          nur Zufallsbytes. Keine Verfuegbarkeitsgarantie.
+ *   mqtt   Public broker over WSS. No account, no deploy.
+ *          Payload is encrypted (crypto.js), the broker sees
+ *          only random bytes. No availability guarantee.
  *
- *   relay  Eigener Cloudflare Worker (worker/relay.js), schlichtes
- *          WebSocket. Stabiler und unter eigener Kontrolle.
- *          Aktivierung per ?relay=wss://...
+ *   relay  Own Cloudflare Worker (worker/relay.js), plain
+ *          WebSocket. More stable and under your own control.
+ *          Enabled via ?relay=wss://...
  *
- * Beides bewusst "fire and forget": Positionen sind nur Sekunden lang
- * interessant. Eine verlorene Meldung wird nicht nachgesendet, die
- * naechste ist schon unterwegs. Deshalb MQTT QoS 0 und kein Retain --
- * Retain waere sogar schaedlich, weil neue Teilnehmer dann veraltete
- * Positionen als aktuell angezeigt bekaemen.
+ * Both deliberately "fire and forget": positions are only interesting
+ * for seconds. A lost report is not resent, the next one is already
+ * on its way. That is why MQTT QoS 0 and no retain --
+ * retain would even be harmful, because new participants would then
+ * be shown stale positions as current.
  * ============================================================ */
 
 var Net = (function () {
@@ -43,7 +43,7 @@ var Net = (function () {
             var s = document.createElement('script');
             s.src = src;
             s.onload = res;
-            s.onerror = function () { rej(new Error('Skript nicht ladbar: ' + src)); };
+            s.onerror = function () { rej(new Error(T('Skript nicht ladbar: {src}', { src: src }))); };
             document.head.appendChild(s);
         });
     }
@@ -55,8 +55,7 @@ var Net = (function () {
             try {
                 await loadScript(MQTT_LIB);
             } catch (e) {
-                state('error', 'MQTT-Bibliothek nicht ladbar. Ohne Netz laeuft die ' +
-                               'App weiter, du siehst nur dich selbst.');
+                state('error', T('MQTT-Bibliothek nicht ladbar. Ohne Netz läuft die App weiter, du siehst nur dich selbst.'));
                 return;
             }
         }
@@ -72,7 +71,7 @@ var Net = (function () {
             client = window.mqtt.connect(url, {
                 clientId: 'gr_' + Math.random().toString(36).slice(2, 10),
                 keepalive: 30,
-                reconnectPeriod: 0,          // eigene Broker-Rotation
+                reconnectPeriod: 0,          // own broker rotation
                 connectTimeout: 8000,
                 clean: true
             });
@@ -100,7 +99,7 @@ var Net = (function () {
         setTimeout(openBroker, 2500);
     }
 
-    /* ---------------- eigener Relay ---------------- */
+    /* ---------------- own relay ---------------- */
     function connectRelay() {
         if (closed) return;
         var url = relayUrl + (relayUrl.indexOf('?') >= 0 ? '&' : '?') +
@@ -109,7 +108,7 @@ var Net = (function () {
         try {
             ws = new WebSocket(url);
         } catch (e) {
-            state('error', 'Relay-Adresse ungueltig');
+            state('error', T('Relay-Adresse ungültig'));
             return;
         }
         ws.onopen    = function () { state('online', url); };
@@ -123,7 +122,7 @@ var Net = (function () {
         ws.onerror   = function () { try { ws.close(); } catch (e) {} };
     }
 
-    /* ---------------- Schnittstelle ---------------- */
+    /* ---------------- interface ---------------- */
     function start(opts) {
         closed = false;
         topic  = opts.topic;
@@ -141,7 +140,7 @@ var Net = (function () {
             } else if (client && client.connected) {
                 client.publish(topic, payloadStr, { qos: 0, retain: false });
             }
-        } catch (e) { /* stillschweigend: naechste Meldung kommt gleich */ }
+        } catch (e) { /* silent: the next report comes right away */ }
     }
 
     function stop() {

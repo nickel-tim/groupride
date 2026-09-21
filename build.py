@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Faltet index.html, CSS und alle JS-Module in eine einzige Datei.
+"""Folds index.html, CSS and all JS modules into a single file.
 
-Praktisch fuer den Webspace: eine Datei hochladen, fertig. Die
-Schriften bleiben extern (Google Fonts), alles andere ist eingebettet.
+Handy for web hosting: upload one file, done. The
+fonts stay external (Google Fonts), everything else is embedded.
 """
 import re, pathlib, sys
 

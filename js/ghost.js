@@ -1,21 +1,21 @@
 /* ============================================================
- * ghost.js -- eine gespeicherte Fahrt als virtueller Mitfahrer
+ * ghost.js -- a saved ride as a virtual fellow rider
  * ============================================================
- * Der Ghost ist kein Sonderfall in der Auswertung: er wird wie ein
- * weiterer Fahrer eingespeist (Analytics.ingest). Rang, Luecke in
- * Metern und Sekunden, Kompass, Karte, Ueberholvorgaenge -- alles
- * kommt damit ohne Zusatzlogik. Es wird nichts an andere gesendet.
+ * The ghost is not a special case in the analysis: it is fed in like
+ * any other rider (Analytics.ingest). Rank, gap in metres and
+ * seconds, compass, map, overtaking -- everything comes with it
+ * without extra logic. Nothing is sent to anyone else.
  *
- * Zeit: der Ghost fahrt mit SEINER aufgezeichneten Zeit ab dem
- * Moment, in dem er startet. "factor" streckt oder staucht sie
- * (1.05 = fuenf Prozent schneller als damals) -- so laesst sich
- * gegen die eigene Bestleistung mit kleinem Aufschlag trainieren.
+ * Time: the ghost rides with ITS recorded time from the moment
+ * it starts. "factor" stretches or compresses it (1.05 = five
+ * percent faster than back then) -- that way you can train against
+ * your own best with a small margin.
  * ============================================================ */
 
 var Ghost = (function () {
     'use strict';
 
-    /* rec: gespeicherte Fahrt (Rides.get), factor: Tempofaktor */
+    /* rec: saved ride (Rides.get), factor: speed factor */
     function make(rec, factor) {
         var p = rec.p, n = p.length;
         factor = factor > 0 ? factor : 1;
@@ -37,12 +37,12 @@ var Ghost = (function () {
         var g = {
             id: rec.id, name: rec.name,
             start: { lat: p[0][1], lon: p[0][2] },
-            dur: end / factor,                    // Sekunden, mit Faktor
+            dur: end / factor,                    // seconds, with factor
             factor: factor
         };
 
-        /* Position und Tempo zur Ghost-Zeit tSec (Sekunden seit Start).
-           done = true, sobald die aufgezeichnete Fahrt zu Ende ist. */
+        /* Position and speed at ghost time tSec (seconds since start).
+           done = true as soon as the recorded ride is over. */
         g.at = function (tSec) {
             var tr = tSec * factor;
             var a = pos(tr);

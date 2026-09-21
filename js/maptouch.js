@@ -1,22 +1,22 @@
 /* ============================================================
- * maptouch.js -- Gesten fuer die Karte
+ * maptouch.js -- gestures for the map
  * ============================================================
- * Was man von einer Karte erwartet:
- *   - Ziehen mit einem Finger (oder der Maus) verschiebt
- *   - Zwei Finger spreizen/zusammenfuehren zoomt um den Punkt zwischen den
- *     Fingern, waehrend man gleichzeitig verschiebt
- *   - Doppeltippen (Doppelklick) zoomt um den Punkt hinein
- *   - Mausrad und Trackpad-Pinch zoomen um den Mauszeiger
- *   - Nach schnellem Wischen laeuft die Karte kurz aus
+ * What you expect from a map:
+ *   - Dragging with one finger (or the mouse) pans
+ *   - Spreading/pinching two fingers zooms around the point between the
+ *     fingers while you pan at the same time
+ *   - Double tap (double click) zooms in around the point
+ *   - Mouse wheel and trackpad pinch zoom around the mouse pointer
+ *   - After a quick swipe the map coasts to a stop
  *
- * Pointer Events decken Touch, Stift und Maus in einem Zug ab. Das
- * Element braucht "touch-action: none", sonst scrollt oder zoomt der
- * Browser selbst. Die Karte weiss nichts von Gesten: dieses Modul ruft
- * nur api.pan / api.zoomAbout / api.redraw.
+ * Pointer Events cover touch, pen and mouse in one go. The
+ * element needs "touch-action: none", otherwise the browser scrolls or
+ * zooms by itself. The map knows nothing about gestures: this module only calls
+ * api.pan / api.zoomAbout / api.redraw.
  *
- *   api.pan(dx, dy)            Verschiebung der Karte in Pixeln
- *   api.zoomAbout(x, y, f)     Zoomfaktor f um den Bildpunkt (x, y)
- *   api.redraw()               neu zeichnen (darf gedrosselt sein)
+ *   api.pan(dx, dy)            shift of the map in pixels
+ *   api.zoomAbout(x, y, f)     zoom factor f around the picture point (x, y)
+ *   api.redraw()               redraw (may be throttled)
  * ============================================================ */
 
 var MapTouch = (function () {
@@ -25,10 +25,10 @@ var MapTouch = (function () {
     var TAP_MS = 300, TAP_PX = 8, DOUBLE_MS = 320, DOUBLE_PX = 30;
 
     function attach(el, api) {
-        var ptrs = {};                   // aktive Zeiger: id -> {x, y}
+        var ptrs = {};                   // active pointers: id -> {x, y}
         var downT = 0, downX = 0, downY = 0, moved = false;
         var tapT = 0, tapX = 0, tapY = 0;
-        var vx = 0, vy = 0, lastT = 0;   // Wischgeschwindigkeit in px/ms
+        var vx = 0, vy = 0, lastT = 0;   // swipe speed in px/ms
         var fling = null;
 
         function pos(e) {
@@ -46,7 +46,7 @@ var MapTouch = (function () {
                 var p = ptrs[e.pointerId];
                 downT = Date.now(); downX = p.x; downY = p.y; moved = false; vx = vy = 0; lastT = 0;
             } else {
-                moved = true;            // zweiter Finger: kein Tippen mehr
+                moved = true;            // second finger: no longer a tap
             }
         });
 
@@ -56,7 +56,7 @@ var MapTouch = (function () {
             var cur = pos(e), list = ids();
 
             if (list.length === 1) {
-                // kleine Zitterbewegung beim Antippen gilt noch nicht als Ziehen
+                // a small tremor when tapping does not count as dragging yet
                 if (!moved && Math.hypot(cur.x - downX, cur.y - downY) < TAP_PX) return;
                 moved = true;
                 var dx = cur.x - prev.x, dy = cur.y - prev.y, now = performance.now();
@@ -86,14 +86,14 @@ var MapTouch = (function () {
             var left = ids().length;
 
             if (left === 0 && !moved && Date.now() - downT < TAP_MS) {
-                // Tippen: zweimal kurz hintereinander an derselben Stelle = hineinzoomen
+                // Tap: twice in quick succession at the same spot = zoom in
                 var now = Date.now();
                 if (now - tapT < DOUBLE_MS && Math.hypot(p.x - tapX, p.y - tapY) < DOUBLE_PX) {
                     api.zoomAbout(p.x, p.y, 2); api.redraw(); tapT = 0;
                 } else { tapT = now; tapX = p.x; tapY = p.y; }
             } else if (left === 0 && moved && lastT && performance.now() - lastT < 80 &&
                        Math.hypot(vx, vy) > 0.15) {
-                // Auslaufen: Geschwindigkeit klingt exponentiell ab
+                // Coasting: the speed decays exponentially
                 var t0 = performance.now();
                 (function step(t) {
                     var dt = Math.min(32, t - t0); t0 = t;
@@ -103,7 +103,7 @@ var MapTouch = (function () {
                     fling = Math.hypot(vx, vy) > 0.02 ? requestAnimationFrame(step) : null;
                 })(t0);
             }
-            if (left === 1) {            // vom Zoomen zurueck zum Ziehen: ohne Sprung weitermachen
+            if (left === 1) {            // from zooming back to dragging: carry on without a jump
                 vx = vy = 0; lastT = 0;
             }
         }
@@ -111,7 +111,7 @@ var MapTouch = (function () {
         el.addEventListener('pointercancel', up);
 
         el.addEventListener('wheel', function (e) {
-            e.preventDefault();          // die Seite soll nicht mitscrollen
+            e.preventDefault();          // the page should not scroll along
             var p = pos(e);
             api.zoomAbout(p.x, p.y, Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0016)));
             api.redraw();

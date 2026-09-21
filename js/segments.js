@@ -1,32 +1,32 @@
 /* ============================================================
- * segments.js -- Segmente, Bestzeiten und Rekorde ueber alle Fahrten
+ * segments.js -- segments, best times and records across all rides
  * ============================================================
- * Ein Segment ist ein Stueck Strecke mit Anfang, Ende und Verlauf. Faehrt man
- * es erneut, wird die Zeit verglichen -- so entstehen Bestzeiten je Anstieg
- * oder je selbst angelegtem Abschnitt.
+ * A segment is a piece of route with a start, an end and a course. If you ride
+ * it again, the time is compared -- that is how best times per climb
+ * or per self-defined section come about.
  *
- * Woher Segmente kommen
- *   - automatisch: jeder erkannte Anstieg (aus der Auswertung derselben Fahrt)
- *   - von Hand:    ein Abschnitt einer gespeicherten Fahrt
- * Zusaetzlich gibt es Rekorde ohne Ort: schnellste 1/5/10/20/40 km,
- * beste 5 und 20 Minuten, Spitzentempo, meiste Hoehenmeter, laengste Fahrt.
+ * Where segments come from
+ *   - automatically: every detected climb (from the analysis of the same ride)
+ *   - by hand:       a section of a saved ride
+ * In addition there are records without a place: fastest 1/5/10/20/40 km,
+ * best 5 and 20 minutes, top speed, most elevation gain, longest ride.
  *
- * Wiedererkennen: eine Fahrt zaehlt als "Segment gefahren", wenn sie in der
- * Naehe des Anfangs beginnt, in der Naehe des Endes ankommt, dazwischen dem
- * Verlauf folgt und die Strecke ungefaehr stimmt. Die Zeit wird aus dem
- * Punkt kuerzester Annaeherung an Anfang und Ende interpoliert -- bei
- * GPS-Rauschen (+-4 m) und 1-s-Takt bleibt sie auf etwa +-1-2 s genau.
+ * Recognition: a ride counts as "segment ridden" if it starts near
+ * the start, arrives near the end, follows the course in between
+ * and the distance is about right. The time is interpolated from the
+ * point of closest approach to start and end -- with
+ * GPS noise (+-4 m) and a 1 s interval it stays accurate to about +-1-2 s.
  *
- * Simulation und echte Fahrten sind getrennte "Welten": eine erfundene Runde
- * soll keine echten Bestzeiten verdraengen.
+ * Simulation and real rides are separate "worlds": an invented lap
+ * must not displace real best times.
  * ============================================================ */
 
 var Segments = (function () {
     'use strict';
 
-    var ENTRY   = 35;      // m: so nah muss man an Anfang bzw. Ende kommen
-    var MAXDEV  = 32;      // m: mittlere Abweichung vom Verlauf
-    var MAXPEAK = 90;      // m: groesste Abweichung vom Verlauf
+    var ENTRY   = 35;      // m: how close you have to get to the start or end
+    var MAXDEV  = 32;      // m: mean deviation from the course
+    var MAXPEAK = 90;      // m: largest deviation from the course
     var MAX_EFFORTS = 60;
     var world = 'real';
 
@@ -64,7 +64,7 @@ var Segments = (function () {
         saveAll(l);
     }
 
-    /* ---------- Geometrie ---------- */
+    /* ---------- Geometry ---------- */
     function polyDist(px, py, poly) {
         var best = Infinity;
         for (var i = 0; i < poly.length - 1; i++) {
@@ -74,8 +74,8 @@ var Segments = (function () {
         return best;
     }
 
-    /* Zeit der kuerzesten Annaeherung an den Punkt P, zwischen den Spurpunkten
-       um idx herum (xy: dieselbe Ebene wie P). */
+    /* Time of the closest approach to the point P, between the track points
+       around idx (xy: the same plane as P). */
     function timeAtClosest(pts, xy, idx, P) {
         var best = null;
         for (var i = Math.max(0, idx - 1); i <= Math.min(pts.length - 2, idx); i++) {
@@ -86,7 +86,7 @@ var Segments = (function () {
         return best ? best.t : pts[idx].t;
     }
 
-    /* Segment aus einem Stueck einer Spur (Indizes iA..iB) */
+    /* Segment from a piece of a track (indices iA..iB) */
     function fromSection(pts, iA, iB, name, kind, auto) {
         var sec = pts.slice(iA, iB + 1);
         var len = Track.cumulative(sec); len = len[len.length - 1];
@@ -101,8 +101,8 @@ var Segments = (function () {
         };
     }
 
-    /* ---------- Wiedererkennen ---------- */
-    /* Alle Durchfahrten von seg in der Spur pts. -> [{tStart, tEnd, ms, iA, iB, splits}] */
+    /* ---------- Recognition ---------- */
+    /* All passes of seg in the track pts. -> [{tStart, tEnd, ms, iA, iB, splits}] */
     function match(pts, seg, cum) {
         var n = pts.length;
         if (n < 3 || seg.len < 100) return [];
@@ -117,11 +117,11 @@ var Segments = (function () {
         var out = [], i = 0;
         while (i < n) {
             if (dA(i) > ENTRY) { i++; continue; }
-            // zusammenhaengende Naehe am Anfang: der Punkt kuerzester Annaeherung zaehlt
+            // continuous proximity at the start: the point of closest approach counts
             var iMin = i, dMin = dA(i), k = i;
             while (k < n && dA(k) <= ENTRY) { var d = dA(k); if (d < dMin) { dMin = d; iMin = k; } k++; }
 
-            // Ende suchen: hoechstens 1,6x so lang wie das Segment
+            // look for the end: at most 1.6x as long as the segment
             var jBest = -1, j = iMin + 1, maxLen = 1.6 * seg.len;
             while (j < n && cum[j] - cum[iMin] <= maxLen) {
                 if (dB(j) <= ENTRY) {
@@ -133,7 +133,7 @@ var Segments = (function () {
             }
             if (jBest < 0) { i = k; continue; }
 
-            // folgt die Fahrt dem Verlauf? (mittlere und groesste Abweichung)
+            // does the ride follow the course? (mean and largest deviation)
             var step = Math.max(1, Math.floor((jBest - iMin) / 25)), sum = 0, cnt = 0, peak = 0, gapOk = true;
             for (var m = iMin; m <= jBest; m += step) {
                 var dd = polyDist(xy[m].x, xy[m].y, poly); sum += dd; cnt++; if (dd > peak) peak = dd;
@@ -154,7 +154,7 @@ var Segments = (function () {
         return out;
     }
 
-    /* Durchfahrt in die Liste der Bestzeiten eintragen; liefert Vergleich zur bisherigen Bestzeit. */
+    /* Enter a pass into the list of best times; returns the comparison with the previous best time. */
     function addEffort(seg, rideId, rideName, m, count) {
         var prev = seg.efforts.filter(function (e) { return e.ride !== rideId; });
         var prevBest = prev.length ? Math.min.apply(null, prev.map(function (e) { return e.ms; })) : null;
@@ -173,9 +173,9 @@ var Segments = (function () {
         return seg.efforts.reduce(function (a, b) { return b.ms < a.ms ? b : a; });
     }
 
-    /* Ist "cand" dasselbe Stueck Strasse wie "seg"? Die Grenzen eines erkannten Anstiegs
-       schwanken von Fahrt zu Fahrt um ein paar Dutzend Meter -- deshalb zaehlt nicht
-       Anfang/Ende, sondern die Ueberlappung des Verlaufs, in derselben Fahrtrichtung. */
+    /* Is "cand" the same piece of road as "seg"? The limits of a detected climb
+       fluctuate from ride to ride by a few dozen metres -- so what counts is not
+       start/end but the overlap of the course, in the same direction of travel. */
     function overlapFrac(p, q) {
         var fr = Geo.frame(q.poly[0][0], q.poly[0][1]);
         var qxy = q.poly.map(function (c) { return fr.toXY(c[0], c[1]); }), hit = 0;
@@ -188,13 +188,13 @@ var Segments = (function () {
     function similar(cand, seg) {
         var dAA = Geo.distance(cand.a.lat, cand.a.lon, seg.a.lat, seg.a.lon);
         var dAB = Geo.distance(cand.a.lat, cand.a.lon, seg.b.lat, seg.b.lon);
-        if (dAB < dAA) return false;                        // gegenlaeufig: die Abfahrt ist ein anderes Segment
+        if (dAB < dAA) return false;                        // opposite direction: the descent is a different segment
         var f1 = overlapFrac(cand, seg), f2 = overlapFrac(seg, cand);
-        // deckungsgleich, oder eines liegt (fast) ganz im anderen: dann kein neues Segment
+        // congruent, or one lies (almost) entirely inside the other: then no new segment
         return (f1 >= 0.6 && f2 >= 0.6) || f1 >= 0.8 || f2 >= 0.8;
     }
 
-    /* ---------- Rekorde ohne Ort ---------- */
+    /* ---------- Records without a place ---------- */
     function cumAtTime(pts, cum, t) {
         var lo = 0, hi = pts.length - 1;
         while (lo < hi) { var m = (lo + hi + 1) >> 1; if (pts[m].t <= t) lo = m; else hi = m - 1; }
@@ -226,13 +226,13 @@ var Segments = (function () {
             if (best > 0) out['t' + W] = best;
         });
         var top = Track.topSpeed(pts, cum, 5000);
-        if (top > 0 && top < 30) out.top = top;                 // >108 km/h ist ein GPS-Fehler
+        if (top > 0 && top < 30) out.top = top;                 // >108 km/h is a GPS error
         out.gain = Track.gain(pts);
         out.dist = dist;
         return out;
     }
 
-    function better(kind, a, b) { return kind === 'time' ? a < b : a > b; }     // a besser als b?
+    function better(kind, a, b) { return kind === 'time' ? a < b : a > b; }     // a better than b?
 
     function updateRecords(pts, rec, store) {
         var vals = computeRecords(pts), changed = [];
@@ -248,12 +248,12 @@ var Segments = (function () {
         return changed;
     }
 
-    // Gespeicherte Fahrt als geglaettete Spur (siehe Track.smooth: sonst waeren alle Wege ~25 % zu lang)
+    // Saved ride as a smoothed track (see Track.smooth: otherwise all distances would be ~25 % too long)
     function trackOf(rec) { return Track.smooth(Rides.unpack(rec), 2); }
 
-    /* ---------- Auswertung einer Fahrt ---------- */
-    /* Erkennt neue Anstiege, findet bekannte Segmente wieder, fuehrt Rekorde nach.
-       Rueckgabe: { world, newSegments, efforts, records } */
+    /* ---------- Evaluation of a ride ---------- */
+    /* Detects new climbs, recognises known segments, updates records.
+       Returns: { world, newSegments, efforts, records } */
     function processRide(rec, opts) {
         opts = opts || {};
         if (rec.src === 'plan') return Promise.resolve(null);
@@ -279,8 +279,8 @@ var Segments = (function () {
 
         if (opts.detect === false) return Promise.resolve(finish());
 
-        // Anstiege dieser Fahrt: dieselbe Auswertung wie live, allein mit deiner Spur
-        var sess = Session.solo(pts, 'me', 'Du');
+        // Climbs of this ride: the same analysis as live, with your track alone
+        var sess = Session.solo(pts, 'me', T('Du'));
         return sess.workAsync(sess.t1, 3000, opts.onProgress).then(function () {
             var climbs = sess.an.scanClimbs(), added = 0;
             climbs.forEach(function (c) {
@@ -291,15 +291,14 @@ var Segments = (function () {
                                        0, ax.length - 1, '', 'climb', true);
                 if (segs.some(function (s) { return similar(cand, s); })) return;
                 added++;
-                cand.name = 'Anstieg ' + (segs.filter(function (s) { return s.kind === 'climb'; }).length + 1) +
-                            ' (+' + Math.round(cand.gain) + ' Hm)';
+                cand.name = T('Anstieg {n} (+{g} Hm)', { n: segs.filter(function (s) { return s.kind === 'climb'; }).length + 1, g: Math.round(cand.gain) });
                 segs.push(cand); report.newSegments.push(cand);
             });
             return finish();
         });
     }
 
-    /* Nach dem Anlegen eines Segments: in allen gespeicherten Fahrten dieser Welt suchen. */
+    /* After creating a segment: search all saved rides of this world. */
     function backfill(seg) {
         var found = 0;
         Rides.list().forEach(function (r) {
@@ -320,7 +319,7 @@ var Segments = (function () {
         return found;
     }
 
-    /* Eine Fahrt wurde geloescht: ihre Durchfahrten weg, Rekorde neu bestimmen. */
+    /* A ride was deleted: its passes are removed, records are determined again. */
     function forgetRide(id, srcOfRide) {
         use(worldOf(srcOfRide));
         var l = list();
@@ -338,10 +337,10 @@ var Segments = (function () {
         write(key('bests'), fresh);
     }
 
-    /* Fortschritt entlang des Segmentverlaufs (Meter). Die rohe Wegstrecke taugt dafuer nicht:
-       GPS-Rauschen (+-4 m je Fix) addiert bei langsamer Fahrt bergauf ein Vielfaches der echten
-       Strecke -- das Segment wirkte dann schon nach der Haelfte "fast fertig". Die Projektion
-       der Position auf den Verlauf ist davon unabhaengig. */
+    /* Progress along the segment course (metres). The raw distance travelled is no good for this:
+       GPS noise (+-4 m per fix) adds a multiple of the real
+       distance when riding slowly uphill -- the segment would then look "almost done" after
+       half. The projection of the position onto the course is independent of that. */
     function polyInfo(seg) {
         var fr = Geo.frame(seg.a.lat, seg.a.lon);
         var xy = seg.poly.map(function (q) { return fr.toXY(q[0], q[1]); }), cum = [0];
@@ -358,15 +357,15 @@ var Segments = (function () {
         return best;
     }
 
-    /* ---------- Live: Zeit auf dem Segment waehrend der Fahrt ---------- */
-    /* update({lat, lon, t}) -> Ereignisse. Der Live-Wert ist vorlaeufig (+-1-3 s):
-       er startet beim ersten Fix nahe am Anfang. Massgeblich ist die Auswertung
-       nach der Fahrt (processRide), die den Punkt kuerzester Annaeherung nutzt. */
+    /* ---------- Live: time on the segment during the ride ---------- */
+    /* update({lat, lon, t}) -> events. The live value is provisional (+-1-3 s):
+       it starts at the first fix near the start. What counts is the evaluation
+       after the ride (processRide), which uses the point of closest approach. */
     function live(w) {
         var st = {}, lastFix = null, ended = {}, lw = (w === 'sim') ? 'sim' : 'real';
         return {
             update: function (fix) {
-                var prevWorld = world;          // die Ansicht darf inzwischen eine andere Welt zeigen
+                var prevWorld = world;          // the view may meanwhile show a different world
                 use(lw);
                 try { return step(fix); } finally { use(prevWorld); }
             }
@@ -387,7 +386,7 @@ var Segments = (function () {
                 }
                 var pi = s.pi, pr = progressOn(pi, fix.lat, fix.lon);
                 if (pr.dist <= 60) s.prog = Math.max(s.prog, pr.s);
-                if (s.prog < 30 && dA < s.min) { s.t0 = fix.t; s.min = dA; }    // noch am Start: naeher dran = spaeter loslegen
+                if (s.prog < 30 && dA < s.min) { s.t0 = fix.t; s.min = dA; }    // still at the start: closer = start later
                 var fr = Math.min(1, s.prog / pi.len), elapsed = fix.t - s.t0;
                 var best = bestOf(seg), delta = null;
                 if (best && best.splits && fr > 0.05) {

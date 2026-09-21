@@ -1,22 +1,22 @@
 /* ============================================================
- * session.js -- eine aufgezeichnete Fahrt noch einmal durch die Auswertung laufen lassen
+ * session.js -- run a recorded ride through the analysis once more
  * ============================================================
- * Fuettert die aufgezeichneten Positionen in dieselbe Analytics wie die
- * Live-Fahrt: gleiche Streckenachse, gleiche Rangfolge, Luecken, Ueberhol-
- * vorgaenge, Antritte, Anstiege. Damit ist das Replay keine Nachbildung,
- * sondern die echte Auswertung zu einem anderen Zeitpunkt.
+ * Feeds the recorded positions into the same Analytics as the
+ * live ride: same route axis, same ranking, gaps, overtaking,
+ * attacks, climbs. That makes the replay no re-enactment
+ * but the real analysis at a different point in time.
  *
- * Die 2-s-Aufzeichnung wird dabei auf einen Takt (Standard 1 s) interpoliert,
- * wie ihn echtes GPS liefert -- die Analytics ist darauf abgestimmt.
+ * The 2 s recording is interpolated to a beat (default 1 s)
+ * as real GPS delivers it -- the analytics is tuned for that.
  *
- * Fuer Segmente, Rekorde und die Zusammenfassung laeuft dasselbe ohne
- * Bildschirm einmal komplett durch (workAsync).
+ * For segments, records and the summary the same runs through completely
+ * once without a screen (workAsync).
  * ============================================================ */
 
 var Session = (function () {
     'use strict';
 
-    var GAP_MS = 30000;      // laenger ohne Meldung = Fahrer hatte Funkloch, nicht interpolieren
+    var GAP_MS = 30000;      // longer without a report = rider had a radio gap, do not interpolate
 
     /* data: { me, riders: { id: { name, color, pts:[{t,lat,lon,ele}] } } } */
     function S(data) {
@@ -50,8 +50,8 @@ var Session = (function () {
 
     S.prototype.duration = function () { return this.t1 - this.t0; };
 
-    /* Interpolierte Meldung eines Fahrers zur Zeit t, oder null (noch nicht gestartet /
-       schon fertig / Funkloch). */
+    /* Interpolated report of a rider at time t, or null (not started yet /
+       already finished / radio gap). */
     S.prototype.sample = function (rd, t) {
         var p = rd.pts, n = p.length;
         if (t < p[0].t || t > p[n - 1].t) return null;
@@ -79,13 +79,13 @@ var Session = (function () {
             if (rd.id === this.meId) an.riders[rd.id].self = true;
         }
         an.tick(t);
-        // "Zuletzt gesehen" folgt der Replay-Zeit, nicht der Uhr: sonst gelten alle nach 15 s
-        // Pause als "kein Signal", und beim Vorspulen wuerde niemand je verschwinden.
+        // "Last seen" follows the replay time, not the clock: otherwise everybody counts after 15 s
+        // of pause as "no signal", and when fast-forwarding nobody would ever disappear.
         for (var id in an.riders) an.riders[id].lastSeen = now - (t - an.riders[id].t);
     };
 
-    /* Bis zum Zeitpunkt target (ms) vorrechnen, hoechstens budgetMs lang.
-       Rueckgabe true = angekommen. Rueckwaerts geht nur ueber reset(). */
+    /* Compute ahead to time target (ms), for budgetMs at most.
+       Returns true = arrived. Going backwards only works via reset(). */
     S.prototype.work = function (target, step, budgetMs) {
         var start = performance.now(), st = step || 1000;
         while (this.tCur < target) {
@@ -96,13 +96,13 @@ var Session = (function () {
         return this.tCur >= target;
     };
 
-    /* An eine beliebige Zeit springen. Rueckwaerts wird neu aufgebaut. */
+    /* Jump to an arbitrary time. Going backwards rebuilds from scratch. */
     S.prototype.seek = function (t) {
         if (t < this.tCur) this.reset();
         return this;
     };
 
-    /* Komplett durchrechnen, ohne die Oberflaeche zu blockieren. */
+    /* Compute completely without blocking the interface. */
     S.prototype.workAsync = function (target, step, onProgress) {
         var self = this;
         return new Promise(function (resolve) {

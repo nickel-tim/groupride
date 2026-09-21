@@ -1,11 +1,11 @@
 /* ============================================================
- * liga-sync.js -- Fahrten hochladen, Segmente abgleichen, Tacho-Stand holen
+ * liga-sync.js -- upload rides, match segments, fetch the speedometer standing
  * ============================================================
- * Laeuft im Hintergrund und darf nie die Fahrt stoeren:
- *   - Uploads stehen in einer Warteschlange (localStorage) und werden bei Netz nachgeholt.
- *   - Zaehlt nur, wenn man angemeldet und in mindestens einer Liga ist (sonst wird nichts gesendet).
- *   - Was hochgeladen wurde, steht in liga:up { lokale Fahrt-ID: { state, sid, reason } }.
- *       state: wait (in der Schlange) | ok | rej (Server lehnt ab, Grund in reason)
+ * Runs in the background and must never disturb the ride:
+ *   - Uploads wait in a queue (localStorage) and are made up for when there is a network.
+ *   - Only counts if you are logged in and in at least one league (otherwise nothing is sent).
+ *   - What has been uploaded is in liga:up { local ride ID: { state, sid, reason } }.
+ *       state: wait (in the queue) | ok | rej (server refuses, reason in reason)
  * ============================================================ */
 
 var LigaSync = (function () {
@@ -45,14 +45,14 @@ var LigaSync = (function () {
         return true;
     }
 
-    /* Nach dem Speichern einer Fahrt: einreihen und losschicken */
+    /* After saving a ride: queue it and send it off */
     function rideSaved(rec) {
         if (!active() || !auto() || !rec) return Promise.resolve();
         if (enqueue(rec.id)) { changed(); return flush(); }
         return Promise.resolve();
     }
 
-    /* Alle bisherigen, noch nicht gesendeten Fahrten einreihen */
+    /* Queue all previous rides that have not been sent yet */
     function backfill() {
         var n = 0;
         Rides.list().forEach(function (r) { if (enqueue(r.id)) n++; });
@@ -76,14 +76,14 @@ var LigaSync = (function () {
                     if (r.status === 200) { setUp(id, { state: 'ok', sid: body.id, dropped: r.dropped || [] }); changed(); return next(); }
                     if (r.status === 409 && r.reason === 'overlap') { setUp(id, { state: 'rej', reason: 'Zu dieser Zeit gibt es schon eine Fahrt.' }); changed(); return next(); }
                     if (r.status === 422) { setUp(id, { state: 'rej', reason: r.error }); changed(); return next(); }
-                    return null;                                     // offline, 429, 401 ...: spaeter erneut
+                    return null;                                     // offline, 429, 401 ...: try again later
                 });
             }, function (e) { setUp(id, { state: 'rej', reason: e.message || 'Auswertung fehlgeschlagen.' }); changed(); return next(); });
         }
         return next().then(function () { flushing = false; changed(); }, function () { flushing = false; });
     }
 
-    /* Ligen des Kontos vom Server holen und merken */
+    /* Fetch the leagues of the account from the server and remember them */
     function loadLeagues() {
         if (!LigaApi.account()) { setLeagues([]); return Promise.resolve([]); }
         return LigaApi.call('GET', '/api/leagues').then(function (r) {
@@ -92,7 +92,7 @@ var LigaSync = (function () {
         });
     }
 
-    /* ---- Liga-Segmente: eigene Fahrten dagegen abgleichen und die Zeiten melden ---- */
+    /* ---- League segments: match own rides against them and report the times ---- */
     function decodeSeg(s) {
         return LigaCodec.decode(s.poly, 3000).then(function (tr) {
             var p = tr.pts;
@@ -123,7 +123,7 @@ var LigaSync = (function () {
         return forSeg(0);
     }
 
-    /* ---- Tacho-Zeile: gewaehlte Liga und Kategorie ---- */
+    /* ---- Speedometer line: chosen league and category ---- */
     function tacho() { return read(K_TACHO, null); }
     function setTacho(t) { write(K_TACHO, t); write(K_ST, null); changed(); }
     function standing() { return read(K_ST, null); }
@@ -135,7 +135,7 @@ var LigaSync = (function () {
                 var s = { t: Date.now(), league: t.league, cat: t.cat, standing: r.standing, period: r.period };
                 write(K_ST, s); return s;
             }
-            if (r.status === 404) setTacho(null);                    // Liga gibt es nicht mehr
+            if (r.status === 404) setTacho(null);                    // the league no longer exists
             return standing();
         });
     }

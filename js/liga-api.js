@@ -1,9 +1,9 @@
 /* ============================================================
- * liga-api.js -- Anfragen an die Liga (signiert) und Anmeldung
+ * liga-api.js -- requests to the league (signed) and login
  * ============================================================
- * Nichts hier wird ohne Anmeldung benutzt: die Live-Gruppe kennt die Liga nicht.
- * call() wirft nie: Netzfehler und Serverfehler kommen als { status, error } zurueck,
- * damit die Oberflaeche sie anzeigen kann. status 0 = keine Verbindung.
+ * Nothing here is used without a login: the live group does not know the league.
+ * call() never throws: network errors and server errors come back as { status, error },
+ * so that the interface can display them. status 0 = no connection.
  * ============================================================ */
 
 var LigaApi = (function () {
@@ -44,17 +44,18 @@ var LigaApi = (function () {
             return res.text().then(function (t) {
                 var out;
                 try { out = JSON.parse(t); } catch (e) { out = null; }
-                if (!out) return { status: res.status, unavailable: true, error: 'Die Liga gibt es auf diesem Server nicht.' };
+                if (!out) return { status: res.status, unavailable: true, error: T('Die Liga gibt es auf diesem Server nicht.') };
                 out.status = res.status;
                 if (res.status === 401 && (out.code === 'unknown_key' || out.code === 'bad_sig') && acct) { setAccount(null); }
-                if (res.status >= 400 && !out.error) out.error = 'Fehler ' + res.status;
+                if (res.status >= 400 && !out.error) out.error = 'Fehler {n}';
+                if (out.error) { out.errorKey = out.error; out.error = T(out.error, { n: res.status }); }     // server messages arrive in German
                 return out;
             });
-        }, function () { return { status: 0, offline: true, error: 'Keine Verbindung.' }; });
+        }, function () { return { status: 0, offline: true, error: T('Keine Verbindung.') }; });
     }
 
-    /* ---- Anmeldung ---- */
-    function start(email) { return call('POST', '/api/auth/start', { email: email }); }
+    /* ---- Login ---- */
+    function start(email) { return call('POST', '/api/auth/start', { email: email, lang: I18n.lang() }); }     // the mail is written in the app language
     function verify(email, code, profile) {
         var b = { email: email, code: code };
         if (profile) { b.name = profile.name; b.emoji = profile.emoji; b.color = profile.color; }
@@ -63,7 +64,7 @@ var LigaApi = (function () {
             return r;
         });
     }
-    /* Dieses Geraet abmelden: Schluessel und alle lokalen Liga-Daten weg. Das Konto bleibt bestehen. */
+    /* Log this device out: key and all local league data gone. The account remains. */
     function logout() {
         return LigaId.reset().then(function () {
             try {
@@ -74,7 +75,7 @@ var LigaApi = (function () {
             setAccount(null);
         });
     }
-    /* Beim Start pruefen, ob dieses Geraet noch angemeldet ist (Schluessel da, Konto bekannt) */
+    /* Check at start whether this device is still logged in (key present, account known) */
     function refresh() {
         return LigaId.peek().then(function (k) {
             if (!k) { if (acct) setAccount(null); return null; }

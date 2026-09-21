@@ -1,7 +1,7 @@
-/* boards.js -- Ranglisten, Gesamtwertung, Einfrieren, Ruhmeshalle
+/* boards.js -- rankings, overall standing, freezing, hall of fame
  *
- * Wenige Abfragen je Anfrage (Free Plan: 50 pro Aufruf, 5 Mio. gelesene Zeilen pro Tag):
- * alle gespeicherten Kategorien kommen aus EINER Abfrage ueber ride_values.
+ * Few queries per request (free plan: 50 per invocation, 5 million rows read per day):
+ * all stored categories come from ONE query over ride_values.
  */
 import Cats from '../js/liga-cats.js';
 import { qa, q1, run, parseJson } from './util.js';
@@ -27,13 +27,13 @@ function longestRun(days) {
     return best;
 }
 
-/* -> { key: Map(accountId -> Zahl) } fuer alle verlangten Kategorien im Zeitraum [ps, pe) */
+/* -> { key: Map(accountId -> number) } for all requested categories in the period [ps, pe) */
 export async function computeAll(db, league, keys, ps, pe) {
     const out = {};
     keys = [...new Set(keys)].filter(k => Cats.valid(k));
     keys.forEach(k => { out[k] = new Map(); });
 
-    // 1) Summe / Max / Min / Tage aus ride_values in einer Abfrage
+    // 1) Sum / max / min / days from ride_values in one query
     const simple = keys.filter(k => ['sum', 'max', 'min', 'days'].includes(Cats.get(k).agg));
     if (simple.length) {
         const srcs = [...new Set(simple.map(k => Cats.srcOf(Cats.get(k))))];
@@ -47,7 +47,7 @@ export async function computeAll(db, league, keys, ps, pe) {
         }
     }
 
-    // 2) Tageswerte: Serie und Hoehenmeter an einem Tag
+    // 2) Daily values: streak and elevation gain in a day
     const daily = keys.filter(k => ['streak', 'dayMax'].includes(Cats.get(k).agg));
     if (daily.length) {
         const srcs = [...new Set(daily.map(k => Cats.srcOf(Cats.get(k))))];
@@ -65,13 +65,13 @@ export async function computeAll(db, league, keys, ps, pe) {
         }
     }
 
-    // 3) Entdecken
+    // 3) Explore
     if (out.explore) {
         const rows = await qa(db, `SELECT account_id a, COUNT(*) n FROM account_tiles WHERE first_ts >= ? AND first_ts < ? AND ${MEMBER} GROUP BY account_id`, ps, pe, league.id);
         for (const r of rows) out.explore.set(r.a, r.n);
     }
 
-    // 4) Kletterkoenig: Punkte je Anstiegs-Segment nach Platz (3/2/1)
+    // 4) King of the mountains: points per climb segment by place (3/2/1)
     if (out.kom) {
         const rows = await qa(db,
             `SELECT e.segment_id s, e.account_id a, MIN(e.ms) ms FROM segment_efforts e JOIN league_segments g ON g.id = e.segment_id
@@ -88,7 +88,7 @@ export async function computeAll(db, league, keys, ps, pe) {
         }
     }
 
-    // 5) einzelne Segmente
+    // 5) single segments
     for (const k of keys.filter(k => Cats.get(k).agg === 'seg')) {
         const id = k.slice(4);
         const rows = await qa(db,
@@ -100,7 +100,7 @@ export async function computeAll(db, league, keys, ps, pe) {
     return out;
 }
 
-/* Platz vergeben (Gleichstand = gleicher Platz). smaller: kleiner ist besser. */
+/* Assign places (tie = same place). smaller: smaller is better. */
 export function rankRows(mem, values, smaller) {
     const have = [], none = [];
     for (const m of mem) {
@@ -113,7 +113,7 @@ export function rankRows(mem, values, smaller) {
     return have.concat(none);
 }
 
-/* Gesamtwertung: je Kategorie (Anzahl Mitglieder - Platz + 1) Punkte */
+/* Overall standing: points per category (number of members - place + 1) */
 export function totalRows(mem, boards, league) {
     const off = new Set(parseJson(league.no_points, []));
     const pts = new Map(mem.map(m => [m.id, 0]));
@@ -146,7 +146,7 @@ export function goalCats(league, mem) {
     return [...s].filter(k => Cats.valid(k));
 }
 
-/* Alles fuer die Hauptansicht: Ranglisten aller aktiven Kategorien, Gesamtwertung, Ziele */
+/* Everything for the main view: rankings of all active categories, overall standing, goals */
 export async function overview(db, league, mem, per) {
     const active = parseJson(league.cats, []).filter(k => Cats.valid(k));
     const values = await computeAll(db, league, [...active, ...goalCats(league, mem)], per.start, per.end);
@@ -157,7 +157,7 @@ export async function overview(db, league, mem, per) {
     return out;
 }
 
-/* ---- Einfrieren ---- */
+/* ---- Freezing ---- */
 export async function isFrozen(db, leagueId, start) {
     return !!(await q1(db, 'SELECT 1 x FROM league_periods WHERE league_id = ? AND period_start = ?', leagueId, start));
 }
@@ -177,12 +177,12 @@ export async function freezePeriod(db, league, per) {
     }
 }
 
-/* Friert HOECHSTENS EINEN abgelaufenen Zeitraum ein (Abfragenbudget); die naechste Anfrage den naechsten. */
+/* Freezes AT MOST ONE expired period (query budget); the next request the next one. */
 export async function ensureFrozen(db, league, now) {
     const ended = endedPeriods(league, now).filter(p => now >= frozenAfter(p, league));
     if (!ended.length) return false;
     const done = new Set((await qa(db, 'SELECT period_start s FROM league_periods WHERE league_id = ?', league.id)).map(r => r.s));
-    const todo = ended.filter(p => !done.has(p.start)).pop();       // aeltester zuerst
+    const todo = ended.filter(p => !done.has(p.start)).pop();       // oldest first
     if (!todo) return false;
     await freezePeriod(db, league, todo);
     return true;
@@ -202,7 +202,7 @@ export async function frozenBoard(db, league, start) {
     return { boards, total: league.scoring ? total : undefined };
 }
 
-/* Ruhmeshalle: je eingefrorenem Zeitraum die Top 3, dazu Titelzaehler */
+/* Hall of fame: the top 3 per frozen period, plus title counters */
 export async function hall(db, league) {
     const periods = await qa(db, 'SELECT period_start s, period_end e FROM league_periods WHERE league_id = ? ORDER BY period_start DESC LIMIT 60', league.id);
     if (!periods.length) return { periods: [], titles: [] };
@@ -225,7 +225,7 @@ export async function hall(db, league) {
     return { periods: periods.map(p => by.get(p.s)), titles: [...titles.values()].sort((a, b) => b.total - a.total || b.cats - a.cats) };
 }
 
-/* Nachbarn fuer die Tacho-Zeile */
+/* Neighbours for the speedometer line */
 export function standing(rows, meId) {
     const i = rows.findIndex(r => r.id === meId);
     const me = i >= 0 ? rows[i] : null;

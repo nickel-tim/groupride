@@ -1,49 +1,49 @@
 /* ============================================================
- * map.js -- Karte: Streckenachse als Spline, Fahrer darauf
+ * map.js -- map: route axis as a spline, riders on it
  * ============================================================
- * Die Karte funktioniert ohne jeden Hintergrund: Streckenachse (als
- * glatte Kurve durch die Stuetzpunkte), jeder Fahrer mit Rang, die
- * Luecke in Metern relativ zu dir, Anstiege farbig auf der Achse.
- * Das geht auch im Funkloch und ohne Datenvolumen.
+ * The map works without any background: route axis (as a
+ * smooth curve through the support points), every rider with rank, the
+ * gap in metres relative to you, climbs coloured on the axis.
+ * That also works in a radio gap and without data volume.
  *
- * OPTIONAL laesst sich eine offene Karte (OpenStreetMap) darunterlegen.
- * Das ist bewusst AUS, bis man es einschaltet: Wer Kacheln laedt, verraet
- * dem Kachelserver seine IP-Adresse und den ungefaehren Ausschnitt.
- * Name, Gruppe und Schluessel erfaehrt er nicht -- die Anfrage enthaelt
- * nur z/x/y, und das Fragment mit dem Schluessel geht nie an einen Server.
- * Die Kacheln liegen in einem eigenen <svg> HINTER der Karte, damit man
- * sie im dunklen Theme per CSS abdunkeln kann.
+ * OPTIONALLY an open map (OpenStreetMap) can be put underneath.
+ * This is deliberately OFF until you switch it on: whoever loads tiles reveals
+ * their IP address and the approximate section to the tile server.
+ * Name, group and key it does not learn -- the request contains
+ * only z/x/y, and the fragment with the key never goes to a server.
+ * The tiles lie in a separate <svg> BEHIND the map so that
+ * they can be darkened via CSS in the dark theme.
  *
- * Die Positionen kommen nur ~1x pro Sekunde; die Punkte werden deshalb
- * geglaettet gezeichnet (siehe smooth.js).
+ * Positions only arrive ~1x per second; the dots are therefore
+ * drawn smoothed (see smooth.js).
  *
- * Alles wird in Metern in einer Tangentialebene gerechnet (die
- * der Route, siehe Geo.frame) und erst zuletzt auf Pixel
- * abgebildet. Optional wird die Ebene so gedreht, dass die eigene
- * Fahrtrichtung oben liegt.
+ * Everything is computed in metres in a tangent plane (that
+ * of the route, see Geo.frame) and only at the very end mapped
+ * to pixels. Optionally the plane is rotated so that the own
+ * direction of travel is up.
  * ============================================================ */
 
 var MapView = (function () {
     'use strict';
 
-    // Radius um dich im Modus "Ich", in Metern
+    // Radius around you in "Me" mode, in metres
     var ZOOMS = [80, 150, 300, 600, 1500];
     var PAD_X = 30, PAD_TOP = 34, PAD_BOT = 56;
-    var MIN_EXTENT = 60;          // m, so weit wird im Modus "Alle" hoechstens hineingezoomt
-    var K_MIN = 0.004, K_MAX = 30;   // px je Meter: ~250 m/px (Region) bis ~3 cm/px (Detail)
-    var PX_STEP = 2.5;            // Stuetzpunkte dichter als das (in Pixeln) entfallen
+    var MIN_EXTENT = 60;          // m, in "All" mode it zooms in this far at most
+    var K_MIN = 0.004, K_MAX = 30;   // px per metre: ~250 m/px (region) to ~3 cm/px (detail)
+    var PX_STEP = 2.5;            // support points closer than this (in pixels) are dropped
     var SCALE_STEPS = [5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
 
     function f(n) { return n.toFixed(1); }
 
-    /* ---- Kacheln (Web-Mercator, "Slippy Map") --------------------
-       Eine Kachel ist im Mercator-Netz ein Quadrat, in unserer lokalen
-       Ebene (Meter, ggf. gedreht) ein leicht verzerrtes Viereck. Ueber
-       drei Ecken (NW, NO, SW) laesst sich jede Kachel exakt als affine
-       Abbildung auf den Bildschirm legen -- damit dreht sich der
-       Hintergrund im Modus "Kurs" ohne Sonderfall mit.            */
+    /* ---- Tiles (Web Mercator, "slippy map") --------------------
+       A tile is a square in the Mercator grid, in our local
+       plane (metres, possibly rotated) a slightly distorted quadrilateral. Via
+       three corners (NW, NE, SW) every tile can be placed exactly as an affine
+       mapping onto the screen -- so the background rotates along
+       in "Heading" mode without a special case.            */
     var TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    var MAX_TILES = 30;           // hoechstens so viele Kacheln je Bild (schont den Server)
+    var MAX_TILES = 30;           // at most this many tiles per frame (spares the server)
 
     function lon2x(lon, z) { return (lon + 180) / 360 * Math.pow(2, z); }
     function lat2y(lat, z) {
@@ -62,13 +62,13 @@ var MapView = (function () {
         if (tsvg.firstChild) tsvg.innerHTML = '';
     }
 
-    /* c: { W, H, k (px je Meter), toScreen(lat,lon), fromScreen(X,Y), tpl } */
+    /* c: { W, H, k (px per metre), toScreen(lat,lon), fromScreen(X,Y), tpl } */
     function drawTiles(tsvg, c) {
         var NS = 'http://www.w3.org/2000/svg';
         tsvg.setAttribute('viewBox', '0 0 ' + c.W + ' ' + c.H);
         var els = tsvg.__tiles || (tsvg.__tiles = {});
 
-        // sichtbarer Bereich in Lat/Lon (vier Ecken, weil der Ausschnitt gedreht sein kann)
+        // visible area in lat/lon (four corners, because the section may be rotated)
         var cs = [c.fromScreen(0, 0), c.fromScreen(c.W, 0), c.fromScreen(0, c.H), c.fromScreen(c.W, c.H)];
         var lat0 = Infinity, lat1 = -Infinity, lon0 = Infinity, lon1 = -Infinity;
         cs.forEach(function (q) {
@@ -77,7 +77,7 @@ var MapView = (function () {
         });
         var latC = (lat0 + lat1) / 2;
 
-        // Zoomstufe: eine Kachelpixel ~ ein Bildschirmpixel
+        // Zoom level: one tile pixel ~ one screen pixel
         var z = Math.ceil(Math.log(156543.03392 * Math.cos(latC * Math.PI / 180) * c.k) / Math.LN2 - 0.35);
         z = Math.max(2, Math.min(19, z));
         var x0, x1, y0, y1, n;
@@ -106,10 +106,10 @@ var MapView = (function () {
                 var el = els[key];
                 if (!el) {
                     el = document.createElementNS(NS, 'image');
-                    // 256.7 statt 256: minimale Ueberlappung, sonst blitzen Haarlinien zwischen den Kacheln
+                    // 256.7 instead of 256: minimal overlap, otherwise hairlines flash between the tiles
                     el.setAttribute('width', '256.7'); el.setAttribute('height', '256.7');
                     el.setAttribute('decoding', 'async');
-                    el.addEventListener('error', function () { this.style.display = 'none'; });   // offline: kein kaputtes Bild
+                    el.addEventListener('error', function () { this.style.display = 'none'; });   // offline: no broken image
                     el.setAttribute('href', c.tpl.replace('{z}', z).replace('{x}', tx).replace('{y}', ty));
                     el.__zxy = [z, tx, ty];
                     tsvg.appendChild(el);
@@ -118,9 +118,9 @@ var MapView = (function () {
                 el.__seen = now;
             }
         }
-        /* Kacheln der vorigen Zoomstufe bleiben noch kurz UNTER den neuen liegen
-           (und werden weiter mitgefuehrt), bis die neuen geladen sind. Sonst
-           blitzt beim Zoomen und Ziehen der leere Hintergrund auf. */
+        /* Tiles of the previous zoom level stay briefly UNDER the new ones
+           (and keep being moved along) until the new ones are loaded. Otherwise
+           the empty background flashes when zooming and dragging. */
         var n2 = 0;
         for (var k2 in els) {
             var e2 = els[k2];
@@ -134,11 +134,11 @@ var MapView = (function () {
         }
     }
 
-    /* ---- Catmull-Rom-Spline als kubische Bezier-Segmente ---------
-       Die Kurve laeuft durch jeden Stuetzpunkt und hat dort dieselbe
-       Tangente wie die Verbindung der Nachbarn -- die Achse sieht
-       damit aus wie ein Strassenverlauf und nicht wie ein Zickzack,
-       ohne dass ein Punkt verschoben wird.                        */
+    /* ---- Catmull-Rom spline as cubic Bezier segments ---------
+       The curve runs through every support point and has the same
+       tangent there as the connection of the neighbours -- the axis then looks
+       like a road course and not like a zigzag,
+       without any point being moved.                        */
     function spline(p) {
         if (p.length < 2) return '';
         var d = 'M' + f(p[0].x) + ' ' + f(p[0].y);
@@ -151,10 +151,10 @@ var MapView = (function () {
         return d;
     }
 
-    /* Nur zeichnen, was im Bild liegt (plus je ein Nachbar, damit die
-       Kurve am Rand nicht abreisst), und Stuetzpunkte ausduennen, die
-       naeher als PX_STEP beieinander liegen. Bei einer langen
-       Ausfahrt sind das sonst tausende Punkte pro Bild. */
+    /* Only draw what is in the picture (plus one neighbour each so that the
+       curve does not break off at the edge), and thin out support points that are
+       closer together than PX_STEP. On a long
+       ride that would otherwise be thousands of points per frame. */
     function runs(sp, W, H) {
         var m = 160, n = sp.length, inside = new Array(n), out = [], cur = null;
         for (var i = 0; i < n; i++) {
@@ -163,7 +163,7 @@ var MapView = (function () {
         for (var j = 0; j < n; j++) {
             var keep = inside[j] || (j > 0 && inside[j - 1]) || (j < n - 1 && inside[j + 1]);
             if (!keep) { cur = null; continue; }
-            if (sp[j].gap) cur = null;         // Luecke (Funkloch, Neuanfang): kein Strich ueber das Nichts
+            if (sp[j].gap) cur = null;         // gap (radio gap, fresh start): no line across nothing
             if (!cur) { cur = []; out.push(cur); }
             var last = cur[cur.length - 1];
             var isEdge = (j === n - 1) || !(inside[j + 1] || inside[j]);
@@ -179,7 +179,7 @@ var MapView = (function () {
     }
 
     function niceScale(k) {
-        // groesste Laenge, die hoechstens ~110 px breit wird
+        // largest length that becomes ~110 px wide at most
         var best = SCALE_STEPS[0];
         for (var i = 0; i < SCALE_STEPS.length; i++) {
             if (SCALE_STEPS[i] * k <= 110) best = SCALE_STEPS[i];
@@ -191,8 +191,8 @@ var MapView = (function () {
         return (g > 0 ? '+' : '−') + UI.fmtDist(Math.abs(g));
     }
 
-    /* Die geplante Route liegt in Lat/Lon vor; die Umrechnung in Meter der
-       Kartenebene wird je Bezugssystem einmal gemacht und gemerkt. */
+    /* The planned route is available in lat/lon; the conversion into metres of the
+       map plane is done once per reference frame and remembered. */
     function ovXY(ov, frame) {
         if (ov.__frame !== frame) {
             ov.__frame = frame;
@@ -201,7 +201,7 @@ var MapView = (function () {
         return ov.__xy;
     }
 
-    /* d = { route, riders (sortiert, vorne zuerst), meId, climbs,
+    /* d = { route, riders (sorted, front first), meId, climbs,
              follow, zoom, trackUp, heading } */
     function render(svg, d) {
         var W = svg.clientWidth, H = svg.clientHeight;
@@ -227,13 +227,13 @@ var MapView = (function () {
 
         var now = performance.now();
         var trk = Smooth.reset(svg.__trk || (svg.__trk = Smooth.create()), frame);
-        trk.off = d.smooth === false;      // Replay rechnet selbst Zwischenwerte
+        trk.off = d.smooth === false;      // the replay computes intermediate values itself
 
-        // --- Drehung: Fahrtrichtung nach oben, oder Norden oben (weich nachgefuehrt) ---
+        // --- Rotation: direction of travel up, or north up (softly followed) ---
         var hs = d.trackUp ? Smooth.heading(trk, d.heading, now) : Smooth.heading(trk, null, now);
         var hDeg = hs === null ? 0 : hs;
         var ct = Math.cos(hDeg * Math.PI / 180), st = Math.sin(hDeg * Math.PI / 180);
-        // u = nach rechts, v = nach oben (Meter)
+        // u = to the right, v = up (metres)
         function tr(x, y) { return { u: x * ct - y * st, v: x * st + y * ct }; }
 
         var seen = {};
@@ -244,9 +244,9 @@ var MapView = (function () {
             var t = tr(sm.x, sm.y);
             return { r: r, u: t.u, v: t.v, hd: sm.hd };
         });
-        Smooth.prune(trk, seen);       // weggefallene Fahrer aufraeumen
+        Smooth.prune(trk, seen);       // clean up riders that have gone away
 
-        // --- Ausschnitt ---
+        // --- Section ---
         var cu, cv, k;
         var meP = null;
         pos.forEach(function (p) { if (p.r === me) meP = p; });
@@ -255,7 +255,7 @@ var MapView = (function () {
             cu = meP.u; cv = meP.v;
             var R = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, d.zoom | 0))];
             k = (Math.min(W - 2 * PAD_X, H - PAD_TOP - PAD_BOT) / 2) / R;
-            // Mitte des Bildes ist die Mitte der nutzbaren Flaeche
+            // The centre of the picture is the centre of the usable area
         } else {
             var u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
             if (!d.fitOverlay) pos.forEach(function (p) {
@@ -264,7 +264,7 @@ var MapView = (function () {
             });
             var fitPts = null;
             if (ov && (d.fitOverlay || !pos.length)) fitPts = ovXY(ov, frame);
-            else if (d.fitOverlay && route.frame && route.pts.length) fitPts = route.pts;     // keine Route geladen: die Live-Achse
+            else if (d.fitOverlay && route.frame && route.pts.length) fitPts = route.pts;     // no route loaded: the live axis
             if (fitPts) {
                 fitPts.forEach(function (q) {
                     var t = tr(q.x, q.y);
@@ -276,18 +276,18 @@ var MapView = (function () {
             var bw = Math.max(u1 - u0, MIN_EXTENT), bh = Math.max(v1 - v0, MIN_EXTENT);
             k = Math.min((W - 2 * PAD_X) / bw, (H - PAD_TOP - PAD_BOT) / bh);
         }
-        /* Vom Nutzer: Verschiebung in Metern (in der gedrehten Ebene, also so,
-           wie sie auf dem Bildschirm liegt) und ein Zoomfaktor auf den
-           automatischen Ausschnitt. "Alle" und "Ich" bleiben Grundeinstellungen:
-           sie bestimmen, wohin der Ausschnitt ohne Eingriff zeigt. */
+        /* From the user: shift in metres (in the rotated plane, i.e. as it
+           lies on the screen) and a zoom factor on the automatic section.
+           "All" and "Me" remain base settings: they determine where the
+           section points without intervention. */
         k = Math.max(K_MIN, Math.min(K_MAX, k * (d.zoomMul || 1)));
         cu += d.panU || 0; cv += d.panV || 0;
 
-        var oy = (PAD_TOP - PAD_BOT) / 2;      // Bildmitte etwas nach oben: unten liegen Beschriftungen
+        var oy = (PAD_TOP - PAD_BOT) / 2;      // picture centre slightly upwards: captions lie at the bottom
         function sx(u) { return W / 2 + (u - cu) * k; }
         function sy(v) { return H / 2 + oy - (v - cv) * k; }
 
-        // --- Kartenhintergrund (optional) ---
+        // --- Map background (optional) ---
         if (d.tiles && d.tileSvg) {
             drawTiles(d.tileSvg, {
                 W: W, H: H, k: k, tpl: d.tileUrl || TILE_URL,
@@ -297,14 +297,14 @@ var MapView = (function () {
                 },
                 fromScreen: function (X, Y) {
                     var u = cu + (X - W / 2) / k, v = cv - (Y - (H / 2 + oy)) / k;
-                    return frame.toLatLon(u * ct + v * st, -u * st + v * ct);   // Drehung zurueck
+                    return frame.toLatLon(u * ct + v * st, -u * st + v * ct);   // rotation back
                 }
             });
         }
 
         var parts = [];
 
-        // --- geplante Route (Ueberlagerung), unter allem anderen ---
+        // --- planned route (overlay), below everything else ---
         if (ov) {
             var oxy = ovXY(ov, frame), osp = new Array(oxy.length);
             for (var oi = 0; oi < oxy.length; oi++) {
@@ -321,7 +321,7 @@ var MapView = (function () {
             }
         }
 
-        // --- Streckenachse ---
+        // --- Route axis ---
         var nRoute = route.pts.length;
         if (nRoute > 1 && route.frame) {
             var sp = new Array(nRoute);
@@ -333,16 +333,16 @@ var MapView = (function () {
             parts.push('<path class="mcase" d="' + dRoute + '"/>');
             parts.push('<path class="mroute" d="' + dRoute + '"/>');
 
-            // Anstiege
+            // Climbs
             (d.climbs || []).forEach(function (c) {
                 var sub = sp.filter(function (q) { return q.s >= c.sStart && q.s <= c.sEnd; });
                 if (sub.length > 1) parts.push('<path class="mclimb" d="' + pathOf(sub, W, H) + '"/>');
             });
 
-            /* Die Achse waechst nur alle 20 m um einen Stuetzpunkt (und die
-               Position ist zusaetzlich geglaettet): der Fuehrende liegt
-               deshalb meist ein Stueck vor ihrem Ende. Gestrichelt
-               verbinden, damit keine Luecke im Bild klafft. */
+            /* The axis only grows by one support point every 20 m (and the
+               position is additionally smoothed): the leader therefore
+               is usually a bit ahead of its end. Connect with a dashed
+               line so that no gap yawns in the picture. */
             var lead = null;
             pos.forEach(function (q) { if (q.r === d.riders[0]) lead = q; });
             if (lead) {
@@ -356,7 +356,7 @@ var MapView = (function () {
             parts.push('<circle class="mstart" cx="' + f(sp[0].x) + '" cy="' + f(sp[0].y) + '" r="4"/>');
         }
 
-        // --- Fahrer: zuerst die anderen, du zuletzt (liegst oben) ---
+        // --- Riders: the others first, you last (on top) ---
         var order = pos.slice().sort(function (a, b) {
             return (a.r === me ? 1 : 0) - (b.r === me ? 1 : 0);
         });
@@ -379,18 +379,18 @@ var MapView = (function () {
                     g += '<polygon class="mhead" fill="' + color + '" points="0,-17 -6,-9 6,-9" ' +
                          'transform="rotate(' + f(p.hd - hDeg) + ')"/>';
                 }
-                /* Mit Symbol: das Symbol steht im (etwas groesseren) Punkt, der Rang wandert vor den
-                   Namen ("2 Anna") -- die Rangfolge soll man nicht verlieren. */
+                /* With a symbol: the symbol sits in the (somewhat larger) dot, the rank moves in front of the
+                   name ("2 Anna") -- you should not lose the ranking. */
                 var emo = r.ghost ? '' : UI.emojiOf(r.emoji), rr = emo ? 12 : 9;
                 g += '<circle class="mdot' + (isMe ? ' me' : '') + (r.dropped ? ' drop' : '') + (r.ghost ? ' ghost' : '') +
                      '" r="' + rr + '" fill="' + color + '"/>' +
                      (emo ? Emo.svg(emo, 0, 0, 18)
                           : '<text class="mrank" y="3.4" text-anchor="middle">' + (r.ghost ? 'G' : rankOf[r.id]) + '</text>') + '</g>';
                 parts.push(g);
-                boxes.push({ x: x - rr - 2, y: y - rr - 2, w: 2 * rr + 4, h: 2 * rr + 4 });     // Punkt selbst ist Hindernis
+                boxes.push({ x: x - rr - 2, y: y - rr - 2, w: 2 * rr + 4, h: 2 * rr + 4 });     // the dot itself is an obstacle
                 labels.push({ x: x, y: y, r: r, color: color, op: op, gap: gap, isMe: isMe, emo: !!emo, rr: rr });
             } else if (me && !isMe) {
-                // ausserhalb des Bildes: Pfeil am Rand in Richtung des Fahrers
+                // outside the picture: arrow at the edge in the direction of the rider
                 var dx = x - W / 2, dy = y - (H / 2 + oy);
                 var len = Math.hypot(dx, dy) || 1;
                 var ux = dx / len, uy = dy / len;
@@ -410,12 +410,12 @@ var MapView = (function () {
             }
         });
 
-        /* Beschriftungen: Fahren mehrere dicht beieinander (das ist der
-           Normalfall, 2 bis 3 m Abstand), wuerden sich die Namen
-           uebereinanderlegen. Jeder Name probiert deshalb nacheinander
-           unten, oben, rechts, links -- du zuerst, dann nach Rang. Findet
-           sich kein freier Platz, bleibt nur die Rangzahl im Punkt; die
-           entspricht der Reihenfolge in der Liste auf dem Tacho. */
+        /* Labels: if several ride close together (that is the
+           normal case, 2 to 3 m apart), the names would lie
+           on top of each other. Each name therefore tries in turn
+           bottom, top, right, left -- you first, then by rank. If
+           no free space is found, only the rank number in the dot remains; it
+           corresponds to the order in the list on the speedometer. */
         function hit(b) {
             if (b.x < 2 || b.y < 2 || b.x + b.w > W - 2 || b.y + b.h > H - 2) return true;
             for (var i = 0; i < boxes.length; i++) {
@@ -452,14 +452,14 @@ var MapView = (function () {
         });
         parts.push(edgeParts.join(''));
 
-        // --- Massstab ---
+        // --- Scale ---
         var L = niceScale(k), px = L * k;
         var bx = 16, by = H - 16;
         parts.push('<g class="mscale"><path d="M' + bx + ' ' + (by - 5) + 'V' + by + 'H' + f(bx + px) +
                    'V' + (by - 5) + '"/><text x="' + bx + '" y="' + (by - 9) + '">' +
                    (L >= 1000 ? (L / 1000) + ' km' : L + ' m') + '</text></g>');
 
-        // --- Nordpfeil ---
+        // --- North arrow ---
         var na = -hDeg * Math.PI / 180;
         parts.push('<g class="mnorth" transform="translate(' + (W - 28) + ' 32)">' +
                    '<circle r="17"/>' +
@@ -468,7 +468,7 @@ var MapView = (function () {
                    '" text-anchor="middle">N</text></g>');
 
         svg.innerHTML = parts.join('');
-        // k und Bildmitte gehen zurueck, damit Gesten (Zoom um einen Punkt) rechnen koennen
+        // k and the picture centre go back so that gestures (zoom around a point) can compute
         return { riders: placed.length, length: route.length(), k: k, cx: W / 2, cy: H / 2 + oy };
     }
 
