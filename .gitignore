@@ -1,2 +1,5 @@
 node_modules/
 .wrangler/
+
+# Debug-Bilder und Pruefskripte der Testlaeufe (lokal, nicht ins Repo)
+test/debug/

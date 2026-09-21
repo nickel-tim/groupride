@@ -232,3 +232,41 @@ Der Ghost fährt die Abschnitte nacheinander auf einer Strecke ab. Die Strecke k
 - Der Ghost fährt seine aufgezeichnete Zeit, samt Pausen. Wer damals eine Viertelstunde am Café stand, dem steht der Ghost auch eine Viertelstunde.
 
 Die Prüfbilder und -skripte liegen in `test/debug/`.
+
+---
+
+## Höhenprofil, Route, Replay, Segmente, Rekorde, Bilanz
+
+### Höhenprofil (Berge → Jetzt, oder Karte → Profil)
+Die Strecke „abgerollt“: waagerecht die Strecke, senkrecht die Höhe, Anstiege farbig hinterlegt, jeder Fahrer als Punkt mit Anfangsbuchstabe an seiner Stelle (grau „G“ = Ghost, Pfeil am Rand = außerhalb des Ausschnitts). Darunter steht in Worten, was als Nächstes kommt: *„Nächster Anstieg 1 in 410 m · 580 m · +33 Hm · 5,7 %“*. **Alles** zeigt die ganze Strecke, **Voraus** ein Fenster von 400 m zurück bis 4 km voraus.
+
+Ohne Route endet das Profil beim Führenden, denn die Live-Achse entsteht erst beim Fahren. Mit einer geladenen Route (nächster Abschnitt) kennt es auch das Stück *vor* dir – dann sind die Anstiege voraus sichtbar.
+
+### Route auf der Karte
+Unter *Gruppe → Gespeicherte Ausfahrten* auf **Route** tippen: Die Strecke (eigene Fahrt, GPX-Import oder Plan) liegt dann als Linie unter der Karte, mit Start (Kreis) und Ziel (Quadrat). Ohne Positionen zeigt die Karte die Route; der Knopf **Route** in der Leiste passt den Ausschnitt an sie an. Es gibt bewusst keine Warnung bei Abweichung. Die Wahl bleibt gespeichert.
+
+### Gruppen-Replay
+**Replay** in der Fahrtenliste spielt die Gruppenfahrt noch einmal ab: Karte, Profil, Rangliste mit Lücken und das jeweils letzte Ereignis. Die Fahrt läuft durch dieselbe Auswertung wie live – Rang, Überholen, Antritte und Abrisse sind also nicht nachgestellt, sondern zum jeweiligen Zeitpunkt berechnet. Tempo ×1/×10/×60/×300, Schieberegler zum Vor- und Zurückspulen (rückwärts wird von vorn neu gerechnet, das dauert bei langen Fahrten einen Moment; „berechne …“ zeigt es an).
+
+Aufgezeichnet wird jeder Fahrer, dessen Meldungen ankommen, alle 2 s, kompakt (rund 12 Byte je Punkt, fünf Fahrer über drei Stunden ≈ 170 KB). Fährt man allein, gibt es nur die eigene Spur. Wer erst mitten in der Fahrt dazukam, erscheint ab dann. Ein Absturz während der Fahrt rettet die eigene Spur (Entwurf), nicht die der anderen.
+
+### Segmente und Rekorde (Berge → Segmente / Rekorde)
+**Segmente.** Nach jeder Fahrt werden die Anstiege automatisch als Segment gespeichert; fährst du sie wieder, wird die Zeit verglichen (Bestzeit, letzte Zeit, Verlauf, Tempo, Hm/h). Eigene Segmente legst du mit **Segment aus einer Fahrt anlegen** an: Fahrt wählen, Anfang und Ende mit den Reglern setzen, Namen vergeben – die App sucht es dann in allen gespeicherten Fahrten. Auch aus alten GPX-Dateien (Strava, Garmin), die du importierst.
+
+*Wiedererkennen:* Die Fahrt muss in der Nähe (35 m) des Anfangs beginnen und des Endes ankommen, dazwischen dem Verlauf folgen (mittlere Abweichung ≤ 32 m) und die Länge muss ungefähr stimmen. Die Zeit wird aus dem Punkt kürzester Annäherung interpoliert; das ist auf etwa ±1–2 s genau. Die erkannten Grenzen eines Anstiegs schwanken von Fahrt zu Fahrt um einige Dutzend Meter – deshalb gilt Überlappung, nicht der Anfangspunkt, als „dasselbe Segment“.
+
+**Rekorde ohne Ort:** schnellste 1 / 5 / 10 / 20 / 40 km, beste 5 und 20 Minuten, Spitzentempo (5 s), meiste Höhenmeter, längste Fahrt.
+
+**Live im Tacho:** Kommst du an ein bekanntes Segment, erscheint ein Banner mit deiner Zeit und dem Vorsprung oder Rückstand auf die Bestzeit (verglichen an zehn Zwischenzeiten). Am Ende steht das Ergebnis, bei einer Bestzeit gibt es Vibration (Android). Der Live-Wert ist vorläufig (±1–3 s); maßgeblich ist die Auswertung nach der Fahrt.
+
+**Warum die Spur vorher geglättet wird:** Ein GPS-Fix springt um ±4 m; bei 1 Hz addieren diese Zacken rund 20–25 % Weg dazu (eine 6-km-Runde „ist“ dann 7,4 km lang). Ohne Glättung wären Distanz-Rekorde und Segmentlängen zu groß und das Wiederfinden scheiterte an der Längenprüfung. Rohdaten und GPX-Export bleiben unverändert.
+
+**Simulation und echte Fahrten sind getrennte Welten** (Umschalter oben in Segmente/Rekorde): eine erfundene Runde soll keine echten Bestzeiten verdrängen.
+
+### Bilanz (Bilanz in der Fahrtenliste, nach echten Fahrten automatisch)
+Strecke, Fahrzeit, Ø- und Spitzentempo, Höhenmeter; eine kleine Karte der gefahrenen Linien; Führungsarbeit je Fahrer; Highlights (meiste und längste Führung, größter Antritt, höchstes Tempo, Überholmanöver und Abrisse); Anstiege mit den drei Schnellsten; deine Bestzeiten und Rekorde dieser Fahrt. **Als Bild teilen** erzeugt ein PNG (Web Share auf dem Handy, sonst Download). Das Bild enthält nur die gefahrenen Linien, keine Straßenkarte – es verrät die Form der Strecke, aber keinen Ort.
+
+### Grenzen
+- Segmente, Rekorde und Bilanz gelten für **dieses Gerät** (localStorage, ~5 MB). Löscht der Browser die Seitendaten, sind sie weg; GPX sichert nur die Fahrten selbst.
+- Sehr kurze Anstiege (unter 300 m oder 20 Hm) werden nicht automatisch angelegt – die GPS-Höhe gibt das nicht her. Eigene Segmente gehen beliebig kurz (ab 150 m).
+- Simulierte Höhen und GPS-Rauschen sind eine Näherung; die Genauigkeit der Segmentzeiten auf echten Straßen ist nicht gemessen.

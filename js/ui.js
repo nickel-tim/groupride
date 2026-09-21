@@ -219,6 +219,22 @@ var UI = (function () {
         el.textContent = n;
     }
 
+    /* Ereignis in Worte. Nimmt die Auswertung mit, damit dieselbe Formulierung
+       fuer die Live-Fahrt und das Replay gilt. */
+    function eventText(an, e) {
+        function nm(id) { var r = an.riders[id]; return escapeHtml((r && r.name) || id); }
+        switch (e.type) {
+            case 'pass':   return nm(e.id) + ' überholt ' + nm(e.over);
+            case 'attack': return nm(e.id) + ' tritt an – ' + e.gain + ' m gewonnen' +
+                                  (e.surge ? ' (+' + e.surge + ' km/h)' : '');
+            case 'drop':   return nm(e.id) + (e.standing ? ' steht' : ' ist abgerissen') +
+                                  (e.gap ? ' – ' + fmtDist(e.gap) + ' zurück' : '');
+            case 'rejoin': return nm(e.id) + ' ist wieder dran';
+            case 'lead':   return nm(e.id) + ' übernimmt die Führung' + (e.from ? ' von ' + nm(e.from) : '');
+            default:       return e.type;
+        }
+    }
+
     function escapeHtml(s) {
         return String(s === null || s === undefined ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -232,6 +248,6 @@ var UI = (function () {
         renderFrontWork: renderFrontWork, renderEvents: renderEvents,
         renderClimbs: renderClimbs, renderNet: renderNet,
         renderHeadingSrc: renderHeadingSrc, badge: badge,
-        fmtDur: fmtDur, fmtDist: fmtDist, escapeHtml: escapeHtml, kmh: kmh
+        fmtDur: fmtDur, fmtDist: fmtDist, escapeHtml: escapeHtml, kmh: kmh, eventText: eventText
     };
 })();

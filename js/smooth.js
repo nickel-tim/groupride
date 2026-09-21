@@ -48,7 +48,7 @@ var Smooth = (function () {
        r: Fahrer (id, heading), xy: letzte gemeldete Position, stale: keine
        Meldung mehr -> nicht weiterschieben. Rueckgabe {x, y, hd}. */
     api.follow = function (trk, r, xy, now, stale) {
-        if (!api.enabled) return { x: xy.x, y: xy.y, hd: r.heading === undefined ? null : r.heading };
+        if (!api.enabled || trk.off) return { x: xy.x, y: xy.y, hd: r.heading === undefined ? null : r.heading };
         var st = trk.r[r.id];
         if (!st) {
             st = trk.r[r.id] = { fx: xy.x, fy: xy.y, tf: now, vx: 0, vy: 0, x: xy.x, y: xy.y, tl: now,
@@ -85,7 +85,7 @@ var Smooth = (function () {
        target = null -> keine Richtung bekannt (Tracker vergisst sie). */
     api.heading = function (trk, target, now) {
         if (target === null || target === undefined) { trk.hd = null; trk.hl = null; return null; }
-        if (!api.enabled || trk.hd === null) { trk.hd = target; trk.hl = now; return target; }
+        if (!api.enabled || trk.off || trk.hd === null) { trk.hd = target; trk.hl = now; return target; }
         var dt = Math.min(0.25, Math.max(0, (now - (trk.hl || now)) / 1000));
         trk.hd += api.angDelta(trk.hd, target) * (1 - Math.exp(-dt / TAU_HDG));
         trk.hl = now;

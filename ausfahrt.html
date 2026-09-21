@@ -33,6 +33,7 @@
     --bad:    #ff5d4d;
     --good:   #7ed957;
     --shadow: 0 2px 10px rgba(0,0,0,.45);
+    --plan:   #4dd0e1;
 }
 
 :root[data-theme="sun"] {
@@ -48,6 +49,7 @@
     --bad:    #c0271a;
     --good:   #2f7d32;
     --shadow: 0 1px 4px rgba(0,0,0,.14);
+    --plan:   #0277bd;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -275,9 +277,16 @@ nav button .bdg {
     background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
 }
 .mapbox svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-#mapSvg { touch-action: none; user-select: none; }
-#mapTiles { pointer-events: none; }
-:root:not([data-theme="sun"]) #mapTiles {
+/* Die Karte lebt in einem Container, damit es mehr als eine geben kann (live, Replay) */
+.mapmount { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.msvg { touch-action: none; user-select: none; }
+/* Route ueber der Karte, darunter die Live-Achse */
+.mplan  { fill: none; stroke: var(--plan); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.mplanc { fill: none; stroke: var(--bg2); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.mplanS { fill: var(--bg2); stroke: var(--plan); stroke-width: 3; }
+.mplanE { fill: var(--plan); stroke: var(--bg2); stroke-width: 2; }
+.mtiles { pointer-events: none; }
+:root:not([data-theme="sun"]) .mtiles {
     filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.55);
 }
 .mapattr {
@@ -376,6 +385,123 @@ select:disabled { opacity: .5; }
 .mapctr[hidden] { display: none !important; }
 .mapctr:active { filter: brightness(1.25); }
 
+/* ---------------- Hoehenprofil ---------------- */
+.profstrip { flex: none; background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; margin-top: 8px; padding: 4px 0 2px; }
+.profstrip[hidden] { display: none !important; }
+.profstrip svg { display: block; width: 100%; height: 104px; }
+.profcard { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 0 2px; }
+.profcard svg { display: block; width: 100%; height: 150px; }
+.profinfo { font-size: 12px; color: var(--ink2); padding: 2px 10px 6px; min-height: 16px; }
+.pgrid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.ptick { stroke: var(--ink3); stroke-width: 1; }
+.plbl  { fill: var(--ink3); font-size: 9px; }
+.parea { fill: var(--bg3); opacity: .9; stroke: none; }
+.pline { fill: none; stroke: var(--ink2); stroke-width: 2; stroke-linejoin: round; }
+.pclimbfill { fill: var(--warn); opacity: .28; stroke: none; }
+.pclimb { fill: none; stroke: var(--warn); stroke-width: 3; stroke-linejoin: round; }
+.pclimbno { fill: var(--warn); font-size: 10px; font-weight: 700; }
+.pcursor { stroke: var(--ink); stroke-width: 1.5; }
+.pmark { stroke: var(--plan); stroke-width: 2; stroke-dasharray: 4 3; }
+.prl { stroke-width: 1; opacity: .5; }
+.pdot { stroke: var(--bg2); stroke-width: 1.5; }
+.pdot.me { stroke: var(--self); stroke-width: 2.5; }
+.pdot.ghost { fill-opacity: .7; stroke-dasharray: 2 2; }
+.pini { font-size: 9px; font-weight: 700; paint-order: stroke; stroke: var(--bg2); stroke-width: 2.5px; }
+.subtabs { flex: none; margin: 10px 0 2px; }
+.subtabs .seg { width: 100%; }
+.subtabs .seg button { flex: 1; padding: 8px 4px; }
+
+.sub[hidden] { display: none !important; }
+.profmode { margin: 8px 0 0; }
+.profmode button { flex: 1; padding: 7px 4px; }
+
+/* ---------------- Replay ---------------- */
+.replay {
+    position: fixed; inset: 0; z-index: 40; background: var(--bg);
+    display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top, 0px) 12px env(safe-area-inset-bottom, 0px);
+    overflow: hidden;
+}
+.replay[hidden] { display: none !important; }
+.rp-head { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 10px 0 4px; gap: 10px; }
+.rp-head b { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-head button { border: 1px solid var(--line); background: var(--bg2); color: var(--ink); border-radius: 8px; width: 38px; height: 34px; font-size: 16px; }
+.replay .maptools { padding: 4px 0; }
+.rp-ctl { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 0 2px; }
+.rp-play { flex: none; width: 46px; height: 40px; border: none; border-radius: 8px; font-size: 18px; background: var(--bg3); color: var(--ink); }
+.rp-play.go { background: var(--good); color: #05210a; }
+.rp-ctl input[type=range] { flex: 1; min-width: 0; accent-color: var(--warn); height: 28px; }
+.rp-time { flex: none; font-size: 12px; color: var(--ink2); min-width: 82px; text-align: right; }
+.rp-row { flex: none; display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+.rp-busy { font-size: 11px; color: var(--warn); }
+.rp-event { flex: none; font-size: 12px; color: var(--ink2); min-height: 18px; padding: 2px 0; }
+.rp-event .tm { color: var(--ink3); margin-right: 6px; }
+.rp-riders { flex: none; max-height: 24vh; overflow-y: auto; }
+.rprow { display: grid; grid-template-columns: 22px 12px 1fr 34px 70px; gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.rprow.me { font-weight: 600; }
+.rprow .rk { color: var(--ink3); font-size: 11px; }
+.rprow .rs { text-align: right; color: var(--ink2); }
+.rprow .rg { text-align: right; color: var(--ink3); font-size: 12px; }
+.rprow .tag { font-style: normal; font-size: 9px; padding: 1px 4px; border-radius: 3px; background: var(--bad); color: #fff; margin-left: 4px; }
+
+/* ---------------- Segmente und Rekorde ---------------- */
+.segbanner {
+    flex: none; margin: 6px 0 0; padding: 8px 12px; border-radius: 8px; font-size: 14px;
+    background: var(--bg3); border-left: 4px solid var(--ink3); line-height: 1.35;
+}
+.segbanner[hidden] { display: none !important; }
+.segbanner.ahead { border-left-color: var(--good); }
+.segbanner.behind { border-left-color: var(--warn); }
+.segbanner.pb { border-left-color: var(--good); background: color-mix(in srgb, var(--good) 22%, var(--bg3)); }
+.segbanner b { font-weight: 600; }
+.segbanner .sub2 { font-size: 12px; color: var(--ink2); }
+.worldsw { margin: 10px 0 4px; }
+.worldsw .seg { width: 100%; }
+.worldsw button { flex: 1; padding: 7px 4px; }
+.segcard { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+.segcard .sh { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.segcard .sh b { font-size: 15px; font-weight: 600; }
+.segcard .sm { font-size: 11px; color: var(--ink3); }
+.segcard .sb { margin-top: 6px; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.segcard .sb .big { color: var(--ink); font-size: 18px; font-weight: 600; }
+.segcard .sa { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.segcard .sa button, .miniBtn { border: 1px solid var(--line); background: var(--bg3); color: var(--ink2); font-family: inherit; font-size: 12px; padding: 6px 9px; border-radius: 6px; }
+.efrow { display: grid; grid-template-columns: 62px 1fr 60px 46px; gap: 6px; font-size: 12px; padding: 4px 0; border-top: 1px solid var(--line); color: var(--ink2); }
+.efrow.pbrow { color: var(--ink); font-weight: 600; }
+.efrow .num { text-align: right; }
+.pos { color: var(--good); } .neg { color: var(--warn); }
+.recrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.recrow .rl { font-size: 14px; }
+.recrow .rv { font-size: 17px; font-weight: 600; text-align: right; }
+.recrow .rd { font-size: 11px; color: var(--ink3); grid-column: 1 / -1; }
+.newb { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .5px; background: var(--good); color: #05210a; padding: 1px 5px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+.segedit { max-height: 100%; overflow-y: auto; }
+.seprev { display: block; width: 100%; height: 170px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
+.seprev .stt { fill: none; stroke: var(--ink3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.seprev .ssel { fill: none; stroke: var(--warn); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.seprev .sdot { fill: var(--bg2); stroke: var(--warn); stroke-width: 3; }
+.ride .rb { flex-wrap: wrap; justify-content: flex-end; }
+.ride { flex-wrap: wrap; }
+
+/* ---------------- Bilanz ---------------- */
+.sumcard { max-height: 100%; overflow-y: auto; }
+.sumttl { font-size: 20px; font-weight: 600; }
+.sumsub { font-size: 12px; color: var(--ink3); margin: 2px 0 10px; }
+.sumgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.sumtile { background: var(--bg3); border-radius: 8px; padding: 9px 4px; text-align: center; }
+.sumtile b { display: block; font-size: 20px; font-weight: 400; }
+.sumtile span { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: .5px; }
+.sumsvg { margin: 10px 0 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+.sumsvg svg { display: block; width: 100%; height: 190px; }
+.sumbar { position: relative; display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; padding: 6px 0 9px; font-size: 13px; }
+.sumbar i { position: absolute; left: 0; bottom: 2px; height: 4px; border-radius: 2px; opacity: .8; }
+.sumhl { font-size: 13px; padding: 4px 0; color: var(--ink2); line-height: 1.4; }
+.sumhl b { color: var(--ink); font-weight: 600; }
+.sumclimb { padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.sumclimb .sm { font-size: 11px; color: var(--ink3); margin-left: 6px; }
+.sumrk { display: grid; grid-template-columns: 20px 12px 1fr auto; gap: 8px; align-items: center; padding: 2px 0; color: var(--ink2); }
+.sumrk.me { color: var(--ink); font-weight: 600; }
+
 </style>
 </head>
 <body>
@@ -401,6 +527,8 @@ select:disabled { opacity: .5; }
             </div>
         </div>
 
+        <div class="segbanner" id="segBanner" hidden></div>
+
         <div class="compasswrap">
             <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
                 <circle class="cring faint" cx="0" cy="0" r="30"></circle>
@@ -422,30 +550,11 @@ select:disabled { opacity: .5; }
 
     <!-- ============ Karte ============ -->
     <section class="view" id="v-map">
-        <div class="maptools">
-            <div class="seg" role="group" aria-label="Ausschnitt">
-                <button id="mapAll" class="on">Alle</button>
-                <button id="mapMe">Ich</button>
-            </div>
-            <div class="seg" role="group" aria-label="Ausrichtung">
-                <button id="mapNorth" class="on">Nord</button>
-                <button id="mapCourse">Kurs</button>
-            </div>
-            <div class="seg" role="group" aria-label="Zoom">
-                <button id="mapOut" aria-label="Herauszoomen">−</button>
-                <button id="mapIn" aria-label="Hineinzoomen">+</button>
-            </div>
-            <div class="seg" role="group" aria-label="Kartenhintergrund">
-                <button id="mapTilesBtn" aria-pressed="false">Straßenkarte</button>
-            </div>
+        <div class="mapmount" id="liveMap"></div>
+        <div class="profstrip" id="mapProf" hidden>
+            <svg id="mapProfSvg" aria-label="Höhenprofil"></svg>
+            <div class="profinfo" id="mapProfInfo"></div>
         </div>
-        <div class="mapbox">
-            <svg id="mapTiles" aria-hidden="true"></svg>
-            <svg id="mapSvg" aria-label="Karte der Gruppe"></svg>
-            <button class="mapctr" id="mapCenter" hidden aria-label="Ansicht zurücksetzen">⌖</button>
-            <a class="mapattr" id="mapAttr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" hidden>© OpenStreetMap-Mitwirkende</a>
-        </div>
-        <div class="mapinfo" id="mapInfo"></div>
     </section>
 
     <!-- ============ Verlauf ============ -->
@@ -458,8 +567,29 @@ select:disabled { opacity: .5; }
 
     <!-- ============ Berge ============ -->
     <section class="view scroll" id="v-climbs">
-        <h2>Bergsprints</h2>
-        <div id="climbList"></div>
+        <div class="subtabs">
+            <div class="seg" role="tablist" aria-label="Berge und Rekorde">
+                <button data-sub="now" class="on">Jetzt</button>
+                <button data-sub="seg">Segmente</button>
+                <button data-sub="rec">Rekorde</button>
+            </div>
+        </div>
+
+        <div class="sub" id="sub-now">
+            <h2>Höhenprofil</h2>
+            <div class="profcard">
+                <svg id="climbProfSvg" aria-label="Höhenprofil"></svg>
+                <div class="profinfo" id="climbProfInfo"></div>
+            </div>
+            <div class="seg profmode" role="group" aria-label="Ausschnitt des Profils">
+                <button data-pm="all">Alles</button>
+                <button data-pm="ahead">Voraus</button>
+            </div>
+            <h2>Bergsprints</h2>
+            <div id="climbList"></div>
+        </div>
+        <div class="sub" id="sub-seg" hidden><div id="segPane"></div></div>
+        <div class="sub" id="sub-rec" hidden><div id="recPane"></div></div>
     </section>
 
     <!-- ============ Gruppe ============ -->
@@ -546,6 +676,61 @@ select:disabled { opacity: .5; }
     <button data-v="climbs">Berge<span class="bdg" id="bdgClimbs" hidden>0</span></button>
     <button data-v="group">Gruppe</button>
 </nav>
+
+<!-- Bilanz einer Ausfahrt -->
+<div id="sumOverlay" class="overlay" hidden>
+    <div class="qrcard sumcard" role="dialog" aria-modal="true" aria-label="Bilanz der Ausfahrt">
+        <div id="sumBusy" class="note" hidden>Bilanz wird berechnet …</div>
+        <div id="sumBody"></div>
+        <button class="btn go" id="sumShare">Als Bild teilen</button>
+        <button class="btn" id="sumClose">Schließen</button>
+        <div class="note" id="sumMsg"></div>
+    </div>
+</div>
+
+<!-- Segment anlegen: Abschnitt einer gespeicherten Fahrt waehlen -->
+<div id="segEdit" class="overlay" hidden>
+    <div class="qrcard segedit" role="dialog" aria-modal="true" aria-label="Segment anlegen">
+        <div class="qrttl">Segment anlegen</div>
+        <label for="seRide">Aus Fahrt</label>
+        <select id="seRide"></select>
+        <svg id="seSvg" class="seprev" aria-label="Vorschau"></svg>
+        <label for="seA">Anfang</label>
+        <input type="range" id="seA" min="0" max="1000" value="0">
+        <label for="seB">Ende</label>
+        <input type="range" id="seB" min="0" max="1000" value="1000">
+        <div class="note" id="seStats"></div>
+        <label for="seName">Name</label>
+        <input type="text" id="seName" maxlength="40" placeholder="z. B. Buchberg-Rampe" autocomplete="off">
+        <button class="btn go" id="seSave">Segment speichern</button>
+        <button class="btn" id="seCancel">Abbrechen</button>
+        <div class="note" id="seMsg"></div>
+    </div>
+</div>
+
+<!-- Replay: Gruppenfahrt noch einmal abspielen, Vollbild -->
+<div id="replay" class="replay" hidden>
+    <div class="rp-head"><b id="rpTitle"></b><button id="rpClose" aria-label="Schließen">✕</button></div>
+    <div class="mapmount" id="rpMap"></div>
+    <div class="profstrip" id="rpProf">
+        <svg id="rpProfSvg" aria-label="Höhenprofil"></svg>
+        <div class="profinfo" id="rpProfInfo"></div>
+    </div>
+    <div class="rp-ctl">
+        <button class="rp-play go" id="rpPlay" aria-label="Abspielen">▶</button>
+        <input type="range" id="rpSlider" min="0" max="1000" value="0" aria-label="Zeit">
+        <span class="num rp-time" id="rpTime">0:00 / 0:00</span>
+    </div>
+    <div class="rp-row">
+        <div class="seg" role="group" aria-label="Geschwindigkeit">
+            <button data-rs="1">×1</button><button data-rs="10" class="on">×10</button>
+            <button data-rs="60">×60</button><button data-rs="300">×300</button>
+        </div>
+        <span class="rp-busy" id="rpBusy" hidden>berechne …</span>
+    </div>
+    <div class="rp-event" id="rpEvent"></div>
+    <div class="rp-riders" id="rpRiders"></div>
+</div>
 
 <!-- Einladung per QR-Code: Vollbild, damit die Kamera des anderen Handys
      den Code auch auf Armlaenge sicher liest -->
@@ -669,6 +854,140 @@ if (typeof module !== 'undefined') module.exports = Geo;
 
 </script>
 <script>
+/* ==== js/track.js ==== */
+/* ============================================================
+ * track.js -- Werkzeuge fuer eine Spur: [{t (ms), lat, lon, ele|null}]
+ * ============================================================
+ * Gemeinsame Grundlage fuer Segmente, Rekorde, Zusammenfassung und
+ * Replay: Strecke, Tempo und Hoehenmeter einer Fahrt, alles aus den
+ * Positionen mit Zeit. Nichts davon haengt an der Live-Auswertung.
+ * ============================================================ */
+
+var Track = (function () {
+    'use strict';
+
+    /* Rauschen aus der Spur nehmen, bevor man ihre Laenge misst. Ein GPS-Fix
+       springt um +-4 m; bei 1 Hz addieren diese Zacken rund 20-25 % Weg dazu
+       (eine 6-km-Runde "ist" dann 7,4 km lang) -- das verfaelscht Distanz-
+       Rekorde, Segmentlaengen und Tempo. Gleitender Mittelwert ueber
+       2*half+1 Punkte auf Lat/Lon; Zeit und Hoehe bleiben unberuehrt.
+       Am Rand wird das Fenster kleiner, damit Anfang und Ende stehen bleiben. */
+    function smooth(pts, half) {
+        var h = half === undefined ? 2 : half, n = pts.length, out = new Array(n);
+        for (var i = 0; i < n; i++) {
+            var w = Math.min(h, i, n - 1 - i), sl = 0, sn = 0;
+            for (var j = i - w; j <= i + w; j++) { sl += pts[j].lat; sn += pts[j].lon; }
+            out[i] = { t: pts[i].t, lat: sl / (2 * w + 1), lon: sn / (2 * w + 1), ele: pts[i].ele };
+        }
+        return out;
+    }
+
+    /* Kumulierte Strecke in Metern; cum[i] gehoert zu pts[i]. */
+    function cumulative(pts) {
+        var c = new Array(pts.length), d = 0;
+        for (var i = 0; i < pts.length; i++) {
+            if (i) d += Geo.distance(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon);
+            c[i] = d;
+        }
+        return c;
+    }
+
+    /* Index i mit cum[i] <= d < cum[i+1] */
+    function idxAt(cum, d) {
+        var lo = 0, hi = cum.length - 1;
+        while (lo < hi) { var m = (lo + hi + 1) >> 1; if (cum[m] <= d) lo = m; else hi = m - 1; }
+        return lo;
+    }
+
+    /* Zeit (ms) und Ort bei der Strecke d, linear zwischen den Punkten. */
+    function atDistance(pts, cum, d) {
+        var n = pts.length;
+        if (d <= 0) return { t: pts[0].t, lat: pts[0].lat, lon: pts[0].lon, ele: pts[0].ele };
+        if (d >= cum[n - 1]) { var l = pts[n - 1]; return { t: l.t, lat: l.lat, lon: l.lon, ele: l.ele }; }
+        var i = idxAt(cum, d), a = pts[i], b = pts[i + 1], span = cum[i + 1] - cum[i];
+        var f = span > 0 ? (d - cum[i]) / span : 0;
+        return { t: a.t + f * (b.t - a.t), lat: a.lat + f * (b.lat - a.lat), lon: a.lon + f * (b.lon - a.lon),
+                 ele: (a.ele !== null && b.ele !== null) ? a.ele + f * (b.ele - a.ele) : a.ele };
+    }
+
+    /* Ort zur Zeit t (ms), linear; null ausserhalb der Spur. */
+    function atTime(pts, t) {
+        var n = pts.length;
+        if (!n || t < pts[0].t || t > pts[n - 1].t) return null;
+        var lo = 0, hi = n - 1;
+        while (lo < hi) { var m = (lo + hi + 1) >> 1; if (pts[m].t <= t) lo = m; else hi = m - 1; }
+        var a = pts[lo], b = pts[Math.min(n - 1, lo + 1)], span = b.t - a.t, f = span > 0 ? (t - a.t) / span : 0;
+        return { lat: a.lat + f * (b.lat - a.lat), lon: a.lon + f * (b.lon - a.lon),
+                 ele: (a.ele !== null && b.ele !== null) ? a.ele + f * (b.ele - a.ele) : a.ele, i: lo };
+    }
+
+    /* Hoehenmeter: Achse aufbauen, Hoehe ueber 100 m glaetten (die rohe GPS-Hoehe
+       rauscht um mehrere Meter -- ohne Glaettung "steigt" jede Fahrt auf ebener
+       Strecke), dann nur die Anstiege summieren. */
+    function gain(pts) {
+        var r = Route.fromPoints(pts, 10);
+        if (r.pts.length < 3) return 0;
+        r.smoothElevation();
+        var g = 0, prev = null;
+        for (var i = 0; i < r.pts.length; i++) {
+            var e = r.pts[i].eleS;
+            if (e === null || e === undefined) continue;
+            if (prev !== null && e > prev) g += e - prev;
+            prev = e;
+        }
+        return g;
+    }
+
+    /* Tempo ueber ein Zeitfenster (m/s), damit ein einzelner Ausreisser-Fix keine
+       Spitzengeschwindigkeit vortaeuscht. */
+    function topSpeed(pts, cum, windowMs) {
+        var w = windowMs || 5000, best = 0, j = 0;
+        for (var i = 0; i < pts.length; i++) {
+            while (j < pts.length - 1 && pts[j + 1].t - pts[i].t <= w) j++;
+            var dt = pts[j].t - pts[i].t;
+            if (dt >= w * 0.6) best = Math.max(best, (cum[j] - cum[i]) / (dt / 1000));
+        }
+        return best;
+    }
+
+    /* Bewegungszeit: Abschnitte unter 1 m/s (Ampel, Café) zaehlen nicht. */
+    function movingMs(pts) {
+        var ms = 0;
+        for (var i = 1; i < pts.length; i++) {
+            var dt = pts[i].t - pts[i - 1].t;
+            if (dt <= 0 || dt > 20000) continue;
+            var d = Geo.distance(pts[i - 1].lat, pts[i - 1].lon, pts[i].lat, pts[i].lon);
+            if (d / (dt / 1000) >= 1) ms += dt;
+        }
+        return ms;
+    }
+
+    function stats(pts) {
+        if (!pts || pts.length < 2) return { dist: 0, dur: 0, moving: 0, avg: 0, max: 0, gain: 0 };
+        pts = smooth(pts, 2);
+        var cum = cumulative(pts), dist = cum[cum.length - 1];
+        var dur = pts[pts.length - 1].t - pts[0].t, moving = movingMs(pts);
+        return { dist: dist, dur: dur, moving: moving, avg: moving ? dist / (moving / 1000) : 0,
+                 max: topSpeed(pts, cum), gain: gain(pts) };
+    }
+
+    /* Punkte mit mindestens minM Abstand (Anfang und Ende bleiben). */
+    function thin(pts, minM) {
+        var out = [], last = null;
+        for (var i = 0; i < pts.length; i++) {
+            if (!last || i === pts.length - 1 || Geo.distance(last.lat, last.lon, pts[i].lat, pts[i].lon) >= minM) {
+                out.push(pts[i]); last = pts[i];
+            }
+        }
+        return out;
+    }
+
+    return { smooth: smooth, cumulative: cumulative, idxAt: idxAt, atDistance: atDistance, atTime: atTime,
+             gain: gain, topSpeed: topSpeed, movingMs: movingMs, stats: stats, thin: thin };
+})();
+
+</script>
+<script>
 /* ==== js/smooth.js ==== */
 /* ============================================================
  * smooth.js -- ruckelfreie Anzeige trotz 1-Hz-Positionen
@@ -720,7 +1039,7 @@ var Smooth = (function () {
        r: Fahrer (id, heading), xy: letzte gemeldete Position, stale: keine
        Meldung mehr -> nicht weiterschieben. Rueckgabe {x, y, hd}. */
     api.follow = function (trk, r, xy, now, stale) {
-        if (!api.enabled) return { x: xy.x, y: xy.y, hd: r.heading === undefined ? null : r.heading };
+        if (!api.enabled || trk.off) return { x: xy.x, y: xy.y, hd: r.heading === undefined ? null : r.heading };
         var st = trk.r[r.id];
         if (!st) {
             st = trk.r[r.id] = { fx: xy.x, fy: xy.y, tf: now, vx: 0, vy: 0, x: xy.x, y: xy.y, tl: now,
@@ -757,7 +1076,7 @@ var Smooth = (function () {
        target = null -> keine Richtung bekannt (Tracker vergisst sie). */
     api.heading = function (trk, target, now) {
         if (target === null || target === undefined) { trk.hd = null; trk.hl = null; return null; }
-        if (!api.enabled || trk.hd === null) { trk.hd = target; trk.hl = now; return target; }
+        if (!api.enabled || trk.off || trk.hd === null) { trk.hd = target; trk.hl = now; return target; }
         var dt = Math.min(0.25, Math.max(0, (now - (trk.hl || now)) / 1000));
         trk.hd += api.angDelta(trk.hd, target) * (1 - Math.exp(-dt / TAU_HDG));
         trk.hl = now;
@@ -1040,6 +1359,20 @@ var Route = (function () {
         return this.pts.map(function (p) {
             return { lat: p.lat, lon: p.lon, ele: p.ele, s: p.s };
         });
+    };
+
+    /* Fertige Strecke (geplante Route, importierte GPX-Datei) als Achse.
+       minSpacing dünnt zu dichte Punkte aus (1-Hz-Aufzeichnungen haben
+       alle 3 m einen) -- die Achse braucht nicht mehr als ~10 m. */
+    R.fromPoints = function (pts, minSpacing) {
+        var r = new R(), gap = minSpacing || 10, last = null;
+        for (var i = 0; i < pts.length; i++) {
+            var p = pts[i];
+            if (last && i < pts.length - 1 && Geo.distance(last.lat, last.lon, p.lat, p.lon) < gap) continue;
+            r._push(p.lat, p.lon, (p.ele === undefined || isNaN(p.ele)) ? null : p.ele);
+            last = p;
+        }
+        return r;
     };
 
     R.MIN_SPACING = MIN_SPACING;
@@ -1534,6 +1867,14 @@ var Analytics = (function () {
     };
 
     /* ---- Zeiten der Fahrer auf jedem Berg ----------------------- */
+    /* Anstiege einer fertigen Achse finden (ohne Fahrer), z. B. einer
+       geplanten Route: Laenge, Hoehengewinn und Steigung sind danach gesetzt. */
+    A.prototype.scanClimbs = function () {
+        this._scanClimbs();
+        this._scoreClimbs();
+        return this.climbs;
+    };
+
     A.prototype._scoreClimbs = function () {
         for (var c = 0; c < this.climbs.length; c++) {
             var cl = this.climbs[c];
@@ -2357,6 +2698,22 @@ var UI = (function () {
         el.textContent = n;
     }
 
+    /* Ereignis in Worte. Nimmt die Auswertung mit, damit dieselbe Formulierung
+       fuer die Live-Fahrt und das Replay gilt. */
+    function eventText(an, e) {
+        function nm(id) { var r = an.riders[id]; return escapeHtml((r && r.name) || id); }
+        switch (e.type) {
+            case 'pass':   return nm(e.id) + ' überholt ' + nm(e.over);
+            case 'attack': return nm(e.id) + ' tritt an – ' + e.gain + ' m gewonnen' +
+                                  (e.surge ? ' (+' + e.surge + ' km/h)' : '');
+            case 'drop':   return nm(e.id) + (e.standing ? ' steht' : ' ist abgerissen') +
+                                  (e.gap ? ' – ' + fmtDist(e.gap) + ' zurück' : '');
+            case 'rejoin': return nm(e.id) + ' ist wieder dran';
+            case 'lead':   return nm(e.id) + ' übernimmt die Führung' + (e.from ? ' von ' + nm(e.from) : '');
+            default:       return e.type;
+        }
+    }
+
     function escapeHtml(s) {
         return String(s === null || s === undefined ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -2370,7 +2727,7 @@ var UI = (function () {
         renderFrontWork: renderFrontWork, renderEvents: renderEvents,
         renderClimbs: renderClimbs, renderNet: renderNet,
         renderHeadingSrc: renderHeadingSrc, badge: badge,
-        fmtDur: fmtDur, fmtDist: fmtDist, escapeHtml: escapeHtml, kmh: kmh
+        fmtDur: fmtDur, fmtDist: fmtDist, escapeHtml: escapeHtml, kmh: kmh, eventText: eventText
     };
 })();
 
@@ -2569,6 +2926,16 @@ var MapView = (function () {
         return (g > 0 ? '+' : '−') + UI.fmtDist(Math.abs(g));
     }
 
+    /* Die geplante Route liegt in Lat/Lon vor; die Umrechnung in Meter der
+       Kartenebene wird je Bezugssystem einmal gemacht und gemerkt. */
+    function ovXY(ov, frame) {
+        if (ov.__frame !== frame) {
+            ov.__frame = frame;
+            ov.__xy = ov.pts.map(function (q) { return frame.toXY(q.lat, q.lon); });
+        }
+        return ov.__xy;
+    }
+
     /* d = { route, riders (sortiert, vorne zuerst), meId, climbs,
              follow, zoom, trackUp, heading } */
     function render(svg, d) {
@@ -2578,7 +2945,8 @@ var MapView = (function () {
         if (!d.tiles) clearTiles(d.tileSvg);
 
         var placed = d.riders.filter(function (r) { return r.fLat !== null && r.lat !== null; });
-        if (!placed.length) {
+        var ov = d.overlay || null;
+        if (!placed.length && !ov) {
             clearTiles(d.tileSvg);
             svg.innerHTML = '<text class="mempty" x="' + (W / 2) + '" y="' + (H / 2) +
                 '" text-anchor="middle">Noch keine Positionen.</text>' +
@@ -2588,12 +2956,13 @@ var MapView = (function () {
         }
 
         var route = d.route;
-        var frame = route.frame || Geo.frame(placed[0].fLat, placed[0].fLon);
+        var frame = route.frame || (placed.length ? Geo.frame(placed[0].fLat, placed[0].fLon) : ov.route.frame);
         var me = null;
         placed.forEach(function (r) { if (r.id === d.meId) me = r; });
 
         var now = performance.now();
         var trk = Smooth.reset(svg.__trk || (svg.__trk = Smooth.create()), frame);
+        trk.off = d.smooth === false;      // Replay rechnet selbst Zwischenwerte
 
         // --- Drehung: Fahrtrichtung nach oben, oder Norden oben (weich nachgefuehrt) ---
         var hs = d.trackUp ? Smooth.heading(trk, d.heading, now) : Smooth.heading(trk, null, now);
@@ -2624,10 +2993,17 @@ var MapView = (function () {
             // Mitte des Bildes ist die Mitte der nutzbaren Flaeche
         } else {
             var u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
-            pos.forEach(function (p) {
+            if (!d.fitOverlay) pos.forEach(function (p) {
                 if (p.u < u0) u0 = p.u; if (p.u > u1) u1 = p.u;
                 if (p.v < v0) v0 = p.v; if (p.v > v1) v1 = p.v;
             });
+            if (ov && (d.fitOverlay || !pos.length)) {
+                ovXY(ov, frame).forEach(function (q) {
+                    var t = tr(q.x, q.y);
+                    if (t.u < u0) u0 = t.u; if (t.u > u1) u1 = t.u;
+                    if (t.v < v0) v0 = t.v; if (t.v > v1) v1 = t.v;
+                });
+            }
             cu = (u0 + u1) / 2; cv = (v0 + v1) / 2;
             var bw = Math.max(u1 - u0, MIN_EXTENT), bh = Math.max(v1 - v0, MIN_EXTENT);
             k = Math.min((W - 2 * PAD_X) / bw, (H - PAD_TOP - PAD_BOT) / bh);
@@ -2659,6 +3035,23 @@ var MapView = (function () {
         }
 
         var parts = [];
+
+        // --- geplante Route (Ueberlagerung), unter allem anderen ---
+        if (ov) {
+            var oxy = ovXY(ov, frame), osp = new Array(oxy.length);
+            for (var oi = 0; oi < oxy.length; oi++) {
+                var ot = tr(oxy[oi].x, oxy[oi].y);
+                osp[oi] = { x: sx(ot.u), y: sy(ot.v), s: ov.pts[oi].s };
+            }
+            var dPlan = pathOf(osp, W, H);
+            parts.push('<path class="mplanc" d="' + dPlan + '"/>');
+            parts.push('<path class="mplan" d="' + dPlan + '"/>');
+            if (osp.length) {
+                parts.push('<circle class="mplanS" cx="' + f(osp[0].x) + '" cy="' + f(osp[0].y) + '" r="5"/>');
+                var oe = osp[osp.length - 1];
+                parts.push('<rect class="mplanE" x="' + f(oe.x - 5) + '" y="' + f(oe.y - 5) + '" width="10" height="10"/>');
+            }
+        }
 
         // --- Streckenachse ---
         var nRoute = route.pts.length;
@@ -2811,6 +3204,180 @@ var MapView = (function () {
 
 </script>
 <script>
+/* ==== js/profile.js ==== */
+/* ============================================================
+ * profile.js -- Hoehenprofil mit den Fahrern darauf
+ * ============================================================
+ * Die Streckenachse "abgerollt": waagerecht die Strecke, senkrecht die
+ * Hoehe, Anstiege farbig hinterlegt, jeder Fahrer als Punkt an seiner
+ * Stelle. Auf einen Blick: wie weit ist der naechste Berg, wie steil,
+ * und wie sehr ist die Gruppe gerade auseinandergezogen.
+ *
+ * Mit einer geplanten Route (Ueberlagerung) zeigt das Profil die ganze
+ * Strecke, auch VOR dem Fuehrenden. Ohne sie endet es beim Fuehrenden,
+ * denn die Live-Achse entsteht erst beim Fahren.
+ *
+ *   Profile.render(svg, {
+ *     route, riders: [{id, name, color, s, self, ghost, stale}], climbs,
+ *     meS, mode: 'all' | 'ahead', cursor: s (Meter) oder null
+ *   })  ->  { from, to, next: {dist, gain, len, grade, no, inside} | null }
+ * ============================================================ */
+
+var Profile = (function () {
+    'use strict';
+
+    var PAD_L = 34, PAD_R = 8, PAD_T = 12, PAD_B = 20;
+    var AHEAD_BACK = 400, AHEAD_FWD = 4000;         // Fenster im Modus "Voraus", Meter
+    var STEPS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
+
+    function f(n) { return n.toFixed(1); }
+    function esc(s) { return UI.escapeHtml(s); }
+
+    /* Naechster (oder aktueller) Anstieg ab der Stelle s */
+    function nextClimb(climbs, s) {
+        var best = null;
+        (climbs || []).forEach(function (c) {
+            if (c.sEnd < s) return;
+            var inside = s >= c.sStart;
+            var dist = inside ? 0 : c.sStart - s;
+            if (!best || dist < best.dist) {
+                best = { dist: dist, inside: inside, no: c.no, gain: c.gain || (c.eEnd - c.eStart),
+                         len: c.len || (c.sEnd - c.sStart), grade: c.grade || 0,
+                         left: inside ? c.sEnd - s : c.sEnd - c.sStart };
+            }
+        });
+        return best;
+    }
+
+    function render(svg, d) {
+        var W = svg.clientWidth, H = svg.clientHeight;
+        if (!W || !H) return null;
+        svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+        var route = d.route, len = route ? route.length() : 0;
+
+        if (!route || len < 60 || route.pts.length < 3) {
+            svg.innerHTML = '<text class="mempty" x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">' +
+                            'Das Profil entsteht, sobald eine Strecke da ist.</text>';
+            return { from: 0, to: 0, next: null };
+        }
+
+        // Fenster
+        var from = 0, to = len;
+        var meS = (d.meS === null || d.meS === undefined) ? null : d.meS;
+        if (d.mode === 'ahead' && meS !== null) {
+            from = Math.max(0, meS - AHEAD_BACK);
+            to = Math.min(len, Math.max(from + 1500, meS + AHEAD_FWD));
+            from = Math.max(0, Math.min(from, to - 1500));
+        }
+        var pw = W - PAD_L - PAD_R, ph = H - PAD_T - PAD_B;
+        function X(s) { return PAD_L + (s - from) / (to - from) * pw; }
+
+        // Hoehenlinie
+        var n = Math.max(20, Math.min(240, Math.floor(pw / 2))), xs = [], es = [], emin = Infinity, emax = -Infinity;
+        for (var i = 0; i <= n; i++) {
+            var s = from + (to - from) * i / n, e = route.eleAt(s);
+            xs.push(s); es.push(e);
+            if (e !== null && e !== undefined) { if (e < emin) emin = e; if (e > emax) emax = e; }
+        }
+        if (emin === Infinity) {
+            svg.innerHTML = '<text class="mempty" x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle">Keine Höhendaten.</text>';
+            return { from: from, to: to, next: null };
+        }
+        // Mindestens 40 m Spanne, sonst wird jeder Feldweg zum Gebirge
+        var span = Math.max(40, emax - emin), mid = (emax + emin) / 2;
+        var lo = mid - span * 0.56, hi = mid + span * 0.62;
+        function Y(e) { return PAD_T + (1 - (e - lo) / (hi - lo)) * ph; }
+
+        var parts = [];
+        // Hintergrundlinien und Achsenbeschriftung
+        var yTop = Math.round(emax), yBot = Math.round(emin);
+        parts.push('<line class="pgrid" x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + f(Y(emax)) + '" y2="' + f(Y(emax)) + '"/>');
+        parts.push('<line class="pgrid" x1="' + PAD_L + '" x2="' + (W - PAD_R) + '" y1="' + f(Y(emin)) + '" y2="' + f(Y(emin)) + '"/>');
+        parts.push('<text class="plbl" x="' + (PAD_L - 4) + '" y="' + f(Y(emax) + 3) + '" text-anchor="end">' + yTop + '</text>');
+        parts.push('<text class="plbl" x="' + (PAD_L - 4) + '" y="' + f(Y(emin) + 3) + '" text-anchor="end">' + yBot + '</text>');
+        parts.push('<text class="plbl" x="' + (PAD_L - 4) + '" y="' + (PAD_T - 2) + '" text-anchor="end">m</text>');
+
+        var stepM = STEPS[STEPS.length - 1];
+        for (var k = 0; k < STEPS.length; k++) if ((to - from) / STEPS[k] <= 6) { stepM = STEPS[k]; break; }
+        for (var t = Math.ceil(from / stepM) * stepM; t <= to; t += stepM) {
+            parts.push('<line class="ptick" x1="' + f(X(t)) + '" x2="' + f(X(t)) + '" y1="' + (H - PAD_B) + '" y2="' + (H - PAD_B + 3) + '"/>');
+            parts.push('<text class="plbl" x="' + f(X(t)) + '" y="' + (H - 5) + '" text-anchor="middle">' +
+                       (stepM >= 1000 ? (t / 1000) + ' km' : t + ' m') + '</text>');
+        }
+
+        // Flaeche und Linie
+        var line = '', firstOk = -1;
+        for (var j = 0; j <= n; j++) {
+            if (es[j] === null || es[j] === undefined) continue;
+            if (firstOk < 0) firstOk = j;
+            line += (line ? 'L' : 'M') + f(X(xs[j])) + ' ' + f(Y(es[j]));
+        }
+        parts.push('<path class="parea" d="' + line + 'L' + f(X(xs[n])) + ' ' + (H - PAD_B) + 'L' + f(X(xs[Math.max(0, firstOk)])) + ' ' + (H - PAD_B) + 'Z"/>');
+
+        // Anstiege
+        (d.climbs || []).forEach(function (c) {
+            if (c.sEnd < from || c.sStart > to) return;
+            var a = Math.max(c.sStart, from), b = Math.min(c.sEnd, to), seg = '', first = null, lastX = null;
+            for (var q = 0; q <= n; q++) {
+                if (xs[q] < a || xs[q] > b || es[q] === null) continue;
+                if (first === null) first = X(xs[q]);
+                seg += (seg ? 'L' : 'M') + f(X(xs[q])) + ' ' + f(Y(es[q])); lastX = X(xs[q]);
+            }
+            if (!seg || first === null) return;
+            parts.push('<path class="pclimbfill" d="' + seg + 'L' + f(lastX) + ' ' + (H - PAD_B) + 'L' + f(first) + ' ' + (H - PAD_B) + 'Z"/>');
+            parts.push('<path class="pclimb" d="' + seg + '"/>');
+            parts.push('<text class="pclimbno" x="' + f((first + lastX) / 2) + '" y="' + (PAD_T + 8) + '" text-anchor="middle">' + c.no + '</text>');
+        });
+        parts.push('<path class="pline" d="' + line + '"/>');
+
+        // Cursor (Replay/Segment-Auswahl)
+        if (d.cursor !== null && d.cursor !== undefined && d.cursor >= from && d.cursor <= to) {
+            parts.push('<line class="pcursor" x1="' + f(X(d.cursor)) + '" x2="' + f(X(d.cursor)) + '" y1="' + PAD_T + '" y2="' + (H - PAD_B) + '"/>');
+        }
+        (d.marks || []).forEach(function (m) {              // z. B. Anfang/Ende eines Segments
+            if (m.s < from || m.s > to) return;
+            parts.push('<line class="pmark" x1="' + f(X(m.s)) + '" x2="' + f(X(m.s)) + '" y1="' + PAD_T + '" y2="' + (H - PAD_B) + '"/>');
+        });
+
+        // Fahrer: du zuletzt, damit du oben liegst
+        var riders = (d.riders || []).filter(function (r) { return r.s !== null && r.s !== undefined; })
+                     .sort(function (a, b) { return (a.self ? 1 : 0) - (b.self ? 1 : 0); });
+        riders.forEach(function (r) {
+            var col = r.color || '#93a7af', op = r.stale ? 0.4 : 1, ini = esc(((r.name || r.id) + '').charAt(0).toUpperCase());
+            if (r.s < from || r.s > to) {                     // ausserhalb: Pfeil am Rand
+                var left = r.s < from, ex = left ? PAD_L + 6 : W - PAD_R - 6, ey = PAD_T + ph / 2;
+                parts.push('<g opacity="' + op + '"><polygon points="' + (left ? '0,-6 -7,0 0,6' : '0,-6 7,0 0,6') +
+                           '" fill="' + col + '" transform="translate(' + f(ex) + ' ' + f(ey) + ')"/><text class="pini" x="' +
+                           f(ex + (left ? 9 : -9)) + '" y="' + f(ey + 3) + '" text-anchor="middle" fill="' + col + '">' + ini + '</text></g>');
+                return;
+            }
+            var e = route.eleAt(r.s);
+            if (e === null || e === undefined) return;
+            var x = X(r.s), y = Y(e);
+            parts.push('<g opacity="' + op + '">' +
+                '<line class="prl" x1="' + f(x) + '" x2="' + f(x) + '" y1="' + f(y) + '" y2="' + (H - PAD_B) + '" stroke="' + col + '"/>' +
+                '<circle class="pdot' + (r.self ? ' me' : '') + (r.ghost ? ' ghost' : '') + '" cx="' + f(x) + '" cy="' + f(y) + '" r="' + (r.self ? 6 : 4.5) + '" fill="' + col + '"/>' +
+                '<text class="pini" x="' + f(x) + '" y="' + f(y - 9) + '" text-anchor="middle" fill="' + col + '">' + (r.ghost ? 'G' : ini) + '</text></g>');
+        });
+
+        svg.innerHTML = parts.join('');
+        return { from: from, to: to, next: nextClimb(d.climbs, meS === null ? 0 : meS) };
+    }
+
+    /* Text unter dem Profil: der naechste Anstieg, in Worten */
+    function describe(next) {
+        if (!next) return '';
+        var g = Math.round(next.gain), pct = (next.grade * 100).toFixed(1).replace('.', ',');
+        if (next.inside) return 'Im Anstieg ' + next.no + ' · noch ' + UI.fmtDist(next.left) + ' · +' + g + ' Hm · ' + pct + ' %';
+        return 'Nächster Anstieg ' + next.no + ' in ' + UI.fmtDist(next.dist) + ' · ' + UI.fmtDist(next.len) +
+               ' · +' + g + ' Hm · ' + pct + ' %';
+    }
+
+    return { render: render, nextClimb: nextClimb, describe: describe };
+})();
+
+</script>
+<script>
 /* ==== js/maptouch.js ==== */
 /* ============================================================
  * maptouch.js -- Gesten fuer die Karte
@@ -2933,6 +3500,197 @@ var MapTouch = (function () {
     }
 
     return { attach: attach };
+})();
+
+</script>
+<script>
+/* ==== js/mapctl.js ==== */
+/* ============================================================
+ * mapctl.js -- eine bedienbare Karte: Werkzeugleiste, Gesten, Zeichenschleife
+ * ============================================================
+ * MapView zeichnet ein Bild. MapCtl macht daraus eine Karte, die man
+ * benutzt: Knoepfe (Alle / Ich / Route, Nord / Kurs, Zoom, Strassenkarte),
+ * Verschieben und Zoomen per Geste, eine Zeichenschleife mit ~30 Bildern
+ * pro Sekunde, solange die Karte sichtbar ist.
+ *
+ * Es gibt mehr als eine Karte (live und Replay), deshalb ist das eine Fabrik
+ * und kein Singleton: jede Karte hat eigenen Zustand und eigene Element-IDs
+ * (prefix + "Svg", "All", ...).
+ *
+ *   MapCtl.mount(rootElement, {
+ *     prefix:    'map',
+ *     getData:   () => { route, riders, meId, climbs, heading, overlay, smooth },
+ *     isActive:  () => Karte gerade sichtbar?
+ *     hasRoute:  () => gibt es eine Streckenueberlagerung? (zeigt den Knopf "Route")
+ *     persist:   true -> Strassenkarten-Wahl merken
+ *     extras:    [ { id, label, title } ]   weitere Knoepfe der Leiste
+ *   })
+ * ============================================================ */
+
+var MapCtl = (function () {
+    'use strict';
+
+    var K_MIN = 0.004, K_MAX = 30;
+
+    function store(k, v) {
+        try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+        catch (e) { return null; }
+    }
+
+    function template(p, cfg) {
+        var extra = (cfg.extras || []).map(function (x) {
+            return '<div class="seg"><button id="' + p + x.id + '" aria-pressed="false">' + x.label + '</button></div>';
+        }).join('');
+        return '' +
+          '<div class="maptools">' +
+            '<div class="seg" role="group" aria-label="Ausschnitt">' +
+              '<button id="' + p + 'All" class="on">Alle</button>' +
+              '<button id="' + p + 'Me">Ich</button>' +
+              '<button id="' + p + 'Route" hidden>Route</button>' +
+            '</div>' +
+            '<div class="seg" role="group" aria-label="Ausrichtung">' +
+              '<button id="' + p + 'North" class="on">Nord</button>' +
+              '<button id="' + p + 'Course">Kurs</button>' +
+            '</div>' +
+            '<div class="seg" role="group" aria-label="Zoom">' +
+              '<button id="' + p + 'Out" aria-label="Herauszoomen">−</button>' +
+              '<button id="' + p + 'In" aria-label="Hineinzoomen">+</button>' +
+            '</div>' +
+            '<div class="seg" role="group" aria-label="Kartenhintergrund">' +
+              '<button id="' + p + 'TilesBtn" aria-pressed="false">Straßenkarte</button>' +
+            '</div>' + extra +
+          '</div>' +
+          '<div class="mapbox">' +
+            '<svg id="' + p + 'Tiles" class="mtiles" aria-hidden="true"></svg>' +
+            '<svg id="' + p + 'Svg" class="msvg" aria-label="Karte"></svg>' +
+            '<button class="mapctr" id="' + p + 'Center" hidden aria-label="Ansicht zurücksetzen">⌖</button>' +
+            '<a class="mapattr" id="' + p + 'Attr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" hidden>© OpenStreetMap-Mitwirkende</a>' +
+          '</div>' +
+          '<div class="mapinfo" id="' + p + 'Info"></div>';
+    }
+
+    function mount(root, cfg) {
+        var p = cfg.prefix;
+        root.innerHTML = template(p, cfg);
+        function $(id) { return root.querySelector('#' + p + id); }
+
+        /* Verschiebung (panU/panV, Meter) und Zoomfaktor (zoomMul) liegen ueber dem
+           automatischen Ausschnitt von "Alle", "Ich" bzw. "Route". Ein Fingerzeig
+           verschiebt also relativ dazu -- die Karte folgt weiter der Gruppe. */
+        var opt = { follow: false, fitRoute: false, trackUp: false, tiles: false, zoom: 1,
+                    zoomMul: 1, panU: 0, panV: 0 };
+        if (cfg.persist) opt.tiles = store('tiles') === '1' && store('tilesOn') === '1';   // nur nach frueherer Einwilligung
+        var v = { k: 1, cx: 0, cy: 0 };            // Massstab/Mitte des letzten Zeichnens
+        var raf = 0, loopOn = false, loopT = 0;
+
+        function dirty() { return !!(opt.panU || opt.panV) || Math.abs(opt.zoomMul - 1) > 0.01; }
+        function reset() { opt.panU = opt.panV = 0; opt.zoomMul = 1; }
+
+        function pan(dx, dy) { opt.panU -= dx / v.k; opt.panV += dy / v.k; }
+
+        // Zoom um einen Bildpunkt: der Punkt unter dem Finger bleibt unter dem Finger
+        function zoomAbout(px, py, f) {
+            var k0 = v.k, k1 = Math.max(K_MIN, Math.min(K_MAX, k0 * f));
+            if (k1 === k0) return;
+            var dx = px - v.cx, dy = py - v.cy;
+            opt.panU += dx * (1 / k0 - 1 / k1);
+            opt.panV += dy * (1 / k1 - 1 / k0);
+            opt.zoomMul *= k1 / k0;
+            v.k = k1;                              // gleich weiterrechnen, bevor neu gezeichnet ist
+        }
+
+        function sync() {
+            $('All').classList.toggle('on', !opt.follow && !opt.fitRoute);
+            $('Me').classList.toggle('on', opt.follow);
+            var hasRoute = !!(cfg.hasRoute && cfg.hasRoute());
+            $('Route').hidden = !hasRoute;
+            $('Route').classList.toggle('on', opt.fitRoute && hasRoute);
+            $('TilesBtn').classList.toggle('on', opt.tiles);
+            $('TilesBtn').setAttribute('aria-pressed', opt.tiles ? 'true' : 'false');
+            $('Attr').hidden = !opt.tiles;
+            $('North').classList.toggle('on', !opt.trackUp);
+            $('Course').classList.toggle('on', opt.trackUp);
+            $('Center').hidden = !dirty();
+        }
+
+        function draw() {
+            var d = cfg.getData();
+            if (!d) return;
+            var info = MapView.render($(  'Svg'), {
+                zoomMul: opt.zoomMul, panU: opt.panU, panV: opt.panV,
+                route: d.route, riders: d.riders, meId: d.meId, climbs: d.climbs, overlay: d.overlay,
+                follow: opt.follow, fitOverlay: opt.fitRoute && !!d.overlay, zoom: opt.zoom,
+                trackUp: opt.trackUp, heading: d.heading, smooth: d.smooth,
+                tiles: opt.tiles, tileSvg: $('Tiles'), tileUrl: store('tileurl') || undefined
+            });
+            if (!info) return;
+            if (info.k) v = { k: info.k, cx: info.cx, cy: info.cy };
+            var txt = '';
+            if (info.riders) {
+                txt = info.riders + ' Fahrer';
+                if (info.length > 0) txt += ' · Streckenachse ' + UI.fmtDist(info.length);
+            }
+            if (d.overlay) txt += (txt ? ' · ' : '') + 'Route „' + d.overlay.name + '“ ' + UI.fmtDist(d.overlay.len);
+            if (opt.trackUp && d.heading === null && info.riders) txt += ' · noch kein Kurs, Norden oben';
+            $('Info').textContent = txt;
+        }
+
+        // hoechstens einmal je Bild neu zeichnen, auch wenn Gesten schneller kommen
+        function redraw() {
+            if (raf) return;
+            raf = requestAnimationFrame(function () {
+                raf = 0;
+                if (cfg.isActive()) draw();
+                sync();
+            });
+        }
+
+        /* Die Karte zeichnet mit ~30 Bildern pro Sekunde, solange sie sichtbar ist
+           (die Positionen selbst kommen nur ~1x pro Sekunde -- dazwischen glaettet
+           MapView, siehe smooth.js). Ist ein anderer Reiter offen oder die Seite im
+           Hintergrund, laeuft nichts: das schont den Akku. */
+        function loop(ts) {
+            if (!cfg.isActive() || document.hidden) { loopOn = false; return; }
+            if (ts - loopT >= 33) { loopT = ts; draw(); }
+            requestAnimationFrame(loop);
+        }
+        function ensureLoop() {
+            if (loopOn) return;
+            loopOn = true;
+            requestAnimationFrame(loop);
+        }
+
+        // --- Knoepfe ---
+        function again() { sync(); draw(); }
+        $('All').addEventListener('click',    function () { opt.follow = false; opt.fitRoute = false; reset(); again(); });
+        $('Me').addEventListener('click',     function () { opt.follow = true;  opt.fitRoute = false; reset(); again(); });
+        $('Route').addEventListener('click',  function () { opt.follow = false; opt.fitRoute = true;  reset(); again(); });
+        $('Center').addEventListener('click', function () { reset(); again(); });
+        $('North').addEventListener('click',  function () { opt.trackUp = false; again(); });
+        $('Course').addEventListener('click', function () { opt.trackUp = true;  again(); });
+        $('In').addEventListener('click',     function () { zoomAbout(v.cx, v.cy, 1.5); again(); });
+        $('Out').addEventListener('click',    function () { zoomAbout(v.cx, v.cy, 1 / 1.5); again(); });
+        MapTouch.attach($('Svg'), { pan: pan, zoomAbout: zoomAbout, redraw: redraw });
+
+        $('TilesBtn').addEventListener('click', function () {
+            if (!opt.tiles && store('tiles') !== '1') {
+                if (!confirm('Für die Straßenkarte lädt dein Handy Kartenbilder von tile.openstreetmap.org.\n\n' +
+                             'Der Anbieter sieht dabei deine IP-Adresse und den ungefähren Kartenausschnitt – ' +
+                             'nicht deinen Namen, deine Gruppe oder den Gruppenschlüssel.\n\n' +
+                             'Ohne Straßenkarte bleibt alles wie bisher, auch offline.\n\nEinschalten?')) return;
+                store('tiles', '1');
+            }
+            opt.tiles = !opt.tiles;
+            store('tilesOn', opt.tiles ? '1' : '0');
+            again();
+        });
+
+        sync();
+        return { opt: opt, draw: draw, sync: sync, redraw: redraw, ensureLoop: ensureLoop, reset: reset,
+                 el: function (id) { return $(id); } };
+    }
+
+    return { mount: mount };
 })();
 
 </script>
@@ -3123,7 +3881,7 @@ var SimMode = (function () {
 var Rides = (function () {
     'use strict';
 
-    var IDX = 'rides:index', PFX = 'rides:r:', DRAFT = 'rides:draft';
+    var IDX = 'rides:index', PFX = 'rides:r:', GPFX = 'rides:g:', DRAFT = 'rides:draft';
     var MIN_POINTS = 40;                 // darunter lohnt das Speichern nicht
 
     function read(k)  { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
@@ -3173,14 +3931,22 @@ var Rides = (function () {
             p: pack(o.pts)
         };
         if (!write(PFX + id, rec)) return { ok: false, err: 'Speicher voll – alte Ausfahrten löschen oder als GPX sichern.' };
+        var hasGroup = false;
+        if (o.group) {
+            // Gruppe ist optional: passt sie nicht mehr hinein, bleibt wenigstens die eigene Fahrt
+            hasGroup = write(GPFX + id, o.group);
+            if (!hasGroup) drop(GPFX + id);
+        }
         var idx = read(IDX) || [];
-        idx.push({ id: id, name: rec.name, src: rec.src, start: rec.start, dur: rec.dur, dist: rec.dist, n: rec.n });
-        if (!write(IDX, idx)) { drop(PFX + id); return { ok: false, err: 'Speicher voll.' }; }
+        idx.push({ id: id, name: rec.name, src: rec.src, start: rec.start, dur: rec.dur, dist: rec.dist, n: rec.n, g: hasGroup });
+        if (!write(IDX, idx)) { drop(PFX + id); drop(GPFX + id); return { ok: false, err: 'Speicher voll.' }; }
         return { ok: true, id: id, rec: rec };
     }
 
+    function getGroup(id) { return read(GPFX + id); }
+
     function remove(id) {
-        drop(PFX + id);
+        drop(PFX + id); drop(GPFX + id);
         write(IDX, (read(IDX) || []).filter(function (r) { return r.id !== id; }));
     }
 
@@ -3301,11 +4067,1346 @@ var Rides = (function () {
 
     return {
         MIN_POINTS: MIN_POINTS,
-        list: list, get: get, save: save, remove: remove, usage: usage,
+        list: list, get: get, getGroup: getGroup, save: save, remove: remove, usage: usage,
         saveDraft: saveDraft, draft: draft, clearDraft: clearDraft, unpack: unpack,
         gpx: gpx, parseGpx: parseGpx, withPace: withPace, fromPlan: fromPlan, parsePlan: parsePlan,
         fmtDate: fmtDate, distanceOf: distanceOf
     };
+})();
+
+</script>
+<script>
+/* ==== js/recorder.js ==== */
+/* ============================================================
+ * recorder.js -- die ganze Gruppe mitschreiben (fuer Replay, Zusammenfassung)
+ * ============================================================
+ * Zeichnet jeden Fahrer auf, den die App sieht: dich selbst und alle, deren
+ * Meldungen ankommen. Ohne diese Aufzeichnung gaebe es nachher nur DEINE
+ * Spur -- und keine Gruppenfahrt zum Abspielen.
+ *
+ * Kompakt, weil localStorage klein ist (~5 MB): eine Meldung alle 2 s,
+ * Position auf ~1 m gerundet, alles als Differenz zur vorigen Meldung in
+ * ganzen Zahlen. Rund 12 Byte je Punkt statt 35: drei Stunden mit fuenf
+ * Fahrern sind etwa 170 KB. Der Ghost wird nicht aufgezeichnet.
+ *
+ * Format: { v:1, me, riders: [ { id, n, c, t0, d:[dt, dlat, dlon, dele, ...] } ] }
+ *   dt   in Zehntelsekunden, dlat/dlon in 1e-5 Grad (~1,1 m), dele in Dezimetern
+ *   Der erste Punkt steht ausgeschrieben in t0/la0/lo0/e0.
+ * ============================================================ */
+
+var Recorder = (function () {
+    'use strict';
+
+    var MIN_GAP = 1800;                 // ms zwischen zwei gespeicherten Punkten je Fahrer
+    var data = {};                      // id -> { n, c, pts: [{t, lat, lon, ele}] }
+    var meId = null;
+
+    function reset(me) { data = {}; meId = me || null; }
+
+    function add(id, name, color, t, lat, lon, ele) {
+        var r = data[id];
+        if (!r) r = data[id] = { n: name || id, c: color || null, pts: [] };
+        if (name) r.n = name;
+        if (color) r.c = color;
+        var last = r.pts[r.pts.length - 1];
+        if (last && t - last.t < MIN_GAP) return;
+        if (last && t <= last.t) return;            // Zeit muss weiterlaufen
+        r.pts.push({ t: t, lat: lat, lon: lon, ele: (ele === null || ele === undefined || isNaN(ele)) ? null : ele });
+    }
+
+    function riderCount() {
+        var n = 0;
+        for (var id in data) if (data[id].pts.length >= 2) n++;
+        return n;
+    }
+
+    function pack() {
+        var out = { v: 1, me: meId, riders: [] };
+        for (var id in data) {
+            var r = data[id], p = r.pts;
+            if (p.length < 2) continue;
+            var d = [], q = { lat: Math.round(p[0].lat * 1e5), lon: Math.round(p[0].lon * 1e5),
+                              ele: Math.round((p[0].ele || 0) * 10), t: p[0].t }, hasEle = p[0].ele !== null;
+            var e0 = { id: id, n: r.n, c: r.c, t0: p[0].t, la0: q.lat, lo0: q.lon, e0: q.ele, ne: hasEle ? 1 : 0, d: d };
+            for (var i = 1; i < p.length; i++) {
+                var lat = Math.round(p[i].lat * 1e5), lon = Math.round(p[i].lon * 1e5);
+                var ele = Math.round((p[i].ele === null ? (q.ele / 10) : p[i].ele) * 10);
+                d.push(Math.max(1, Math.round((p[i].t - q.t) / 100)), lat - q.lat, lon - q.lon, ele - q.ele);
+                q = { lat: lat, lon: lon, ele: ele, t: q.t + Math.max(1, Math.round((p[i].t - q.t) / 100)) * 100 };
+            }
+            out.riders.push(e0);
+        }
+        return out;
+    }
+
+    /* -> { me, riders: { id: { name, color, pts: [{t, lat, lon, ele}] } } } */
+    function unpack(g) {
+        var out = { me: g.me, riders: {} };
+        g.riders.forEach(function (r) {
+            var lat = r.la0, lon = r.lo0, ele = r.e0, t = r.t0, d = r.d;
+            var pts = [{ t: t, lat: lat / 1e5, lon: lon / 1e5, ele: r.ne ? ele / 10 : null }];
+            for (var i = 0; i < d.length; i += 4) {
+                t += d[i] * 100; lat += d[i + 1]; lon += d[i + 2]; ele += d[i + 3];
+                pts.push({ t: t, lat: lat / 1e5, lon: lon / 1e5, ele: r.ne ? ele / 10 : null });
+            }
+            out.riders[r.id] = { name: r.n, color: r.c, pts: pts };
+        });
+        return out;
+    }
+
+    return { reset: reset, add: add, pack: pack, unpack: unpack, riderCount: riderCount };
+})();
+
+</script>
+<script>
+/* ==== js/session.js ==== */
+/* ============================================================
+ * session.js -- eine aufgezeichnete Fahrt noch einmal durch die Auswertung laufen lassen
+ * ============================================================
+ * Fuettert die aufgezeichneten Positionen in dieselbe Analytics wie die
+ * Live-Fahrt: gleiche Streckenachse, gleiche Rangfolge, Luecken, Ueberhol-
+ * vorgaenge, Antritte, Anstiege. Damit ist das Replay keine Nachbildung,
+ * sondern die echte Auswertung zu einem anderen Zeitpunkt.
+ *
+ * Die 2-s-Aufzeichnung wird dabei auf einen Takt (Standard 1 s) interpoliert,
+ * wie ihn echtes GPS liefert -- die Analytics ist darauf abgestimmt.
+ *
+ * Fuer Segmente, Rekorde und die Zusammenfassung laeuft dasselbe ohne
+ * Bildschirm einmal komplett durch (workAsync).
+ * ============================================================ */
+
+var Session = (function () {
+    'use strict';
+
+    var GAP_MS = 30000;      // laenger ohne Meldung = Fahrer hatte Funkloch, nicht interpolieren
+
+    /* data: { me, riders: { id: { name, color, pts:[{t,lat,lon,ele}] } } } */
+    function S(data) {
+        this.meId = data.me || null;
+        this.list = [];
+        for (var id in data.riders) {
+            var r = data.riders[id];
+            if (r.pts && r.pts.length >= 2) this.list.push({ id: id, name: r.name || id, color: r.color || null, pts: r.pts });
+        }
+        var t0 = Infinity, t1 = -Infinity;
+        this.list.forEach(function (r) {
+            if (r.pts[0].t < t0) t0 = r.pts[0].t;
+            if (r.pts[r.pts.length - 1].t > t1) t1 = r.pts[r.pts.length - 1].t;
+        });
+        this.t0 = t0; this.t1 = t1;
+        this.reset();
+    }
+
+    S.solo = function (pts, id, name, color) {
+        var o = { me: id || 'me', riders: {} };
+        o.riders[o.me] = { name: name || 'Du', color: color || null, pts: pts };
+        return new S(o);
+    };
+
+    S.prototype.reset = function () {
+        this.route = new Route();
+        this.an = new Analytics(this.route);
+        this.tCur = this.t0 - 1000;
+    };
+
+    S.prototype.duration = function () { return this.t1 - this.t0; };
+
+    /* Interpolierte Meldung eines Fahrers zur Zeit t, oder null (noch nicht gestartet /
+       schon fertig / Funkloch). */
+    S.prototype.sample = function (rd, t) {
+        var p = rd.pts, n = p.length;
+        if (t < p[0].t || t > p[n - 1].t) return null;
+        var lo = 0, hi = n - 1;
+        while (lo < hi) { var m = (lo + hi + 1) >> 1; if (p[m].t <= t) lo = m; else hi = m - 1; }
+        var a = p[lo], b = p[Math.min(n - 1, lo + 1)], gap = b.t - a.t;
+        if (gap > GAP_MS && (t - a.t) > 8000 && (b.t - t) > 8000) return null;
+        var f = gap > 0 ? (t - a.t) / gap : 0;
+        var d = Geo.distance(a.lat, a.lon, b.lat, b.lon);
+        return {
+            lat: a.lat + f * (b.lat - a.lat), lon: a.lon + f * (b.lon - a.lon),
+            ele: (a.ele !== null && b.ele !== null) ? a.ele + f * (b.ele - a.ele) : a.ele,
+            speed: gap > 0 ? d / (gap / 1000) : 0,
+            heading: d > 0.5 ? Geo.bearing(a.lat, a.lon, b.lat, b.lon) : null
+        };
+    };
+
+    S.prototype._feed = function (t) {
+        var an = this.an, now = Date.now();
+        for (var i = 0; i < this.list.length; i++) {
+            var rd = this.list[i], s = this.sample(rd, t);
+            if (!s) continue;
+            an.ingest(rd.id, { lat: s.lat, lon: s.lon, ele: s.ele, speed: s.speed, heading: s.heading,
+                               acc: 5, t: t, name: rd.name, color: rd.color });
+            if (rd.id === this.meId) an.riders[rd.id].self = true;
+        }
+        an.tick(t);
+        // "Zuletzt gesehen" folgt der Replay-Zeit, nicht der Uhr: sonst gelten alle nach 15 s
+        // Pause als "kein Signal", und beim Vorspulen wuerde niemand je verschwinden.
+        for (var id in an.riders) an.riders[id].lastSeen = now - (t - an.riders[id].t);
+    };
+
+    /* Bis zum Zeitpunkt target (ms) vorrechnen, hoechstens budgetMs lang.
+       Rueckgabe true = angekommen. Rueckwaerts geht nur ueber reset(). */
+    S.prototype.work = function (target, step, budgetMs) {
+        var start = performance.now(), st = step || 1000;
+        while (this.tCur < target) {
+            this.tCur = Math.min(target, this.tCur + st);
+            this._feed(this.tCur);
+            if (budgetMs && performance.now() - start > budgetMs) break;
+        }
+        return this.tCur >= target;
+    };
+
+    /* An eine beliebige Zeit springen. Rueckwaerts wird neu aufgebaut. */
+    S.prototype.seek = function (t) {
+        if (t < this.tCur) this.reset();
+        return this;
+    };
+
+    /* Komplett durchrechnen, ohne die Oberflaeche zu blockieren. */
+    S.prototype.workAsync = function (target, step, onProgress) {
+        var self = this;
+        return new Promise(function (resolve) {
+            (function chunk() {
+                var done = self.work(target, step, 12);
+                if (onProgress) onProgress((self.tCur - self.t0) / Math.max(1, target - self.t0));
+                if (done) resolve(self); else setTimeout(chunk, 0);
+            })();
+        });
+    };
+
+    return S;
+})();
+
+</script>
+<script>
+/* ==== js/segments.js ==== */
+/* ============================================================
+ * segments.js -- Segmente, Bestzeiten und Rekorde ueber alle Fahrten
+ * ============================================================
+ * Ein Segment ist ein Stueck Strecke mit Anfang, Ende und Verlauf. Faehrt man
+ * es erneut, wird die Zeit verglichen -- so entstehen Bestzeiten je Anstieg
+ * oder je selbst angelegtem Abschnitt.
+ *
+ * Woher Segmente kommen
+ *   - automatisch: jeder erkannte Anstieg (aus der Auswertung derselben Fahrt)
+ *   - von Hand:    ein Abschnitt einer gespeicherten Fahrt
+ * Zusaetzlich gibt es Rekorde ohne Ort: schnellste 1/5/10/20/40 km,
+ * beste 5 und 20 Minuten, Spitzentempo, meiste Hoehenmeter, laengste Fahrt.
+ *
+ * Wiedererkennen: eine Fahrt zaehlt als "Segment gefahren", wenn sie in der
+ * Naehe des Anfangs beginnt, in der Naehe des Endes ankommt, dazwischen dem
+ * Verlauf folgt und die Strecke ungefaehr stimmt. Die Zeit wird aus dem
+ * Punkt kuerzester Annaeherung an Anfang und Ende interpoliert -- bei
+ * GPS-Rauschen (+-4 m) und 1-s-Takt bleibt sie auf etwa +-1-2 s genau.
+ *
+ * Simulation und echte Fahrten sind getrennte "Welten": eine erfundene Runde
+ * soll keine echten Bestzeiten verdraengen.
+ * ============================================================ */
+
+var Segments = (function () {
+    'use strict';
+
+    var ENTRY   = 35;      // m: so nah muss man an Anfang bzw. Ende kommen
+    var MAXDEV  = 32;      // m: mittlere Abweichung vom Verlauf
+    var MAXPEAK = 90;      // m: groesste Abweichung vom Verlauf
+    var MAX_EFFORTS = 60;
+    var world = 'real';
+
+    var RECORDS = [
+        { key: 'd1000',   label: 'Schnellster Kilometer',   kind: 'time' },
+        { key: 'd5000',   label: 'Schnellste 5 km',         kind: 'time' },
+        { key: 'd10000',  label: 'Schnellste 10 km',        kind: 'time' },
+        { key: 'd20000',  label: 'Schnellste 20 km',        kind: 'time' },
+        { key: 'd40000',  label: 'Schnellste 40 km',        kind: 'time' },
+        { key: 't300000', label: 'Beste 5 Minuten',         kind: 'dist', win: 300000 },
+        { key: 't1200000',label: 'Beste 20 Minuten',        kind: 'dist', win: 1200000 },
+        { key: 'top',     label: 'Spitzentempo (5 s)',      kind: 'speed' },
+        { key: 'gain',    label: 'Meiste Höhenmeter',       kind: 'gain' },
+        { key: 'dist',    label: 'Längste Fahrt',           kind: 'len' }
+    ];
+
+    function key(k) { return 'seg:' + world + ':' + k; }
+    function read(k) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+    function write(k, o) { try { localStorage.setItem(k, JSON.stringify(o)); return true; } catch (e) { return false; } }
+    function newId() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+
+    function use(w) { world = (w === 'sim') ? 'sim' : 'real'; }
+    function current() { return world; }
+    function worldOf(src) { return src === 'sim' ? 'sim' : 'real'; }
+
+    function list() { return read(key('index')) || []; }
+    function saveAll(l) { return write(key('index'), l); }
+    function get(id) { return list().filter(function (s) { return s.id === id; })[0] || null; }
+    function bests() { return read(key('bests')) || {}; }
+
+    function remove(id) { saveAll(list().filter(function (s) { return s.id !== id; })); }
+    function rename(id, name) {
+        var l = list();
+        l.forEach(function (s) { if (s.id === id) s.name = name; });
+        saveAll(l);
+    }
+
+    /* ---------- Geometrie ---------- */
+    function polyDist(px, py, poly) {
+        var best = Infinity;
+        for (var i = 0; i < poly.length - 1; i++) {
+            var pr = Geo.projectOnSegment(px, py, poly[i].x, poly[i].y, poly[i + 1].x, poly[i + 1].y);
+            if (pr.dist < best) best = pr.dist;
+        }
+        return best;
+    }
+
+    /* Zeit der kuerzesten Annaeherung an den Punkt P, zwischen den Spurpunkten
+       um idx herum (xy: dieselbe Ebene wie P). */
+    function timeAtClosest(pts, xy, idx, P) {
+        var best = null;
+        for (var i = Math.max(0, idx - 1); i <= Math.min(pts.length - 2, idx); i++) {
+            var pr = Geo.projectOnSegment(P.x, P.y, xy[i].x, xy[i].y, xy[i + 1].x, xy[i + 1].y);
+            var t = Math.max(0, Math.min(1, pr.t));
+            if (best === null || pr.dist < best.dist) best = { dist: pr.dist, t: pts[i].t + t * (pts[i + 1].t - pts[i].t) };
+        }
+        return best ? best.t : pts[idx].t;
+    }
+
+    /* Segment aus einem Stueck einer Spur (Indizes iA..iB) */
+    function fromSection(pts, iA, iB, name, kind, auto) {
+        var sec = pts.slice(iA, iB + 1);
+        var len = Track.cumulative(sec); len = len[len.length - 1];
+        var thin = Track.thin(sec, Math.max(8, len / 40));
+        var g = Track.gain(sec);
+        return {
+            id: newId(), name: name, kind: kind || 'custom', auto: !!auto,
+            len: Math.round(len), gain: Math.round(g * 10) / 10, grade: len > 0 ? g / len : 0,
+            a: { lat: sec[0].lat, lon: sec[0].lon }, b: { lat: sec[sec.length - 1].lat, lon: sec[sec.length - 1].lon },
+            poly: thin.map(function (p) { return [+p.lat.toFixed(6), +p.lon.toFixed(6)]; }),
+            efforts: [], created: Date.now()
+        };
+    }
+
+    /* ---------- Wiedererkennen ---------- */
+    /* Alle Durchfahrten von seg in der Spur pts. -> [{tStart, tEnd, ms, iA, iB, splits}] */
+    function match(pts, seg, cum) {
+        var n = pts.length;
+        if (n < 3 || seg.len < 100) return [];
+        cum = cum || Track.cumulative(pts);
+        var fr = Geo.frame(seg.a.lat, seg.a.lon);
+        var A = fr.toXY(seg.a.lat, seg.a.lon), B = fr.toXY(seg.b.lat, seg.b.lon);
+        var poly = seg.poly.map(function (q) { return fr.toXY(q[0], q[1]); });
+        var xy = pts.map(function (p) { return fr.toXY(p.lat, p.lon); });
+        function dA(i) { return Math.hypot(xy[i].x - A.x, xy[i].y - A.y); }
+        function dB(i) { return Math.hypot(xy[i].x - B.x, xy[i].y - B.y); }
+
+        var out = [], i = 0;
+        while (i < n) {
+            if (dA(i) > ENTRY) { i++; continue; }
+            // zusammenhaengende Naehe am Anfang: der Punkt kuerzester Annaeherung zaehlt
+            var iMin = i, dMin = dA(i), k = i;
+            while (k < n && dA(k) <= ENTRY) { var d = dA(k); if (d < dMin) { dMin = d; iMin = k; } k++; }
+
+            // Ende suchen: hoechstens 1,6x so lang wie das Segment
+            var jBest = -1, j = iMin + 1, maxLen = 1.6 * seg.len;
+            while (j < n && cum[j] - cum[iMin] <= maxLen) {
+                if (dB(j) <= ENTRY) {
+                    var jm = j, dm = dB(j), q = j;
+                    while (q < n && dB(q) <= ENTRY && cum[q] - cum[iMin] <= maxLen) { var e = dB(q); if (e < dm) { dm = e; jm = q; } q++; }
+                    if (cum[jm] - cum[iMin] >= 0.7 * seg.len) { jBest = jm; break; }
+                    j = q;
+                } else j++;
+            }
+            if (jBest < 0) { i = k; continue; }
+
+            // folgt die Fahrt dem Verlauf? (mittlere und groesste Abweichung)
+            var step = Math.max(1, Math.floor((jBest - iMin) / 25)), sum = 0, cnt = 0, peak = 0, gapOk = true;
+            for (var m = iMin; m <= jBest; m += step) {
+                var dd = polyDist(xy[m].x, xy[m].y, poly); sum += dd; cnt++; if (dd > peak) peak = dd;
+            }
+            for (var g = iMin + 1; g <= jBest; g++) if (pts[g].t - pts[g - 1].t > 60000) { gapOk = false; break; }
+            var ratio = (cum[jBest] - cum[iMin]) / seg.len;
+            if (!gapOk || sum / cnt > MAXDEV || peak > MAXPEAK || ratio < 0.7 || ratio > 1.4) { i = k; continue; }
+
+            var t0 = timeAtClosest(pts, xy, iMin, A), t1 = timeAtClosest(pts, xy, jBest, B), ms = t1 - t0;
+            var avg = seg.len / (ms / 1000);
+            if (ms > 1000 && avg >= 0.8 && avg <= 25) {
+                var d0 = cum[iMin], tot = cum[jBest] - d0, splits = [];
+                for (var f = 1; f <= 10; f++) splits.push(Math.round(Track.atDistance(pts, cum, d0 + tot * f / 10).t - t0));
+                out.push({ tStart: t0, tEnd: t1, ms: ms, iA: iMin, iB: jBest, splits: splits });
+            }
+            i = jBest + 1;
+        }
+        return out;
+    }
+
+    /* Durchfahrt in die Liste der Bestzeiten eintragen; liefert Vergleich zur bisherigen Bestzeit. */
+    function addEffort(seg, rideId, rideName, m, count) {
+        var prev = seg.efforts.filter(function (e) { return e.ride !== rideId; });
+        var prevBest = prev.length ? Math.min.apply(null, prev.map(function (e) { return e.ms; })) : null;
+        var effort = { ride: rideId, rname: rideName, t: m.tStart, ms: Math.round(m.ms),
+                       kmh: seg.len / (m.ms / 1000) * 3.6, vam: seg.gain > 0 ? seg.gain / (m.ms / 3600000) : 0,
+                       splits: m.splits, n: count || 1 };
+        seg.efforts = prev.concat([effort]).sort(function (a, b) { return a.t - b.t; }).slice(-MAX_EFFORTS);
+        var rank = prev.filter(function (e) { return e.ms < effort.ms; }).length + 1;
+        return { seg: seg, effort: effort, prevBest: prevBest, first: prevBest === null,
+                 isPB: prevBest === null || effort.ms < prevBest, rank: rank, of: prev.length + 1,
+                 delta: prevBest === null ? null : effort.ms - prevBest };
+    }
+
+    function bestOf(seg) {
+        if (!seg.efforts.length) return null;
+        return seg.efforts.reduce(function (a, b) { return b.ms < a.ms ? b : a; });
+    }
+
+    /* Ist "cand" dasselbe Stueck Strasse wie "seg"? Die Grenzen eines erkannten Anstiegs
+       schwanken von Fahrt zu Fahrt um ein paar Dutzend Meter -- deshalb zaehlt nicht
+       Anfang/Ende, sondern die Ueberlappung des Verlaufs, in derselben Fahrtrichtung. */
+    function overlapFrac(p, q) {
+        var fr = Geo.frame(q.poly[0][0], q.poly[0][1]);
+        var qxy = q.poly.map(function (c) { return fr.toXY(c[0], c[1]); }), hit = 0;
+        p.poly.forEach(function (c) {
+            var xy = fr.toXY(c[0], c[1]);
+            if (polyDist(xy.x, xy.y, qxy) <= 30) hit++;
+        });
+        return hit / p.poly.length;
+    }
+    function similar(cand, seg) {
+        var dAA = Geo.distance(cand.a.lat, cand.a.lon, seg.a.lat, seg.a.lon);
+        var dAB = Geo.distance(cand.a.lat, cand.a.lon, seg.b.lat, seg.b.lon);
+        if (dAB < dAA) return false;                        // gegenlaeufig: die Abfahrt ist ein anderes Segment
+        var f1 = overlapFrac(cand, seg), f2 = overlapFrac(seg, cand);
+        // deckungsgleich, oder eines liegt (fast) ganz im anderen: dann kein neues Segment
+        return (f1 >= 0.6 && f2 >= 0.6) || f1 >= 0.8 || f2 >= 0.8;
+    }
+
+    /* ---------- Rekorde ohne Ort ---------- */
+    function cumAtTime(pts, cum, t) {
+        var lo = 0, hi = pts.length - 1;
+        while (lo < hi) { var m = (lo + hi + 1) >> 1; if (pts[m].t <= t) lo = m; else hi = m - 1; }
+        var a = pts[lo], b = pts[Math.min(pts.length - 1, lo + 1)], span = b.t - a.t;
+        return cum[lo] + (span > 0 ? (t - a.t) / span : 0) * (cum[Math.min(pts.length - 1, lo + 1)] - cum[lo]);
+    }
+
+    function computeRecords(pts) {
+        var n = pts.length, cum = Track.cumulative(pts), dist = cum[n - 1], out = {};
+        [1000, 5000, 10000, 20000, 40000].forEach(function (L) {
+            if (dist < L) return;
+            var best = Infinity;
+            for (var i = 0; i < n; i++) {
+                if (cum[i] + L > dist) break;
+                var ms = Track.atDistance(pts, cum, cum[i] + L).t - pts[i].t;
+                if (ms < best) best = ms;
+            }
+            if (best < Infinity) out['d' + L] = best;
+        });
+        [300000, 1200000].forEach(function (W) {
+            var total = pts[n - 1].t - pts[0].t;
+            if (total < W) return;
+            var best = 0;
+            for (var i = 0; i < n; i++) {
+                if (pts[i].t + W > pts[n - 1].t) break;
+                var d = cumAtTime(pts, cum, pts[i].t + W) - cum[i];
+                if (d > best) best = d;
+            }
+            if (best > 0) out['t' + W] = best;
+        });
+        var top = Track.topSpeed(pts, cum, 5000);
+        if (top > 0 && top < 30) out.top = top;                 // >108 km/h ist ein GPS-Fehler
+        out.gain = Track.gain(pts);
+        out.dist = dist;
+        return out;
+    }
+
+    function better(kind, a, b) { return kind === 'time' ? a < b : a > b; }     // a besser als b?
+
+    function updateRecords(pts, rec, store) {
+        var vals = computeRecords(pts), changed = [];
+        RECORDS.forEach(function (R) {
+            var v = vals[R.key];
+            if (v === undefined) return;
+            var old = store[R.key];
+            if (!old || better(R.kind, v, old.v)) {
+                store[R.key] = { v: v, ride: rec.id, rname: rec.name, t: rec.start };
+                changed.push({ key: R.key, label: R.label, kind: R.kind, now: v, before: old ? old.v : null });
+            }
+        });
+        return changed;
+    }
+
+    // Gespeicherte Fahrt als geglaettete Spur (siehe Track.smooth: sonst waeren alle Wege ~25 % zu lang)
+    function trackOf(rec) { return Track.smooth(Rides.unpack(rec), 2); }
+
+    /* ---------- Auswertung einer Fahrt ---------- */
+    /* Erkennt neue Anstiege, findet bekannte Segmente wieder, fuehrt Rekorde nach.
+       Rueckgabe: { world, newSegments, efforts, records } */
+    function processRide(rec, opts) {
+        opts = opts || {};
+        if (rec.src === 'plan') return Promise.resolve(null);
+        use(worldOf(rec.src));
+        var pts = trackOf(rec);
+        if (pts.length < 20) return Promise.resolve(null);
+        var cum = Track.cumulative(pts), report = { world: world, newSegments: [], efforts: [], records: [] };
+        var segs = list();
+
+        function finish() {
+            segs.forEach(function (seg) {
+                var ms = match(pts, seg, cum);
+                if (!ms.length) return;
+                var best = ms.reduce(function (a, b) { return b.ms < a.ms ? b : a; });
+                report.efforts.push(addEffort(seg, rec.id, rec.name, best, ms.length));
+            });
+            saveAll(segs);
+            var st = bests();
+            report.records = updateRecords(pts, rec, st);
+            write(key('bests'), st);
+            return report;
+        }
+
+        if (opts.detect === false) return Promise.resolve(finish());
+
+        // Anstiege dieser Fahrt: dieselbe Auswertung wie live, allein mit deiner Spur
+        var sess = Session.solo(pts, 'me', 'Du');
+        return sess.workAsync(sess.t1, 3000, opts.onProgress).then(function () {
+            var climbs = sess.an.scanClimbs(), added = 0;
+            climbs.forEach(function (c) {
+                if ((c.len || 0) < 300 || (c.gain || 0) < 20) return;
+                var ax = sess.route.pts.filter(function (p) { return p.s >= c.sStart && p.s <= c.sEnd; });
+                if (ax.length < 4) return;
+                var cand = fromSection(ax.map(function (p) { return { lat: p.lat, lon: p.lon, ele: p.ele, t: 0 }; }),
+                                       0, ax.length - 1, '', 'climb', true);
+                if (segs.some(function (s) { return similar(cand, s); })) return;
+                added++;
+                cand.name = 'Anstieg ' + (segs.filter(function (s) { return s.kind === 'climb'; }).length + 1) +
+                            ' (+' + Math.round(cand.gain) + ' Hm)';
+                segs.push(cand); report.newSegments.push(cand);
+            });
+            return finish();
+        });
+    }
+
+    /* Nach dem Anlegen eines Segments: in allen gespeicherten Fahrten dieser Welt suchen. */
+    function backfill(seg) {
+        var found = 0;
+        Rides.list().forEach(function (r) {
+            if (r.src === 'plan' || worldOf(r.src) !== world) return;
+            var rec = Rides.get(r.id); if (!rec) return;
+            var pts = trackOf(rec), ms = match(pts, seg);
+            if (!ms.length) return;
+            var best = ms.reduce(function (a, b) { return b.ms < a.ms ? b : a; });
+            addEffort(seg, rec.id, rec.name, best, ms.length); found++;
+        });
+        return found;
+    }
+
+    function addSegment(seg) {
+        var l = list(); l.push(seg); saveAll(l);
+        var found = backfill(seg);
+        var l2 = list().map(function (s) { return s.id === seg.id ? seg : s; }); saveAll(l2);
+        return found;
+    }
+
+    /* Eine Fahrt wurde geloescht: ihre Durchfahrten weg, Rekorde neu bestimmen. */
+    function forgetRide(id, srcOfRide) {
+        use(worldOf(srcOfRide));
+        var l = list();
+        l.forEach(function (s) { s.efforts = s.efforts.filter(function (e) { return e.ride !== id; }); });
+        saveAll(l);
+        var st = bests(), stale = false;
+        for (var k in st) if (st[k].ride === id) stale = true;
+        if (!stale) return;
+        var fresh = {};
+        Rides.list().forEach(function (r) {
+            if (r.id === id || r.src === 'plan' || worldOf(r.src) !== world) return;
+            var rec = Rides.get(r.id); if (!rec) return;
+            updateRecords(trackOf(rec), rec, fresh);
+        });
+        write(key('bests'), fresh);
+    }
+
+    /* Fortschritt entlang des Segmentverlaufs (Meter). Die rohe Wegstrecke taugt dafuer nicht:
+       GPS-Rauschen (+-4 m je Fix) addiert bei langsamer Fahrt bergauf ein Vielfaches der echten
+       Strecke -- das Segment wirkte dann schon nach der Haelfte "fast fertig". Die Projektion
+       der Position auf den Verlauf ist davon unabhaengig. */
+    function polyInfo(seg) {
+        var fr = Geo.frame(seg.a.lat, seg.a.lon);
+        var xy = seg.poly.map(function (q) { return fr.toXY(q[0], q[1]); }), cum = [0];
+        for (var i = 1; i < xy.length; i++) cum.push(cum[i - 1] + Math.hypot(xy[i].x - xy[i - 1].x, xy[i].y - xy[i - 1].y));
+        return { fr: fr, xy: xy, cum: cum, len: cum[cum.length - 1] || seg.len };
+    }
+    function progressOn(pi, lat, lon) {
+        var p = pi.fr.toXY(lat, lon), best = null;
+        for (var i = 0; i < pi.xy.length - 1; i++) {
+            var pr = Geo.projectOnSegment(p.x, p.y, pi.xy[i].x, pi.xy[i].y, pi.xy[i + 1].x, pi.xy[i + 1].y);
+            var t = Math.max(0, Math.min(1, pr.t));
+            if (!best || pr.dist < best.dist) best = { dist: pr.dist, s: pi.cum[i] + t * (pi.cum[i + 1] - pi.cum[i]) };
+        }
+        return best;
+    }
+
+    /* ---------- Live: Zeit auf dem Segment waehrend der Fahrt ---------- */
+    /* update({lat, lon, t}) -> Ereignisse. Der Live-Wert ist vorlaeufig (+-1-3 s):
+       er startet beim ersten Fix nahe am Anfang. Massgeblich ist die Auswertung
+       nach der Fahrt (processRide), die den Punkt kuerzester Annaeherung nutzt. */
+    function live(w) {
+        var st = {}, lastFix = null, ended = {}, lw = (w === 'sim') ? 'sim' : 'real';
+        return {
+            update: function (fix) {
+                var prevWorld = world;          // die Ansicht darf inzwischen eine andere Welt zeigen
+                use(lw);
+                try { return step(fix); } finally { use(prevWorld); }
+            }
+        };
+        function step(fix) {
+            var ev = [], segs = list();
+            segs.forEach(function (seg) {
+                if (seg.len < 100) return;
+                var s = st[seg.id];
+                var dA = Geo.distance(fix.lat, fix.lon, seg.a.lat, seg.a.lon);
+                var dB = Geo.distance(fix.lat, fix.lon, seg.b.lat, seg.b.lon);
+                if (!s) {
+                    if (dA <= ENTRY && !(ended[seg.id] && fix.t - ended[seg.id] < 90000)) {
+                        st[seg.id] = { t0: fix.t, prog: 0, off: 0, min: dA, pi: polyInfo(seg) };
+                        ev.push({ type: 'start', seg: seg, elapsed: 0, frac: 0, left: seg.len, delta: null, best: (bestOf(seg) || {}).ms || null });
+                    }
+                    return;
+                }
+                var pi = s.pi, pr = progressOn(pi, fix.lat, fix.lon);
+                if (pr.dist <= 60) s.prog = Math.max(s.prog, pr.s);
+                if (s.prog < 30 && dA < s.min) { s.t0 = fix.t; s.min = dA; }    // noch am Start: naeher dran = spaeter loslegen
+                var fr = Math.min(1, s.prog / pi.len), elapsed = fix.t - s.t0;
+                var best = bestOf(seg), delta = null;
+                if (best && best.splits && fr > 0.05) {
+                    var pos = fr * 10, lo = Math.min(9, Math.floor(pos)), a = lo === 0 ? 0 : best.splits[lo - 1], b = best.splits[lo];
+                    delta = elapsed - (a + (pos - lo) * (b - a));
+                }
+                if (dB <= ENTRY && s.prog >= 0.8 * pi.len) {
+                    var ms = fix.t - s.t0;
+                    ended[seg.id] = fix.t; delete st[seg.id];
+                    ev.push({ type: 'finish', seg: seg, ms: ms, best: best ? best.ms : null,
+                              isPB: !best || ms < best.ms, delta: best ? ms - best.ms : null });
+                    return;
+                }
+                s.off = pr.dist > 150 ? s.off + 1 : 0;
+                if (s.off >= 5 || elapsed > 3 * 3600 * 1000) { delete st[seg.id]; ev.push({ type: 'abort', seg: seg }); return; }
+                ev.push({ type: 'progress', seg: seg, elapsed: elapsed, frac: fr, left: Math.max(0, pi.len - s.prog),
+                          delta: delta, best: best ? best.ms : null });
+            });
+            lastFix = fix;
+            return ev;
+        }
+    }
+
+    return {
+        RECORDS: RECORDS,
+        use: use, current: current, worldOf: worldOf,
+        list: list, get: get, remove: remove, rename: rename, bests: bests,
+        fromSection: fromSection, addSegment: addSegment, bestOf: bestOf,
+        match: match, processRide: processRide, forgetRide: forgetRide, live: live, trackOf: trackOf,
+        computeRecords: computeRecords
+    };
+})();
+
+</script>
+<script>
+/* ==== js/summary.js ==== */
+/* ============================================================
+ * summary.js -- Bilanz einer Ausfahrt, zum Anschauen und als Bild zum Teilen
+ * ============================================================
+ * Wird aus der gespeicherten Fahrt berechnet -- nicht aus dem Live-Zustand.
+ * Dieselbe Auswertung wie im Replay laeuft die Fahrt einmal durch, danach
+ * stehen Fuehrungsarbeit, Anstiege, Antritte und Abrisse fest. Deine
+ * eigenen Zahlen (Strecke, Tempo, Hoehenmeter) kommen aus deiner Spur,
+ * vom GPS-Rauschen befreit (Track.smooth). Bestzeiten und Rekorde stehen
+ * schon in Segments; hier werden nur die dieser Fahrt herausgesucht.
+ *
+ * Das Bild ist ein SVG, das auf ein Canvas gemalt und als PNG geteilt wird
+ * (Web Share mit Datei, sonst Download). Es enthaelt keine Karte im Hintergrund,
+ * nur die gefahrenen Linien -- damit verraet es nichts ueber den Ort, ausser
+ * der Form der Strecke.
+ * ============================================================ */
+
+var Summary = (function () {
+    'use strict';
+
+    function esc(s) { return UI.escapeHtml(s); }
+    function fmtDate(t) {
+        var d = new Date(t), M = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+        return d.getDate() + '. ' + M[d.getMonth()] + ' ' + d.getFullYear() + ' · ' +
+               String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    function kmhOf(ms) { return (ms * 3.6).toFixed(1).replace('.', ','); }
+
+    /* ---------- berechnen ---------- */
+    function forRide(rideId, onProgress) {
+        var rec = Rides.get(rideId);
+        if (!rec) return Promise.reject(new Error('Ausfahrt nicht gefunden.'));
+        var g = Rides.getGroup(rideId), data = g ? Recorder.unpack(g) : null;
+        var meId = data ? data.me : 'me';
+        if (!data) { data = { me: 'me', riders: { me: { name: 'Du', color: UI.COLORS[0], pts: Rides.unpack(rec) } } }; }
+        var sess = new Session(data);
+        return sess.workAsync(sess.t1, 3000, onProgress).then(function () {
+            var an = sess.an;
+            an.scanClimbs();
+            var ord = an.order();
+            var mine = data.riders[meId] || data.riders[Object.keys(data.riders)[0]];
+            var own = Track.stats(Track.smooth(mine ? mine.pts : Rides.unpack(rec), 2));
+
+            var total = 0;
+            ord.forEach(function (r) { total += r.frontMs; });
+            var riders = ord.map(function (r, i) {
+                return { id: r.id, name: r.name || r.id, color: r.color || '#93a7af', me: r.id === meId, rank: i + 1,
+                         frontMs: r.frontMs, share: total ? r.frontMs / total : 0, max: r.maxSpeed || 0 };
+            });
+
+            var ev = { pass: 0, attack: 0, drop: 0, lead: 0 }, bigAttack = null;
+            an.events.forEach(function (e) {
+                if (ev[e.type] !== undefined) ev[e.type]++;
+                if (e.type === 'attack' && (!bigAttack || e.gain > bigAttack.gain)) bigAttack = e;
+            });
+            var longest = null;
+            an.stints.forEach(function (s) { if (!longest || s.ms > longest.ms) longest = s; });
+            function nm(id) { var r = an.riders[id]; return (r && r.name) || id; }
+
+            var climbs = an.climbs.map(function (c) {
+                return { no: c.no, len: c.len, gain: c.gain, grade: c.grade,
+                         ranking: an.climbRanking(c).slice(0, 3).map(function (x) {
+                             var rr = an.riders[x.id]; return { name: x.name, ms: x.ms, vam: x.vam, color: (rr && rr.color) || '#93a7af', me: x.id === meId }; }) };
+            });
+
+            // Bestzeiten und Rekorde dieser Fahrt (aus dem Speicher, nicht neu gerechnet)
+            Segments.use(Segments.worldOf(rec.src));
+            var efforts = [];
+            Segments.list().forEach(function (seg) {
+                var e = seg.efforts.filter(function (x) { return x.ride === rideId; })[0];
+                if (!e) return;
+                var best = Segments.bestOf(seg);
+                efforts.push({ name: seg.name, ms: e.ms, isPB: best && best.ride === rideId, rank: seg.efforts.filter(function (x) { return x.ms < e.ms; }).length + 1, of: seg.efforts.length });
+            });
+            var recs = [], st = Segments.bests();
+            Segments.RECORDS.forEach(function (R) { if (st[R.key] && st[R.key].ride === rideId) recs.push(R.label); });
+
+            // Linien fuer das Bild: alle Fahrer, ausgeduennt
+            var tracks = sess.list.map(function (r) {
+                return { color: r.color || '#93a7af', me: r.id === meId, pts: Track.thin(r.pts, 12).map(function (p) { return [p.lat, p.lon]; }) };
+            });
+
+            return {
+                rideId: rideId, name: rec.name, src: rec.src, start: rec.start, world: Segments.worldOf(rec.src),
+                own: own, group: riders.length > 1, riders: riders, events: ev,
+                longest: longest ? { name: nm(longest.id), ms: longest.ms } : null,
+                bigAttack: bigAttack ? { name: nm(bigAttack.id), gain: bigAttack.gain } : null,
+                topSpeed: riders.reduce(function (a, r) { return r.max > a.v ? { v: r.max, name: r.name } : a; }, { v: 0, name: '' }),
+                climbs: climbs, efforts: efforts, records: recs, tracks: tracks
+            };
+        });
+    }
+
+    /* ---------- Anzeige (HTML) ---------- */
+    function tile(v, l) { return '<div class="sumtile"><b class="num">' + v + '</b><span>' + l + '</span></div>'; }
+
+    function html(d) {
+        var o = d.own, out = [];
+        out.push('<div class="sumttl">' + esc(d.name) + '</div><div class="sumsub">' + fmtDate(d.start) +
+                 (d.src === 'sim' ? ' · Simulation' : '') + '</div>');
+        out.push('<div class="sumgrid">' + tile(UI.fmtDist(o.dist), 'Strecke') + tile(UI.fmtDur(o.moving || o.dur), 'Fahrzeit') +
+                 tile(kmhOf(o.avg), 'Ø km/h') + tile('+' + Math.round(o.gain), 'Höhenmeter') +
+                 tile(kmhOf(o.max), 'Spitze km/h') + tile(UI.fmtDur(o.dur), 'Gesamtzeit') + '</div>');
+        out.push('<div class="sumsvg" id="sumThumb"></div>');
+
+        if (d.group) {
+            out.push('<h2>Führungsarbeit</h2>');
+            var max = Math.max.apply(null, d.riders.map(function (r) { return r.frontMs; })) || 1;
+            d.riders.filter(function (r) { return r.frontMs > 0; }).sort(function (a, b) { return b.frontMs - a.frontMs; }).forEach(function (r) {
+                out.push('<div class="sumbar"><span class="rdot" style="background:' + r.color + '"></span><span class="nm">' + esc(r.name) +
+                         (r.me ? ' (du)' : '') + '</span><span class="num">' + UI.fmtDur(r.frontMs) + ' · ' + Math.round(r.share * 100) +
+                         ' %</span><i style="width:' + Math.round(100 * r.frontMs / max) + '%;background:' + r.color + '"></i></div>');
+            });
+        }
+
+        var hl = [];
+        if (d.group && d.riders.length) {
+            var top = d.riders.slice().sort(function (a, b) { return b.frontMs - a.frontMs; })[0];
+            if (top && top.frontMs > 0) hl.push('<b>Meiste Führungsarbeit:</b> ' + esc(top.name) + ' (' + Math.round(top.share * 100) + ' %)');
+        }
+        if (d.longest && d.group) hl.push('<b>Längste Führung:</b> ' + esc(d.longest.name) + ' · ' + UI.fmtDur(d.longest.ms));
+        if (d.bigAttack) hl.push('<b>Größter Antritt:</b> ' + esc(d.bigAttack.name) + ' · +' + d.bigAttack.gain + ' m');
+        if (d.topSpeed.v > 0 && d.group) hl.push('<b>Höchstes Tempo:</b> ' + esc(d.topSpeed.name) + ' · ' + kmhOf(d.topSpeed.v) + ' km/h');
+        if (d.group) hl.push('<b>Überholmanöver:</b> ' + d.events.pass + ' · <b>Antritte:</b> ' + d.events.attack + ' · <b>Abrisse:</b> ' + d.events.drop);
+        if (hl.length) { out.push('<h2>Highlights</h2>'); hl.forEach(function (h) { out.push('<div class="sumhl">' + h + '</div>'); }); }
+
+        if (d.climbs.length) {
+            out.push('<h2>Anstiege</h2>');
+            d.climbs.forEach(function (c) {
+                out.push('<div class="sumclimb"><b>Anstieg ' + c.no + '</b> <span class="sm">' + UI.fmtDist(c.len) + ' · +' + Math.round(c.gain) +
+                         ' Hm · ' + (c.grade * 100).toFixed(1).replace('.', ',') + ' %</span>' +
+                         c.ranking.map(function (r, i) {
+                             return '<div class="sumrk' + (r.me ? ' me' : '') + '"><span>' + (i + 1) + '.</span><span class="rdot" style="background:' + r.color + '"></span><span class="nm">' +
+                                    esc(r.name) + '</span><span class="num">' + UI.fmtDur(r.ms) + '</span></div>'; }).join('') + '</div>');
+            });
+        }
+
+        if (d.efforts.length || d.records.length) {
+            out.push('<h2>Bestzeiten &amp; Rekorde</h2>');
+            d.efforts.forEach(function (e) {
+                out.push('<div class="sumhl">' + (e.isPB ? '🏆 ' : '') + '<b>' + esc(e.name) + '</b> · ' + UI.fmtDur(e.ms) +
+                         (e.isPB ? ' – neue Bestzeit' : ' – Platz ' + e.rank + ' von ' + e.of) + '</div>');
+            });
+            d.records.forEach(function (r) { out.push('<div class="sumhl">🏆 Rekord: <b>' + esc(r) + '</b></div>'); });
+        }
+        return out.join('');
+    }
+
+    /* Kleine Karte der gefahrenen Linien (SVG), fuer Anzeige und Bild */
+    function thumbSvg(d, W, H) {
+        var all = [];
+        d.tracks.forEach(function (t) { t.pts.forEach(function (p) { all.push(p); }); });
+        if (!all.length) return '';
+        var fr = Geo.frame(all[0][0], all[0][1]), x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        var xy = d.tracks.map(function (t) {
+            return t.pts.map(function (p) { var q = fr.toXY(p[0], p[1]); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); return q; });
+        });
+        var pad = 14, k = Math.min((W - 2 * pad) / Math.max(40, x1 - x0), (H - 2 * pad) / Math.max(40, y1 - y0));
+        var ox = (W - (x1 - x0) * k) / 2 - x0 * k, oy = (H - (y1 - y0) * k) / 2 + y1 * k, parts = [];
+        // dich zuletzt zeichnen, damit deine Linie oben liegt
+        var order = d.tracks.map(function (t, i) { return i; }).sort(function (a, b) { return (d.tracks[a].me ? 1 : 0) - (d.tracks[b].me ? 1 : 0); });
+        order.forEach(function (i) {
+            var t = d.tracks[i], path = xy[i].map(function (q, j) { return (j ? 'L' : 'M') + (q.x * k + ox).toFixed(1) + ' ' + (oy - q.y * k).toFixed(1); }).join('');
+            parts.push('<path d="' + path + '" fill="none" stroke="' + t.color + '" stroke-width="' + (t.me ? 3.5 : 2) + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + (t.me ? 1 : 0.8) + '"/>');
+        });
+        var s = xy[order[order.length - 1]][0], e = xy[order[order.length - 1]][xy[order[order.length - 1]].length - 1];
+        parts.push('<circle cx="' + (s.x * k + ox).toFixed(1) + '" cy="' + (oy - s.y * k).toFixed(1) + '" r="5" fill="#0d1214" stroke="#e8f0f2" stroke-width="2.5"/>');
+        parts.push('<rect x="' + (e.x * k + ox - 5).toFixed(1) + '" y="' + (oy - e.y * k - 5).toFixed(1) + '" width="10" height="10" fill="#e8f0f2"/>');
+        return parts.join('');
+    }
+
+    /* ---------- Bild (SVG -> PNG) ---------- */
+    function cardSvg(d) {
+        var W = 720, o = d.own, y = 0, p = [];
+        var FONT = 'Barlow, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+        function T(x, yy, txt, size, fill, weight, anchor) {
+            return '<text x="' + x + '" y="' + yy + '" font-family="' + FONT + '" font-size="' + size + '" fill="' + fill + '" font-weight="' + (weight || 400) +
+                   '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + esc(txt) + '</text>';
+        }
+        p.push(T(40, 70, d.name, 40, '#e8f0f2', 600));
+        p.push(T(40, 104, fmtDate(d.start) + (d.src === 'sim' ? ' · Simulation' : ''), 22, '#93a7af'));
+        var tiles = [[UI.fmtDist(o.dist), 'Strecke'], [UI.fmtDur(o.moving || o.dur), 'Fahrzeit'], [kmhOf(o.avg), 'Ø km/h'], ['+' + Math.round(o.gain), 'Höhenmeter']];
+        tiles.forEach(function (t, i) {
+            var x = 40 + i * 165;
+            p.push('<rect x="' + x + '" y="136" width="153" height="96" rx="12" fill="#151d21"/>');
+            p.push(T(x + 76, 190, t[0], 34, '#ffffff', 300, 'middle'));
+            p.push(T(x + 76, 218, t[1], 17, '#93a7af', 400, 'middle'));
+        });
+        p.push('<rect x="40" y="252" width="640" height="330" rx="14" fill="#151d21"/>');
+        p.push('<g transform="translate(40 252)">' + thumbSvg(d, 640, 330) + '</g>');
+        y = 626;
+        if (d.group) {
+            p.push(T(40, y, 'FÜHRUNGSARBEIT', 18, '#5f7379', 600)); y += 14;
+            var max = Math.max.apply(null, d.riders.map(function (r) { return r.frontMs; })) || 1;
+            d.riders.filter(function (r) { return r.frontMs > 0; }).sort(function (a, b) { return b.frontMs - a.frontMs; }).slice(0, 5).forEach(function (r) {
+                y += 34;
+                p.push('<circle cx="52" cy="' + (y - 8) + '" r="7" fill="' + r.color + '"/>');
+                p.push(T(70, y, r.name + (r.me ? ' (du)' : ''), 22, '#e8f0f2'));
+                p.push(T(680, y, Math.round(r.share * 100) + ' %', 22, '#93a7af', 400, 'end'));
+                p.push('<rect x="70" y="' + (y + 6) + '" width="' + (610 * r.frontMs / max) + '" height="6" rx="3" fill="' + r.color + '"/>');
+                y += 12;
+            });
+            y += 46;
+        }
+        /* Symbole als gezeichnete Formen: Emoji brauchen eine Schrift, die im SVG-Bild
+           nicht sicher da ist -- sie erschienen als leere Kaestchen. */
+        function icon(kind, cx, cy, col) {
+            if (kind === 'star') {
+                var pts = [];
+                for (var i = 0; i < 10; i++) { var r = i % 2 ? 5 : 11, a = -Math.PI / 2 + i * Math.PI / 5; pts.push((cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1)); }
+                return '<polygon points="' + pts.join(' ') + '" fill="' + col + '"/>';
+            }
+            if (kind === 'bolt') return '<polygon points="' + [cx + 3, cy - 12, cx - 7, cy + 2, cx - 1, cy + 2, cx - 4, cy + 12, cx + 8, cy - 3, cx + 2, cy - 3].join(',') + '" fill="' + col + '"/>';
+            return '<polygon points="' + [cx - 10, cy + 9, cx, cy - 10, cx + 10, cy + 9].join(',') + '" fill="' + col + '"/>';     // Anstieg
+        }
+        var lines = [];
+        d.efforts.filter(function (e) { return e.isPB; }).slice(0, 3).forEach(function (e) { lines.push({ k: 'star', c: '#f2b01e', t: e.name + ' · ' + UI.fmtDur(e.ms) + ' – Bestzeit' }); });
+        d.records.slice(0, 2).forEach(function (r) { lines.push({ k: 'star', c: '#f2b01e', t: 'Rekord: ' + r }); });
+        if (d.bigAttack) lines.push({ k: 'bolt', c: '#ffb02e', t: 'Größter Antritt: ' + d.bigAttack.name + ' +' + d.bigAttack.gain + ' m' });
+        if (d.climbs.length && d.climbs[0].ranking.length) lines.push({ k: 'tri', c: '#7ed957', t: 'Anstieg ' + d.climbs[0].no + ': ' + d.climbs[0].ranking[0].name + ' ' + UI.fmtDur(d.climbs[0].ranking[0].ms) });
+        if (lines.length) {
+            p.push(T(40, y, 'HIGHLIGHTS', 18, '#5f7379', 600)); y += 14;
+            lines.slice(0, 5).forEach(function (l) { y += 36; p.push(icon(l.k, 52, y - 8, l.c)); p.push(T(76, y, l.t, 22, '#e8f0f2')); });
+            y += 16;
+        }
+        p.push(T(40, y + 40, 'Gruppenausfahrt', 18, '#5f7379', 600));
+        var H = y + 64;
+        return { W: W, H: H, svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
+                 '<rect width="' + W + '" height="' + H + '" fill="#0d1214"/>' + p.join('') + '</svg>' };
+    }
+
+    function toPng(card) {
+        return new Promise(function (resolve, reject) {
+            var img = new Image();
+            img.onload = function () {
+                var c = document.createElement('canvas'), s = 2;
+                c.width = card.W * s; c.height = card.H * s;
+                var x = c.getContext('2d'); x.scale(s, s); x.drawImage(img, 0, 0);
+                c.toBlob(function (b) { b ? resolve(b) : reject(new Error('Bild konnte nicht erzeugt werden.')); }, 'image/png');
+            };
+            img.onerror = function () { reject(new Error('Bild konnte nicht erzeugt werden.')); };
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(card.svg);
+        });
+    }
+
+    /* Teilen: Web Share mit Datei (Handy), sonst Download. */
+    function share(d) {
+        return toPng(cardSvg(d)).then(function (blob) {
+            var name = 'ausfahrt_' + new Date(d.start).toISOString().slice(0, 10) + '.png';
+            var file = new File([blob], name, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                return navigator.share({ files: [file], title: d.name }).catch(function (e) { if (e && e.name !== 'AbortError') throw e; });
+            }
+            var a = document.createElement('a'), u = URL.createObjectURL(blob);
+            a.href = u; a.download = name; document.body.appendChild(a); a.click();
+            setTimeout(function () { URL.revokeObjectURL(u); a.remove(); }, 1500);
+        });
+    }
+
+    return { forRide: forRide, html: html, thumbSvg: thumbSvg, cardSvg: cardSvg, toPng: toPng, share: share };
+})();
+
+</script>
+<script>
+/* ==== js/segui.js ==== */
+/* ============================================================
+ * segui.js -- Oberflaeche fuer Segmente, Bestzeiten und Rekorde
+ * ============================================================
+ *   - Berge > Segmente: Liste mit Bestzeit, letzter Zeit und Verlauf je Segment
+ *   - Berge > Rekorde:  schnellste 1/5/10/20/40 km, beste 5/20 Minuten, ...
+ *   - Editor: einen Abschnitt einer gespeicherten Fahrt als Segment anlegen
+ *   - Live-Banner im Tacho: Zeit auf dem Segment und Vorsprung/Rueckstand
+ *     auf die Bestzeit, waehrend man faehrt
+ * ============================================================ */
+
+var SegUI = (function () {
+    'use strict';
+
+    var state = { world: 'real', open: {} };
+    var liveSeg = null, active = {}, toast = null, lastReport = null;
+    var cr = { rec: null, pts: null, cum: null };
+
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return UI.escapeHtml(s); }
+
+    function fmt(ms) {                        // m:ss
+        var s = Math.round(ms / 1000), m = Math.floor(s / 60);
+        return m + ':' + String(s % 60).padStart(2, '0');
+    }
+    function fmtDelta(ms) {                   // +8,3 s / −12,1 s
+        var sgn = ms < 0 ? '−' : '+', a = Math.abs(ms) / 1000;
+        return sgn + (a >= 60 ? fmt(Math.abs(ms)) : a.toFixed(1).replace('.', ',') + ' s');
+    }
+    function fmtDate(t) { return Rides.fmtDate(t); }
+
+    function setWorld(w) { state.world = (w === 'sim') ? 'sim' : 'real'; refresh(); }
+    function worldSwitch() {
+        return '<div class="worldsw"><div class="seg" role="group" aria-label="Fahrten oder Simulation">' +
+            '<button data-w="real"' + (state.world === 'real' ? ' class="on"' : '') + '>Fahrten</button>' +
+            '<button data-w="sim"' + (state.world === 'sim' ? ' class="on"' : '') + '>Simulation</button></div></div>';
+    }
+
+    /* ---------------- Segmente ---------------- */
+    function renderSegments() {
+        Segments.use(state.world);
+        var segs = Segments.list();
+        segs.sort(function (a, b) {
+            var la = a.efforts.length ? a.efforts[a.efforts.length - 1].t : a.created;
+            var lb = b.efforts.length ? b.efforts[b.efforts.length - 1].t : b.created;
+            return lb - la;
+        });
+        var out = [worldSwitch(), '<button class="btn" id="segNew">Segment aus einer Fahrt anlegen</button>'];
+        if (state.world === 'sim') out.push('<div class="note">Simulationsfahrten zählen nicht für deine echten Bestzeiten – sie haben eigene Segmente.</div>');
+        if (!segs.length) {
+            out.push('<div class="empty">Noch keine Segmente.<br>Anstiege werden nach jeder Fahrt automatisch erkannt und ' +
+                     'gespeichert. Eigene Abschnitte legst du mit dem Knopf oben an – ' +
+                     'auch aus importierten GPX-Dateien.</div>');
+        }
+        segs.forEach(function (seg) {
+            var best = Segments.bestOf(seg), last = seg.efforts[seg.efforts.length - 1], open = !!state.open[seg.id];
+            var body;
+            if (!best) body = 'Noch nicht gefahren.';
+            else {
+                body = 'Bestzeit <span class="big">' + fmt(best.ms) + '</span> · ' + best.kmh.toFixed(1).replace('.', ',') + ' km/h · ' + fmtDate(best.t);
+                if (last && last !== best) body += '<br>Zuletzt ' + fmt(last.ms) + ' (<span class="' + (last.ms > best.ms ? 'neg' : 'pos') + '">' + fmtDelta(last.ms - best.ms) + '</span>)';
+                body += '<br>' + seg.efforts.length + (seg.efforts.length === 1 ? ' Fahrt' : ' Fahrten');
+                if (seg.gain > 0 && best.vam) body += ' · ' + Math.round(best.vam) + ' Hm/h';
+            }
+            var eff = '';
+            if (open && seg.efforts.length) {
+                eff = seg.efforts.slice().sort(function (a, b) { return b.t - a.t; }).map(function (e) {
+                    return '<div class="efrow' + (e === best ? ' pbrow' : '') + '"><span>' + fmtDate(e.t) + '</span>' +
+                        '<span class="num">' + fmt(e.ms) + (e === best ? ' ★' : '') + '</span>' +
+                        '<span class="num ' + (e.ms > best.ms ? 'neg' : 'pos') + '">' + (e === best ? '' : fmtDelta(e.ms - best.ms)) + '</span>' +
+                        '<span class="num">' + e.kmh.toFixed(1).replace('.', ',') + '</span></div>';
+                }).join('');
+            }
+            out.push('<div class="segcard" data-id="' + seg.id + '">' +
+                '<div class="sh"><b>' + esc(seg.name) + '</b><span class="sm">' + UI.fmtDist(seg.len) +
+                (seg.gain > 0 ? ' · +' + Math.round(seg.gain) + ' Hm · ' + (seg.grade * 100).toFixed(1).replace('.', ',') + ' %' : '') + '</span></div>' +
+                '<div class="sb">' + body + '</div>' + eff +
+                '<div class="sa">' + (seg.efforts.length ? '<button data-act="open">' + (open ? 'Verlauf zu' : 'Verlauf') + '</button>' : '') +
+                '<button data-act="rename">Umbenennen</button><button data-act="del">Löschen</button></div></div>');
+        });
+        $('segPane').innerHTML = out.join('');
+    }
+
+    /* ---------------- Rekorde ---------------- */
+    function renderRecords() {
+        Segments.use(state.world);
+        var st = Segments.bests(), out = [worldSwitch()], any = false;
+        var fresh = {};
+        if (lastReport && lastReport.world === state.world) lastReport.records.forEach(function (r) { fresh[r.key] = true; });
+        Segments.RECORDS.forEach(function (R) {
+            var rec = st[R.key];
+            if (!rec) return;
+            any = true;
+            var val, sub = '';
+            if (R.kind === 'time') { var L = +R.key.slice(1); val = fmt(rec.v); sub = (L / (rec.v / 1000) * 3.6).toFixed(1).replace('.', ',') + ' km/h'; }
+            else if (R.kind === 'dist') { val = UI.fmtDist(rec.v); sub = (rec.v / (R.win / 1000) * 3.6).toFixed(1).replace('.', ',') + ' km/h'; }
+            else if (R.kind === 'speed') val = (rec.v * 3.6).toFixed(1).replace('.', ',') + ' km/h';
+            else if (R.kind === 'gain') val = '+' + Math.round(rec.v) + ' Hm';
+            else val = UI.fmtDist(rec.v);
+            out.push('<div class="recrow"><span class="rl">' + R.label + (fresh[R.key] ? '<span class="newb">NEU</span>' : '') +
+                     '</span><span class="rv num">' + val + '</span><span class="rd">' + (sub ? sub + ' · ' : '') + esc(rec.rname) + ' · ' + fmtDate(rec.t) + '</span></div>');
+        });
+        if (!any) out.push('<div class="empty">Noch keine Rekorde.<br>Sie entstehen automatisch aus jeder beendeten Fahrt – ' +
+                           'auch aus importierten GPX-Dateien (Gruppe → Gespeicherte Ausfahrten). ' +
+                           'Kürzere Fahrten als 1 km zählen nicht.</div>');
+        $('recPane').innerHTML = out.join('');
+    }
+
+    function refresh() {
+        if (!$('segPane')) return;
+        renderSegments(); renderRecords();
+    }
+
+    /* ---------------- Editor ---------------- */
+    function selection() {
+        var total = cr.cum[cr.cum.length - 1] || 1;
+        var fa = $('seA').value / 1000, fb = $('seB').value / 1000;
+        return { iA: Track.idxAt(cr.cum, fa * total), iB: Math.min(cr.pts.length - 1, Track.idxAt(cr.cum, fb * total)), total: total };
+    }
+
+    function drawPreview() {
+        var svg = $('seSvg'), W = svg.clientWidth || 300, H = svg.clientHeight || 170;
+        svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+        var pts = cr.pts, fr = Geo.frame(pts[0].lat, pts[0].lon), xy = pts.map(function (p) { return fr.toXY(p.lat, p.lon); });
+        var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+        xy.forEach(function (q) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); });
+        var pad = 14, k = Math.min((W - 2 * pad) / Math.max(30, x1 - x0), (H - 2 * pad) / Math.max(30, y1 - y0));
+        var ox = (W - (x1 - x0) * k) / 2 - x0 * k, oy = (H - (y1 - y0) * k) / 2 + y1 * k;
+        function X(q) { return (q.x * k + ox).toFixed(1); }
+        function Y(q) { return (oy - q.y * k).toFixed(1); }
+        var step = Math.max(1, Math.floor(xy.length / 300)), all = '';
+        for (var i = 0; i < xy.length; i += step) all += (all ? 'L' : 'M') + X(xy[i]) + ' ' + Y(xy[i]);
+        var s = selection(), sel = '';
+        for (var j = s.iA; j <= s.iB; j += Math.max(1, Math.floor((s.iB - s.iA) / 200))) sel += (sel ? 'L' : 'M') + X(xy[j]) + ' ' + Y(xy[j]);
+        sel += 'L' + X(xy[s.iB]) + ' ' + Y(xy[s.iB]);
+        svg.innerHTML = '<path class="stt" d="' + all + '"/><path class="ssel" d="' + sel + '"/>' +
+            '<circle class="sdot" cx="' + X(xy[s.iA]) + '" cy="' + Y(xy[s.iA]) + '" r="5"/>' +
+            '<circle class="sdot" cx="' + X(xy[s.iB]) + '" cy="' + Y(xy[s.iB]) + '" r="5"/>';
+        var sec = pts.slice(s.iA, s.iB + 1), len = cr.cum[s.iB] - cr.cum[s.iA], dur = pts[s.iB].t - pts[s.iA].t;
+        $('seStats').textContent = UI.fmtDist(len) + ' · +' + Math.round(Track.gain(sec)) + ' Hm · ' +
+            (dur > 0 ? fmt(dur) + ' · ' + (len / (dur / 1000) * 3.6).toFixed(1).replace('.', ',') + ' km/h' : '');
+        return { len: len };
+    }
+
+    function keepOrder(changed) {                 // Anfang vor Ende, mindestens 200 m dazwischen
+        var total = cr.cum[cr.cum.length - 1] || 1, min = Math.min(400, 200 / total * 1000);
+        var a = +$('seA').value, b = +$('seB').value;
+        if (b - a < min) { if (changed === 'A') { $('seB').value = Math.min(1000, a + min); if (+$('seB').value - a < min) $('seA').value = Math.max(0, +$('seB').value - min); } else { $('seA').value = Math.max(0, b - min); if (b - +$('seA').value < min) $('seB').value = Math.min(1000, +$('seA').value + min); } }
+    }
+
+    function loadRide(id) {
+        var rec = Rides.get(id);
+        if (!rec) return;
+        cr.rec = rec; cr.pts = Segments.trackOf(rec); cr.cum = Track.cumulative(cr.pts);
+        $('seA').value = 0; $('seB').value = 1000;
+        $('seName').value = 'Segment ' + (Segments.list().length + 1);
+        $('seMsg').textContent = '';
+        drawPreview();
+    }
+
+    function openEditor() {
+        Segments.use(state.world);
+        var rides = Rides.list().filter(function (r) { return r.src !== 'plan' && Segments.worldOf(r.src) === state.world && r.n >= 20; });
+        if (!rides.length) { alert(state.world === 'sim' ? 'Es gibt noch keine gespeicherte Simulationsfahrt.' : 'Es gibt noch keine gespeicherte Fahrt. Segmente werden aus einer Fahrt herausgeschnitten.'); return; }
+        $('seRide').innerHTML = rides.map(function (r) { return '<option value="' + r.id + '">' + esc(r.name) + ' · ' + UI.fmtDist(r.dist) + '</option>'; }).join('');
+        $('segEdit').hidden = false;
+        loadRide(rides[0].id);
+    }
+
+    function saveEditor() {
+        var s = selection(), name = ($('seName').value || '').trim() || 'Segment';
+        if (s.iB <= s.iA) { $('seMsg').textContent = 'Anfang muss vor dem Ende liegen.'; return; }
+        Segments.use(state.world);
+        var seg = Segments.fromSection(cr.pts, s.iA, s.iB, name, 'custom', false);
+        if (seg.len < 150) { $('seMsg').textContent = 'Das Segment ist zu kurz (mindestens 150 m).'; return; }
+        var found = Segments.addSegment(seg);
+        $('seMsg').textContent = '„' + name + '“ gespeichert – in ' + found + (found === 1 ? ' Fahrt' : ' Fahrten') + ' gefunden.';
+        refresh();
+        setTimeout(function () { $('segEdit').hidden = true; }, 1100);
+    }
+
+    /* ---------------- Live-Banner ---------------- */
+    function startLive(world) { liveSeg = Segments.live(world); active = {}; toast = null; renderBanner(); }
+    function stopLive() { liveSeg = null; active = {}; toast = null; renderBanner(); }
+
+    function feed(fix) {
+        if (!liveSeg) return;
+        var ev = liveSeg.update(fix);
+        ev.forEach(function (e) {
+            if (e.type === 'start' || e.type === 'progress') active[e.seg.id] = e;
+            else if (e.type === 'abort') delete active[e.seg.id];
+            else if (e.type === 'finish') {
+                delete active[e.seg.id];
+                toast = { until: Date.now() + 14000, e: e };
+                if (e.isPB && e.best !== null && navigator.vibrate) { try { navigator.vibrate([180, 70, 180]); } catch (x) {} }
+            }
+        });
+        renderBanner();
+    }
+
+    function renderBanner() {
+        var el = $('segBanner');
+        if (!el) return;
+        var now = Date.now(), html = '', cls = '';
+        if (toast && toast.until > now) {
+            var e = toast.e;
+            cls = e.isPB ? 'pb' : (e.delta > 0 ? 'behind' : 'ahead');
+            html = '<b>' + esc(e.seg.name) + ' · ' + fmt(e.ms) + '</b> ' +
+                   (e.best === null ? '<div class="sub2">Erste Fahrt – die Zeit ist jetzt deine Bestzeit.</div>'
+                    : e.isPB ? '🏆 neue Bestzeit (' + fmtDelta(e.delta) + ')' : '<div class="sub2">' + fmtDelta(e.delta) + ' zur Bestzeit ' + fmt(e.best) + '</div>');
+        } else {
+            var ids = Object.keys(active);
+            if (ids.length) {
+                var a = active[ids[0]];
+                cls = a.delta == null ? '' : (a.delta <= 0 ? 'ahead' : 'behind');
+                html = '<b>▲ ' + esc(a.seg.name) + '</b> ' + fmt(a.elapsed || 0) +
+                       (a.best ? ' · Bestzeit ' + fmt(a.best) : '') +
+                       '<div class="sub2">' + (a.delta == null ? (a.best ? 'Vergleich ab 5 % der Strecke' : 'erste Fahrt auf diesem Segment')
+                           : (a.delta <= 0 ? 'vor der Bestzeit: ' : 'hinter der Bestzeit: ') + fmtDelta(a.delta).replace(/^[+−]/, '')) +
+                       ' · noch ' + UI.fmtDist(a.left !== undefined ? a.left : a.seg.len) + '</div>';
+            }
+        }
+        el.hidden = !html;
+        el.className = 'segbanner ' + cls;
+        if (html) el.innerHTML = html;
+    }
+
+    /* ---------------- Verdrahtung ---------------- */
+    function init() {
+        function pane(id) {
+            $(id).addEventListener('click', function (e) {
+                var w = e.target.closest('[data-w]');
+                if (w) { setWorld(w.dataset.w); return; }
+                if (e.target.id === 'segNew') { openEditor(); return; }
+                var b = e.target.closest('[data-act]'), card = e.target.closest('.segcard');
+                if (!b || !card) return;
+                var id = card.dataset.id, act = b.dataset.act;
+                Segments.use(state.world);
+                if (act === 'open') { state.open[id] = !state.open[id]; renderSegments(); }
+                else if (act === 'rename') {
+                    var seg = Segments.get(id), nn = prompt('Neuer Name für das Segment:', seg ? seg.name : '');
+                    if (nn && nn.trim()) { Segments.rename(id, nn.trim().slice(0, 40)); renderSegments(); }
+                } else if (act === 'del') {
+                    if (confirm('Segment samt allen Zeiten löschen?')) { Segments.remove(id); renderSegments(); }
+                }
+            });
+        }
+        pane('segPane'); pane('recPane');
+        $('seRide').addEventListener('change', function () { loadRide(this.value); });
+        $('seA').addEventListener('input', function () { keepOrder('A'); drawPreview(); });
+        $('seB').addEventListener('input', function () { keepOrder('B'); drawPreview(); });
+        $('seSave').addEventListener('click', saveEditor);
+        $('seCancel').addEventListener('click', function () { $('segEdit').hidden = true; });
+        setInterval(renderBanner, 1000);          // Banner laeuft ab, auch ohne neue Position
+        refresh();
+    }
+
+    return { init: init, refresh: refresh, setWorld: setWorld, startLive: startLive, stopLive: stopLive, feed: feed,
+             setReport: function (r) { lastReport = r; refresh(); }, fmt: fmt };
+})();
+
+</script>
+<script>
+/* ==== js/replayui.js ==== */
+/* ============================================================
+ * replayui.js -- Gruppenfahrt noch einmal abspielen
+ * ============================================================
+ * Vollbild: Karte, Hoehenprofil, Zeitleiste und die Rangliste zu jedem
+ * Zeitpunkt. Die Fahrt laeuft durch dieselbe Auswertung wie live
+ * (session.js) -- Rang, Luecken, Ueberholvorgaenge und Antritte sind
+ * also nicht nachgestellt, sondern zum jeweiligen Zeitpunkt berechnet.
+ *
+ * Vor- und Zurueckspulen: Vorwaerts wird die Auswertung einfach weiter-
+ * gerechnet; rueckwaerts muss sie von vorn neu aufgebaut werden (die
+ * Achse und die Anstiege entstehen ja erst beim Fahren). Bei langen
+ * Fahrten dauert das einen Moment, deshalb rechnet sie in kleinen
+ * Happen im Hintergrund und zeigt "berechne ..." solange.
+ * ============================================================ */
+
+var ReplayUI = (function () {
+    'use strict';
+
+    var sess = null, ctl = null, ride = null;
+    var playing = false, speed = 10, target = null, lastTs = 0, lastList = 0, raf = 0;
+    var el = {};
+    var events = [];
+
+    function $(id) { return document.getElementById(id); }
+
+    function isOpen() { return !!$('replay') && !$('replay').hidden; }
+
+    function fmtClock(ms) { return UI.fmtDur(Math.max(0, ms)); }
+
+    function build(rideId) {
+        var rec = Rides.get(rideId);
+        if (!rec) return null;
+        var g = Rides.getGroup(rideId);
+        if (g) return { rec: rec, session: new Session(Recorder.unpack(g)) };
+        // keine Gruppe aufgezeichnet: nur die eigene Fahrt
+        return { rec: rec, session: Session.solo(Rides.unpack(rec), 'me', 'Du', UI.COLORS[0]) };
+    }
+
+    function open(rideId) {
+        var b = build(rideId);
+        if (!b) return false;
+        ride = b.rec; sess = b.session;
+        if (!ctl) {
+            ctl = MapCtl.mount($('rpMap'), {
+                prefix: 'rp', persist: false,
+                isActive: isOpen,
+                getData: function () {
+                    if (!sess) return null;
+                    var mine = sess.an.riders[sess.meId];
+                    return { route: sess.route, riders: sess.an.order(), meId: sess.meId,
+                             climbs: sess.an.climbs, heading: mine ? mine.heading : null,
+                             overlay: null, smooth: true };
+                }
+            });
+        }
+        $('replay').hidden = false;
+        $('rpTitle').textContent = ride.name;
+        playing = false; target = null; events = [];
+        sess.reset();
+        speed = 10; syncSpeed(); syncPlay();
+        $('rpSlider').value = 0;
+        // erst bis kurz nach dem Start vorrechnen, damit die Karte nicht leer ist
+        target = sess.t0 + 15000;
+        ctl.reset(); ctl.opt.follow = false; ctl.opt.fitRoute = false; ctl.sync();
+        ctl.ensureLoop();
+        loop(performance.now());
+        return true;
+    }
+
+    function close() {
+        $('replay').hidden = true;
+        playing = false;
+        cancelAnimationFrame(raf); raf = 0;
+    }
+
+    function syncPlay() {
+        $('rpPlay').textContent = playing ? '⏸' : '▶';
+        $('rpPlay').classList.toggle('go', !playing);
+    }
+    function syncSpeed() {
+        document.querySelectorAll('[data-rs]').forEach(function (b) { b.classList.toggle('on', +b.dataset.rs === speed); });
+    }
+
+    /* Zeit t (ms) ansteuern: vorwaerts weiterrechnen, rueckwaerts neu aufbauen. */
+    function seekTo(t) {
+        t = Math.max(sess.t0, Math.min(sess.t1, t));
+        if (t < sess.tCur) { sess.reset(); events = []; }
+        target = t;
+    }
+
+    function loop(ts) {
+        raf = 0;
+        if (!isOpen() || !sess) return;
+        var dt = lastTs ? Math.min(100, ts - lastTs) : 16;
+        lastTs = ts;
+
+        // Abspielen: die Ziel-Zeit laeuft mit der gewaehlten Geschwindigkeit weiter
+        if (playing && target === null) {
+            var nt = sess.tCur + dt * speed;
+            if (nt >= sess.t1) { nt = sess.t1; playing = false; syncPlay(); }
+            target = nt;
+        }
+        var busy = false;
+        if (target !== null) {
+            var big = target - sess.tCur > 5000;
+            var reached = sess.work(target, big ? 2000 : 1000, 10);
+            if (reached) target = null; else busy = true;
+        }
+        $('rpBusy').hidden = !busy;
+
+        // Anzeige: Schieberegler, Zeit, Liste (5x pro Sekunde reicht)
+        var total = Math.max(1, sess.t1 - sess.t0), frac = (sess.tCur - sess.t0) / total;
+        if (!$('rpSlider').dragging) $('rpSlider').value = Math.round(Math.max(0, Math.min(1, frac)) * 1000);
+        $('rpTime').textContent = fmtClock(sess.tCur - sess.t0) + ' / ' + fmtClock(total);
+        if (ts - lastList > 200) { lastList = ts; renderList(); }
+
+        raf = requestAnimationFrame(loop);
+    }
+
+    function renderList() {
+        var an = sess.an, ord = an.order(), lead = ord[0], mine = an.riders[sess.meId];
+        var rows = ord.map(function (r, i) {
+            var gap = (lead && r !== lead) ? lead.s - r.s : null;
+            return '<div class="rprow' + (r.id === sess.meId ? ' me' : '') + '">' +
+                '<span class="rk num">' + (i + 1) + '</span>' +
+                '<span class="rdot" style="background:' + (r.color || '#93a7af') + '"></span>' +
+                '<span class="rn">' + UI.escapeHtml(r.name || r.id) + (r.dropped ? ' <i class="tag drop">ABGERISSEN</i>' : '') + '</span>' +
+                '<span class="rs num">' + (r.speed > 0.3 ? Math.round(UI.kmh(r.speed)) : '–') + '</span>' +
+                '<span class="rg num">' + (gap === null ? '' : '−' + UI.fmtDist(gap)) + '</span></div>';
+        });
+        $('rpRiders').innerHTML = rows.join('') || '<div class="empty">Noch niemand unterwegs.</div>';
+
+        // letztes Ereignis in Worten
+        var ev = an.events[an.events.length - 1];
+        $('rpEvent').innerHTML = ev ? '<span class="tm num">' + UI.fmtDur(ev.t - sess.t0) + '</span> ' + UI.eventText(an, ev) : '';
+
+        // Profil (Live-Achse der Session)
+        var riders = ord.map(function (r) {
+            return { id: r.id, name: r.name, color: r.color, s: r.s, self: r.id === sess.meId, stale: an.isStale(r) };
+        });
+        var pi = Profile.render($('rpProfSvg'), { route: sess.route, riders: riders, climbs: an.climbs,
+                                                   meS: mine ? mine.s : null, mode: 'all' });
+        if (pi) $('rpProfInfo').textContent = Profile.describe(pi.next);
+    }
+
+    function wire() {
+        $('rpClose').addEventListener('click', close);
+        $('rpPlay').addEventListener('click', function () {
+            if (!sess) return;
+            if (!playing && sess.tCur >= sess.t1) seekTo(sess.t0);      // am Ende: von vorn
+            playing = !playing; syncPlay();
+        });
+        document.querySelectorAll('[data-rs]').forEach(function (b) {
+            b.addEventListener('click', function () { speed = +b.dataset.rs; syncSpeed(); });
+        });
+        var sl = $('rpSlider');
+        sl.addEventListener('input', function () {
+            if (!sess) return;
+            sl.dragging = true;
+            var t = sess.t0 + (sl.value / 1000) * (sess.t1 - sess.t0);
+            $('rpTime').textContent = fmtClock(t - sess.t0) + ' / ' + fmtClock(sess.t1 - sess.t0);
+            seekTo(t);
+        });
+        sl.addEventListener('change', function () { sl.dragging = false; });
+        document.addEventListener('keydown', function (e) {
+            if (!isOpen()) return;
+            if (e.key === 'Escape') close();
+            if (e.key === ' ') { e.preventDefault(); $('rpPlay').click(); }
+        });
+    }
+
+    return { open: open, close: close, wire: wire, isOpen: isOpen,
+             _state: function () { return { sess: sess, playing: playing, target: target, speed: speed }; } };
 })();
 
 </script>
@@ -3414,10 +5515,14 @@ var Ghost = (function () {
     var relayUrl = null;
     // Kartenansicht: "Alle" passt den Ausschnitt an die Gruppe an, "Ich" haelt
     // dich in der Mitte; "Kurs" dreht die Karte so, dass deine Fahrtrichtung oben liegt.
-    var mapOpt = { follow: false, trackUp: false, zoom: 1, tiles: false,
-                   zoomMul: 1, panU: 0, panV: 0 };    // Gesten: Zoomfaktor und Verschiebung (m)
-    var mapV = { k: 1, cx: 0, cy: 0 };                // Massstab/Mitte des letzten Zeichnens
-    var lastMap = null, mapRaf = 0;
+    var liveMap = null;                               // Karte (MapCtl), wird beim Laden aufgebaut
+    var lastMap = null;                               // letzter Stand fuer die Zeichenschleife
+
+    // Geplante Route (Ueberlagerung): eine gespeicherte Fahrt/GPX-Strecke als Linie auf der Karte
+    //   { id, name, route (Route), overlay {name,len,pts,route}, climbs, gain }
+    var plan = null;
+    var profMode = null;                              // 'all' | 'ahead' (null = automatisch)
+    var planHint = {};                                // letzte Position je Fahrer auf der Route
 
     // Simulation: eigener Zustand, sie ersetzt GPS und Netz komplett
     var sim = null, simTimer = null, simWarp = 1, simHeading = null, simSaved = false;
@@ -3520,6 +5625,8 @@ var Ghost = (function () {
         if (!m || !m.i || m.i === me.id) return;
         if (typeof m.la !== 'number' || typeof m.lo !== 'number') return;
 
+        Recorder.add(m.i, typeof m.n === 'string' ? m.n.slice(0, 14) : null, UI.COLORS[(m.c | 0) % UI.COLORS.length],
+                     (typeof m.t === 'number') ? m.t : Date.now(), m.la, m.lo, (typeof m.e === 'number') ? m.e : null);
         an.ingest(m.i, {
             lat: m.la, lon: m.lo,
             ele: (typeof m.e === 'number') ? m.e : null,
@@ -3563,6 +5670,9 @@ var Ghost = (function () {
         });
         an.riders[me.id].self = true;
 
+        SegUI.feed({ lat: c.latitude, lon: c.longitude, t: pos.timestamp || Date.now() });
+        Recorder.add(me.id, me.name, myColor(), pos.timestamp || Date.now(), c.latitude, c.longitude,
+                     (c.altitude !== null && !isNaN(c.altitude)) ? c.altitude : null);
         var last = myTrack[myTrack.length - 1];
         if (!last || (pos.timestamp - last.t) > 1500) {
             myTrack.push({ lat: c.latitude, lon: c.longitude,
@@ -3592,7 +5702,9 @@ var Ghost = (function () {
         //     hier nur der aktuelle Stand fuer sie ---
         lastCompass = { ord: ord, heading: h.deg };
         ensureCompassLoop();
-        if (isActive('map')) { lastMap = { ord: ord, heading: h.deg }; ensureMapLoop(); }
+        lastMap = { ord: ord, heading: h.deg };
+        if (isActive('map')) liveMap.ensureLoop();
+        renderProfiles();
 
         // --- Liste: Luecke immer relativ zu MIR, das ist die Zahl,
         //     die man beim Fahren wissen will ---
@@ -3640,61 +5752,6 @@ var Ghost = (function () {
             UI.badge('bdgClimbs', an.climbs.length - seenClimbs);
 
         if (running && !Net.online()) UI.renderNet('wait', 'kein Netz – nur eigene Daten');
-    }
-
-    function renderMap(ord, heading) {
-        lastMap = { ord: ord, heading: heading };
-        var info = MapView.render($('mapSvg'), {
-            zoomMul: mapOpt.zoomMul, panU: mapOpt.panU, panV: mapOpt.panV,
-            route: route, riders: ord, meId: me.id, climbs: an.climbs,
-            follow: mapOpt.follow, zoom: mapOpt.zoom, trackUp: mapOpt.trackUp,
-            heading: heading,
-            tiles: mapOpt.tiles, tileSvg: $('mapTiles'), tileUrl: store('tileurl') || undefined
-        });
-        if (!info) return;
-        if (info.k) mapV = { k: info.k, cx: info.cx, cy: info.cy };
-        var txt = info.riders + ' Fahrer';
-        if (info.length > 0) txt += ' · Streckenachse ' + UI.fmtDist(info.length);
-        if (mapOpt.trackUp && heading === null) txt += ' · noch kein Kurs, Norden oben';
-        $('mapInfo').textContent = info.riders ? txt : '';
-    }
-
-    function syncMapButtons() {
-        $('mapAll').classList.toggle('on', !mapOpt.follow);
-        $('mapMe').classList.toggle('on', mapOpt.follow);
-        $('mapTilesBtn').classList.toggle('on', mapOpt.tiles);
-        $('mapTilesBtn').setAttribute('aria-pressed', mapOpt.tiles ? 'true' : 'false');
-        $('mapAttr').hidden = !mapOpt.tiles;
-        $('mapNorth').classList.toggle('on', !mapOpt.trackUp);
-        $('mapCourse').classList.toggle('on', mapOpt.trackUp);
-        $('mapCenter').hidden = !mapDirty();
-    }
-
-    /* ---------------- Karte: Gesten ----------------
-       Verschiebung (panU/panV, Meter) und Zoomfaktor (zoomMul) liegen ueber
-       dem automatischen Ausschnitt von "Alle" bzw. "Ich". Ein Fingerzeig
-       verschiebt also relativ dazu -- die Karte folgt weiter der Gruppe. */
-    var K_MIN = 0.004, K_MAX = 30;
-
-    function mapDirty() {
-        return !!(mapOpt.panU || mapOpt.panV) || Math.abs(mapOpt.zoomMul - 1) > 0.01;
-    }
-    function mapReset() { mapOpt.panU = mapOpt.panV = 0; mapOpt.zoomMul = 1; }
-
-    function mapPan(dx, dy) {
-        mapOpt.panU -= dx / mapV.k;          // Karte nach rechts ziehen = Mitte nach links
-        mapOpt.panV += dy / mapV.k;
-    }
-
-    // Zoom um einen Bildpunkt: der Punkt unter dem Finger bleibt unter dem Finger
-    function mapZoomAbout(px, py, f) {
-        var k0 = mapV.k, k1 = Math.max(K_MIN, Math.min(K_MAX, k0 * f));
-        if (k1 === k0) return;
-        var dx = px - mapV.cx, dy = py - mapV.cy;
-        mapOpt.panU += dx * (1 / k0 - 1 / k1);
-        mapOpt.panV += dy * (1 / k1 - 1 / k0);
-        mapOpt.zoomMul *= k1 / k0;
-        mapV.k = k1;                          // gleich weiterrechnen, bevor neu gezeichnet ist
     }
 
     /* ---------------- Kompass ----------------
@@ -3756,32 +5813,6 @@ var Ghost = (function () {
         requestAnimationFrame(compassLoop);
     }
 
-    /* Die Karte zeichnet mit ~30 Bildern pro Sekunde, solange sie sichtbar ist
-       (die Positionen selbst kommen nur ~1x pro Sekunde -- dazwischen glaettet
-       MapView, siehe map.js). Ist ein anderer Reiter offen oder die Seite im
-       Hintergrund, laeuft nichts: das schont den Akku. */
-    var mapLoopOn = false, mapLoopT = 0;
-    function mapLoop(ts) {
-        if (!isActive('map') || document.hidden) { mapLoopOn = false; return; }
-        if (ts - mapLoopT >= 33 && lastMap) { mapLoopT = ts; renderMap(lastMap.ord, lastMap.heading); }
-        requestAnimationFrame(mapLoop);
-    }
-    function ensureMapLoop() {
-        if (mapLoopOn) return;
-        mapLoopOn = true;
-        requestAnimationFrame(mapLoop);
-    }
-
-    // hoechstens einmal je Bild neu zeichnen, auch wenn Gesten schneller kommen
-    function mapRedraw() {
-        if (mapRaf) return;
-        mapRaf = requestAnimationFrame(function () {
-            mapRaf = 0;
-            if (lastMap && isActive('map')) renderMap(lastMap.ord, lastMap.heading);
-            syncMapButtons();
-        });
-    }
-
     function showQr() {
         var url = shareLink();
         try {
@@ -3794,31 +5825,15 @@ var Ghost = (function () {
         $('qrOverlay').hidden = false;
     }
 
-    function nameOf(id) {
-        var r = an.riders[id];
-        return UI.escapeHtml((r && r.name) || id);
-    }
-
-    function eventText(e) {
-        switch (e.type) {
-            case 'pass':   return nameOf(e.id) + ' überholt ' + nameOf(e.over);
-            case 'attack': return nameOf(e.id) + ' tritt an – ' + e.gain + ' m gewonnen' +
-                                  (e.surge ? ' (+' + e.surge + ' km/h)' : '');
-            case 'drop':   return nameOf(e.id) + (e.standing ? ' steht' : ' ist abgerissen') +
-                                  (e.gap ? ' – ' + UI.fmtDist(e.gap) + ' zurück' : '');
-            case 'rejoin': return nameOf(e.id) + ' ist wieder dran';
-            case 'lead':   return nameOf(e.id) + ' übernimmt die Führung' +
-                                  (e.from ? ' von ' + nameOf(e.from) : '');
-            default:       return e.type;
-        }
-    }
+    function eventText(e) { return UI.eventText(an, e); }
 
     /* ---------------- Simulation ---------------- */
     function simStart() {
         if (running) { alert('Erst die laufende Ausfahrt beenden.'); return; }
         route = new Route(); an = new Analytics(route);
         seenEvents = 0; seenClimbs = 0;
-        myTrack = []; simSaved = false;
+        myTrack = []; simSaved = false; Recorder.reset(me.id);
+        SegUI.startLive('sim'); SegUI.setWorld('sim');
         armGhostAgain();
         var others = UI.COLORS.filter(function (c, i) { return i !== me.colorIdx; });
         sim = SimMode.create({ meId: me.id, meName: me.name, meColor: myColor(),
@@ -3838,7 +5853,7 @@ var Ghost = (function () {
     }
 
     function simStop() {
-        clearInterval(simTimer); simTimer = null;
+        clearInterval(simTimer); simTimer = null; SegUI.stopLive();
         if (!simSaved && sim && sim.t >= 60) { simSaved = true; finishRecording('sim'); }
         armGhostAgain();
         sim = null; simHeading = null;
@@ -3862,7 +5877,9 @@ var Ghost = (function () {
                 an.ingest(m.id, { lat: m.lat, lon: m.lon, ele: m.ele, speed: m.speed,
                                   heading: m.heading, acc: m.acc, t: m.t,
                                   name: m.name, color: m.color });
+                Recorder.add(m.id, m.name, m.color, m.t, m.lat, m.lon, m.ele);
                 if (m.me) {
+                    SegUI.feed({ lat: m.lat, lon: m.lon, t: m.t });
                     an.riders[m.id].self = true; simHeading = m.heading;
                     myTrack.push({ lat: m.lat, lon: m.lon, ele: m.ele, t: m.t });
                 }
@@ -3898,12 +5915,50 @@ var Ghost = (function () {
 
     function finishRecording(src) {
         if (myTrack.length < Rides.MIN_POINTS) { Rides.clearDraft(); return; }
-        var r = Rides.save({ src: src, pts: myTrack });
+        var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null });
         Rides.clearDraft();
         setRideMsg(r.ok ? '„' + r.rec.name + '“ gespeichert – ' + UI.fmtDist(r.rec.dist) + ', ' +
                           UI.fmtDur(r.rec.dur) + '. Unten als Ghost verwendbar.'
                         : r.err);
         renderRides();
+        if (r.ok) analyseRide(r.rec);
+    }
+
+    /* Nach der Fahrt: Segmente finden, Bestzeiten und Rekorde nachfuehren. Laeuft in kleinen
+       Happen im Hintergrund (bei langen Fahrten einige Sekunden), Ergebnis in lastReport. */
+    var lastReport = null;
+    function analyseRide(rec) {
+        lastReport = null;
+        setRideMsg('„' + rec.name + '“ gespeichert. Auswertung läuft …');
+        return Segments.processRide(rec).then(function (rep) {
+            lastReport = rep ? { rideId: rec.id, rep: rep } : null;
+            if (rep) SegUI.setReport(rep);
+            var note = '„' + rec.name + '“ gespeichert';
+            if (rep) {
+                var pb = rep.efforts.filter(function (e) { return e.isPB && !e.first; }).length;
+                var firsts = rep.efforts.filter(function (e) { return e.first; }).length;
+                if (pb) note += ' · ' + pb + ' neue Bestzeit' + (pb > 1 ? 'en' : '');
+                if (firsts) note += ' · ' + firsts + (firsts > 1 ? ' neue Segmente' : ' neues Segment');
+                if (rep.records.length) note += ' · ' + rep.records.length + ' Rekord' + (rep.records.length > 1 ? 'e' : '');
+            }
+            setRideMsg(note + '.');
+            if (typeof SegUI !== 'undefined') SegUI.refresh();
+            // Echte Fahrten: die Bilanz gleich zeigen. Simulationen nur auf Knopfdruck.
+            if (rec.src === 'ride' && rec.dur > 120000 && rec.dist > 500) openSummary(rec.id);
+        }, function (e) { setRideMsg('Auswertung fehlgeschlagen: ' + (e && e.message || e)); });
+    }
+
+    /* ---------------- Bilanz ---------------- */
+    var sumData = null;
+    function openSummary(id) {
+        $('sumOverlay').hidden = false; $('sumBusy').hidden = false; $('sumBody').innerHTML = ''; $('sumMsg').textContent = '';
+        sumData = null;
+        Summary.forRide(id, function (f) { $('sumBusy').textContent = 'Bilanz wird berechnet … ' + Math.round(f * 100) + ' %'; }).then(function (d) {
+            sumData = d;
+            $('sumBusy').hidden = true;
+            $('sumBody').innerHTML = Summary.html(d);
+            $('sumThumb').innerHTML = '<svg viewBox="0 0 340 190" preserveAspectRatio="xMidYMid meet">' + Summary.thumbSvg(d, 340, 190) + '</svg>';
+        }, function (e) { $('sumBusy').hidden = true; $('sumBody').textContent = 'Bilanz nicht möglich: ' + (e && e.message || e); });
     }
 
     /* Entwurf alle 60 s: Faellt der Akku waehrend der Fahrt aus oder stuerzt
@@ -4013,6 +6068,87 @@ var Ghost = (function () {
         }
     }
 
+    /* ---------------- Geplante Route (Ueberlagerung) ----------------
+       Jede gespeicherte Strecke -- eigene Fahrt, GPX-Import, Trainingsplan -- laesst sich
+       als Linie unter die Karte legen. Es gibt keine Warnung bei Abweichung: die Linie
+       ist ein Wegweiser, keine Vorschrift. Mit einer Route kennt das Hoehenprofil auch
+       das Stueck VOR dem Fuehrenden (die Live-Achse endet ja bei ihm). */
+    function setPlan(id) {
+        var rec = Rides.get(id);
+        if (!rec) { plan = null; return; }
+        var pts = Track.thin(Rides.unpack(rec), 8);
+        var rt = Route.fromPoints(pts, 10);
+        rt.smoothElevation();
+        plan = {
+            id: id, name: rec.name, route: rt,
+            climbs: new Analytics(rt).scanClimbs(),
+            gain: Track.gain(pts),
+            overlay: { name: rec.name, len: rt.length(), route: rt,
+                       pts: rt.pts.map(function (p) { return { lat: p.lat, lon: p.lon, ele: p.ele, s: p.s }; }) }
+        };
+        store('plan', id);
+        planHint = {};
+        syncProfMode();
+    }
+    function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); }
+
+    /* ---------------- Hoehenprofil ----------------
+       Mit Route: das Profil der ganzen Route, die Fahrer darauf projiziert (auch vor dem
+       Fuehrenden). Ohne: die Live-Achse, sie endet beim Fuehrenden. */
+    function planS(r) {
+        var pr = plan.route.project(r.fLat, r.fLon, planHint[r.id]);
+        if (!pr || pr.offset > 150) return null;            // weit ab der Route: nicht darauf zeigen
+        planHint[r.id] = pr.s;
+        return Math.max(0, Math.min(plan.route.length(), pr.s));
+    }
+
+    function profileInput() {
+        var ord = lastMap ? lastMap.ord : [], riders = [], meS = null;
+        function add(r, sv) {
+            if (sv === null || sv === undefined) return;
+            riders.push({ id: r.id, name: r.name, color: r.color, s: sv, self: r.id === me.id,
+                          ghost: !!r.ghost, stale: !r.ghost && an.isStale(r) });
+            if (r.id === me.id) meS = sv;
+        }
+        if (plan) {
+            ord.forEach(function (r) { if (r.fLat !== null) add(r, planS(r)); });
+            return { route: plan.route, riders: riders, climbs: plan.climbs, meS: meS };
+        }
+        ord.forEach(function (r) { add(r, r.s); });
+        return { route: route, riders: riders, climbs: an.climbs, meS: meS };
+    }
+
+    function renderProfiles() {
+        var onClimbs = isActive('climbs') && !$('sub-now').hidden;
+        var onMap = isActive('map') && !$('mapProf').hidden;
+        if (!onClimbs && !onMap) return;
+        var inp = profileInput();
+        inp.mode = profMode || (plan ? 'ahead' : 'all');
+        if (onClimbs) {
+            var i1 = Profile.render($('climbProfSvg'), inp);
+            if (i1) $('climbProfInfo').textContent = Profile.describe(i1.next) ||
+                (plan ? 'Route „' + plan.name + '“ · ' + UI.fmtDist(plan.route.length()) + ' · +' + Math.round(plan.gain) + ' Hm' : '');
+        }
+        if (onMap) {
+            var i2 = Profile.render($('mapProfSvg'), inp);
+            if (i2) $('mapProfInfo').textContent = Profile.describe(i2.next);
+        }
+    }
+
+    function syncProfMode() {
+        var m = profMode || (plan ? 'ahead' : 'all');
+        document.querySelectorAll('[data-pm]').forEach(function (b) { b.classList.toggle('on', b.dataset.pm === m); });
+    }
+
+    function onSubShown(name) { if (name === 'seg' || name === 'rec') SegUI.refresh(); }
+
+    function showSub(name) {
+        ['now', 'seg', 'rec'].forEach(function (x) { $('sub-' + x).hidden = x !== name; });
+        document.querySelectorAll('[data-sub]').forEach(function (b) { b.classList.toggle('on', b.dataset.sub === name); });
+        if (name === 'now') renderProfiles();
+        if (typeof onSubShown === 'function') onSubShown(name);
+    }
+
     /* ---------------- Gespeicherte Ausfahrten ---------------- */
     var SRC = { ride: 'gefahren', sim: 'Simulation', gpx: 'GPX', plan: 'Plan' };
 
@@ -4024,7 +6160,9 @@ var Ghost = (function () {
                 '<div class="rt"><b>' + UI.escapeHtml(r.name) + '</b>' +
                 '<span class="rm">' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' +
                 (SRC[r.src] || r.src) + '</span></div>' +
-                '<div class="rb"><button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? 'Ghost ✓' : 'Ghost') + '</button>' +
+                '<div class="rb">' + (r.src === 'plan' ? '' : '<button data-act="replay">Replay</button><button data-act="sum">Bilanz</button>') +
+                '<button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? 'Ghost ✓' : 'Ghost') + '</button>' +
+                '<button data-act="route" class="' + (plan && plan.id === r.id ? 'on' : '') + '">' + (plan && plan.id === r.id ? 'Route ✓' : 'Route') + '</button>' +
                 '<button data-act="gpx">GPX</button><button data-act="del" aria-label="Löschen">✕</button></div></div>';
         }).join('') || '<div class="empty">Noch nichts gespeichert. Jede beendete Ausfahrt und Simulation ' +
                        'wird automatisch hier abgelegt.</div>';
@@ -4037,11 +6175,21 @@ var Ghost = (function () {
             b.addEventListener('click', function () {
                 var id = b.closest('.ride').dataset.id, act = b.dataset.act;
                 if (act === 'ghost') { if (ghost && ghost.rec.id === id) dropGhost(); else armGhost(id); }
+                else if (act === 'route') {
+                    if (plan && plan.id === id) clearPlan(); else setPlan(id);
+                    renderRides(); liveMap.sync(); liveMap.draw();
+                }
+                else if (act === 'replay') ReplayUI.open(id);
+                else if (act === 'sum') openSummary(id);
                 else if (act === 'gpx') exportRide(id);
                 else if (act === 'del') {
                     if (!confirm('Diese Ausfahrt löschen?')) return;
                     if (ghost && ghost.rec.id === id) dropGhost();
-                    Rides.remove(id); renderRides();
+                    if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
+                    var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
+                    Rides.remove(id);
+                    if (gone) Segments.forgetRide(id, gone.src);
+                    SegUI.refresh(); renderRides();
                 }
             });
         });
@@ -4086,6 +6234,7 @@ var Ghost = (function () {
         setRideMsg(res.ok ? '„' + res.rec.name + '“ importiert – ' + UI.fmtDist(res.rec.dist) + ', ' +
                             UI.fmtDur(res.rec.dur) + '.' : res.err);
         renderRides();
+        if (res.ok && res.rec.src === 'gpx') analyseRide(res.rec);      // Segmente/Rekorde aus alten Fahrten
     }
 
     /* ---------------- Reiter ---------------- */
@@ -4098,7 +6247,8 @@ var Ghost = (function () {
         document.querySelectorAll('nav button').forEach(function (b) {
             b.classList.toggle('on', b.dataset.v === v);
         });
-        if (v === 'map')    { render(); ensureMapLoop(); }
+        if (v === 'map')    { render(); liveMap.ensureLoop(); }
+        if (v === 'climbs') { renderProfiles(); }
         if (v === 'tacho')  { ensureCompassLoop(); }
         if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
         if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
@@ -4151,6 +6301,7 @@ var Ghost = (function () {
                 running = false;
                 Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
                 finishRecording('ride');
+                SegUI.stopLive();
                 armGhostAgain();          // Ghost wartet wieder am Start
                 this.textContent = 'Ausfahrt starten';
                 this.className = 'btn go';
@@ -4158,7 +6309,8 @@ var Ghost = (function () {
                 return;
             }
             if (sim) simStop();
-            myTrack = [];                 // jede Fahrt wird einzeln aufgezeichnet
+            myTrack = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
+            SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
             this.textContent = 'Ausfahrt beenden';
@@ -4202,6 +6354,28 @@ var Ghost = (function () {
             b.addEventListener('click', function () { simWarp = +b.dataset.warp; syncSimBar(); });
         });
 
+        ReplayUI.wire(); SegUI.init();
+        $('sumClose').addEventListener('click', function () { $('sumOverlay').hidden = true; });
+        $('sumOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
+        $('sumShare').addEventListener('click', function () {
+            if (!sumData) return;
+            $('sumMsg').textContent = 'Bild wird erzeugt …';
+            Summary.share(sumData).then(function () { $('sumMsg').textContent = ''; },
+                                        function (e) { $('sumMsg').textContent = 'Teilen nicht möglich: ' + (e && e.message || e); });
+        });
+        document.querySelectorAll('[data-sub]').forEach(function (b) {
+            b.addEventListener('click', function () { showSub(b.dataset.sub); });
+        });
+        document.querySelectorAll('[data-pm]').forEach(function (b) {
+            b.addEventListener('click', function () { profMode = b.dataset.pm; store('profmode', profMode); syncProfMode(); renderProfiles(); });
+        });
+        $('mapProfBtn').addEventListener('click', function () {
+            var hide = !$('mapProf').hidden;
+            $('mapProf').hidden = hide;
+            this.classList.toggle('on', !hide); this.setAttribute('aria-pressed', hide ? 'false' : 'true');
+            store('mapprof', hide ? '0' : '1');
+            renderProfiles(); liveMap.draw();
+        });
         $('btnGhostNow').addEventListener('click', startGhostNow);
         $('btnGhostOff').addEventListener('click', dropGhost);
         $('ghostPace').addEventListener('change', function () {
@@ -4224,27 +6398,6 @@ var Ghost = (function () {
             if (e.key === 'Escape') $('qrOverlay').hidden = true;
         });
 
-        $('mapAll').addEventListener('click',    function () { mapOpt.follow = false; mapReset(); syncMapButtons(); render(); });
-        $('mapMe').addEventListener('click',     function () { mapOpt.follow = true;  mapReset(); syncMapButtons(); render(); });
-        $('mapCenter').addEventListener('click', function () { mapReset(); syncMapButtons(); render(); });
-        $('mapNorth').addEventListener('click',  function () { mapOpt.trackUp = false; syncMapButtons(); render(); });
-        $('mapCourse').addEventListener('click', function () { mapOpt.trackUp = true;  syncMapButtons(); render(); });
-        $('mapIn').addEventListener('click',  function () { mapZoomAbout(mapV.cx, mapV.cy, 1.5); syncMapButtons(); render(); });
-        $('mapOut').addEventListener('click', function () { mapZoomAbout(mapV.cx, mapV.cy, 1 / 1.5); syncMapButtons(); render(); });
-        MapTouch.attach($('mapSvg'), { pan: mapPan, zoomAbout: mapZoomAbout, redraw: mapRedraw });
-        $('mapTilesBtn').addEventListener('click', function () {
-            if (!mapOpt.tiles && store('tiles') !== '1') {
-                if (!confirm('Für die Straßenkarte lädt dein Handy Kartenbilder von tile.openstreetmap.org.\n\n' +
-                             'Der Anbieter sieht dabei deine IP-Adresse und den ungefähren Kartenausschnitt – ' +
-                             'nicht deinen Namen, deine Gruppe oder den Gruppenschlüssel.\n\n' +
-                             'Ohne Straßenkarte bleibt alles wie bisher, auch offline.\n\nEinschalten?')) return;
-                store('tiles', '1');
-            }
-            mapOpt.tiles = !mapOpt.tiles;
-            store('tilesOn', mapOpt.tiles ? '1' : '0');
-            syncMapButtons(); render();
-        });
-        syncMapButtons();
 
         $('btnNewRoom').addEventListener('click', function () {
             if (!confirm('Neue Gruppe öffnen? Der alte Link funktioniert dann nicht mehr ' +
@@ -4293,7 +6446,16 @@ var Ghost = (function () {
         if (th) document.documentElement.setAttribute('data-theme', th);
 
         initIdentity();
-        mapOpt.tiles = store('tiles') === '1' && store('tilesOn') === '1';    // nur nach frueherer Einwilligung
+        liveMap = MapCtl.mount($('liveMap'), {
+            prefix: 'map', persist: true, extras: [{ id: 'ProfBtn', label: 'Profil' }],
+            isActive: function () { return isActive('map'); },
+            hasRoute: function () { return !!plan; },
+            getData: function () {
+                if (!lastMap) return null;
+                return { route: route, riders: lastMap.ord, meId: me.id, climbs: an.climbs,
+                         heading: lastMap.heading, overlay: plan ? plan.overlay : null };
+            }
+        });
         wire();
         try {
             await initRoom();
@@ -4305,7 +6467,12 @@ var Ghost = (function () {
         var gp = store('gpace');
         if (gp) $('ghostPace').value = gp;
         recoverDraft();
-        renderRides(); renderGhostUi();
+        var pid = store('plan');
+        if (pid && Rides.get(pid)) setPlan(pid); else if (pid) clearPlan();
+        profMode = store('profmode') || null;
+        if (store('mapprof') === '1') { $('mapProf').hidden = false; $('mapProfBtn').classList.add('on'); $('mapProfBtn').setAttribute('aria-pressed', 'true'); }
+        syncProfMode();
+        renderRides(); renderGhostUi(); liveMap.sync();
         setInterval(function () {                        // Ghost in Echtzeit (die Simulation treibt ihn selbst)
             if (running && !sim) ghostStep(Date.now(), Date.now());
             renderGhostUi();

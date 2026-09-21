@@ -479,6 +479,14 @@ var Analytics = (function () {
     };
 
     /* ---- Zeiten der Fahrer auf jedem Berg ----------------------- */
+    /* Anstiege einer fertigen Achse finden (ohne Fahrer), z. B. einer
+       geplanten Route: Laenge, Hoehengewinn und Steigung sind danach gesetzt. */
+    A.prototype.scanClimbs = function () {
+        this._scanClimbs();
+        this._scoreClimbs();
+        return this.climbs;
+    };
+
     A.prototype._scoreClimbs = function () {
         for (var c = 0; c < this.climbs.length; c++) {
             var cl = this.climbs[c];

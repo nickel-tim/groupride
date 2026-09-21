@@ -24,7 +24,7 @@
 var Rides = (function () {
     'use strict';
 
-    var IDX = 'rides:index', PFX = 'rides:r:', DRAFT = 'rides:draft';
+    var IDX = 'rides:index', PFX = 'rides:r:', GPFX = 'rides:g:', DRAFT = 'rides:draft';
     var MIN_POINTS = 40;                 // darunter lohnt das Speichern nicht
 
     function read(k)  { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
@@ -74,14 +74,22 @@ var Rides = (function () {
             p: pack(o.pts)
         };
         if (!write(PFX + id, rec)) return { ok: false, err: 'Speicher voll – alte Ausfahrten löschen oder als GPX sichern.' };
+        var hasGroup = false;
+        if (o.group) {
+            // Gruppe ist optional: passt sie nicht mehr hinein, bleibt wenigstens die eigene Fahrt
+            hasGroup = write(GPFX + id, o.group);
+            if (!hasGroup) drop(GPFX + id);
+        }
         var idx = read(IDX) || [];
-        idx.push({ id: id, name: rec.name, src: rec.src, start: rec.start, dur: rec.dur, dist: rec.dist, n: rec.n });
-        if (!write(IDX, idx)) { drop(PFX + id); return { ok: false, err: 'Speicher voll.' }; }
+        idx.push({ id: id, name: rec.name, src: rec.src, start: rec.start, dur: rec.dur, dist: rec.dist, n: rec.n, g: hasGroup });
+        if (!write(IDX, idx)) { drop(PFX + id); drop(GPFX + id); return { ok: false, err: 'Speicher voll.' }; }
         return { ok: true, id: id, rec: rec };
     }
 
+    function getGroup(id) { return read(GPFX + id); }
+
     function remove(id) {
-        drop(PFX + id);
+        drop(PFX + id); drop(GPFX + id);
         write(IDX, (read(IDX) || []).filter(function (r) { return r.id !== id; }));
     }
 
@@ -202,7 +210,7 @@ var Rides = (function () {
 
     return {
         MIN_POINTS: MIN_POINTS,
-        list: list, get: get, save: save, remove: remove, usage: usage,
+        list: list, get: get, getGroup: getGroup, save: save, remove: remove, usage: usage,
         saveDraft: saveDraft, draft: draft, clearDraft: clearDraft, unpack: unpack,
         gpx: gpx, parseGpx: parseGpx, withPace: withPace, fromPlan: fromPlan, parsePlan: parsePlan,
         fmtDate: fmtDate, distanceOf: distanceOf

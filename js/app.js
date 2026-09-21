@@ -33,10 +33,14 @@
     var relayUrl = null;
     // Kartenansicht: "Alle" passt den Ausschnitt an die Gruppe an, "Ich" haelt
     // dich in der Mitte; "Kurs" dreht die Karte so, dass deine Fahrtrichtung oben liegt.
-    var mapOpt = { follow: false, trackUp: false, zoom: 1, tiles: false,
-                   zoomMul: 1, panU: 0, panV: 0 };    // Gesten: Zoomfaktor und Verschiebung (m)
-    var mapV = { k: 1, cx: 0, cy: 0 };                // Massstab/Mitte des letzten Zeichnens
-    var lastMap = null, mapRaf = 0;
+    var liveMap = null;                               // Karte (MapCtl), wird beim Laden aufgebaut
+    var lastMap = null;                               // letzter Stand fuer die Zeichenschleife
+
+    // Geplante Route (Ueberlagerung): eine gespeicherte Fahrt/GPX-Strecke als Linie auf der Karte
+    //   { id, name, route (Route), overlay {name,len,pts,route}, climbs, gain }
+    var plan = null;
+    var profMode = null;                              // 'all' | 'ahead' (null = automatisch)
+    var planHint = {};                                // letzte Position je Fahrer auf der Route
 
     // Simulation: eigener Zustand, sie ersetzt GPS und Netz komplett
     var sim = null, simTimer = null, simWarp = 1, simHeading = null, simSaved = false;
@@ -139,6 +143,8 @@
         if (!m || !m.i || m.i === me.id) return;
         if (typeof m.la !== 'number' || typeof m.lo !== 'number') return;
 
+        Recorder.add(m.i, typeof m.n === 'string' ? m.n.slice(0, 14) : null, UI.COLORS[(m.c | 0) % UI.COLORS.length],
+                     (typeof m.t === 'number') ? m.t : Date.now(), m.la, m.lo, (typeof m.e === 'number') ? m.e : null);
         an.ingest(m.i, {
             lat: m.la, lon: m.lo,
             ele: (typeof m.e === 'number') ? m.e : null,
@@ -182,6 +188,9 @@
         });
         an.riders[me.id].self = true;
 
+        SegUI.feed({ lat: c.latitude, lon: c.longitude, t: pos.timestamp || Date.now() });
+        Recorder.add(me.id, me.name, myColor(), pos.timestamp || Date.now(), c.latitude, c.longitude,
+                     (c.altitude !== null && !isNaN(c.altitude)) ? c.altitude : null);
         var last = myTrack[myTrack.length - 1];
         if (!last || (pos.timestamp - last.t) > 1500) {
             myTrack.push({ lat: c.latitude, lon: c.longitude,
@@ -211,7 +220,9 @@
         //     hier nur der aktuelle Stand fuer sie ---
         lastCompass = { ord: ord, heading: h.deg };
         ensureCompassLoop();
-        if (isActive('map')) { lastMap = { ord: ord, heading: h.deg }; ensureMapLoop(); }
+        lastMap = { ord: ord, heading: h.deg };
+        if (isActive('map')) liveMap.ensureLoop();
+        renderProfiles();
 
         // --- Liste: Luecke immer relativ zu MIR, das ist die Zahl,
         //     die man beim Fahren wissen will ---
@@ -259,61 +270,6 @@
             UI.badge('bdgClimbs', an.climbs.length - seenClimbs);
 
         if (running && !Net.online()) UI.renderNet('wait', 'kein Netz – nur eigene Daten');
-    }
-
-    function renderMap(ord, heading) {
-        lastMap = { ord: ord, heading: heading };
-        var info = MapView.render($('mapSvg'), {
-            zoomMul: mapOpt.zoomMul, panU: mapOpt.panU, panV: mapOpt.panV,
-            route: route, riders: ord, meId: me.id, climbs: an.climbs,
-            follow: mapOpt.follow, zoom: mapOpt.zoom, trackUp: mapOpt.trackUp,
-            heading: heading,
-            tiles: mapOpt.tiles, tileSvg: $('mapTiles'), tileUrl: store('tileurl') || undefined
-        });
-        if (!info) return;
-        if (info.k) mapV = { k: info.k, cx: info.cx, cy: info.cy };
-        var txt = info.riders + ' Fahrer';
-        if (info.length > 0) txt += ' · Streckenachse ' + UI.fmtDist(info.length);
-        if (mapOpt.trackUp && heading === null) txt += ' · noch kein Kurs, Norden oben';
-        $('mapInfo').textContent = info.riders ? txt : '';
-    }
-
-    function syncMapButtons() {
-        $('mapAll').classList.toggle('on', !mapOpt.follow);
-        $('mapMe').classList.toggle('on', mapOpt.follow);
-        $('mapTilesBtn').classList.toggle('on', mapOpt.tiles);
-        $('mapTilesBtn').setAttribute('aria-pressed', mapOpt.tiles ? 'true' : 'false');
-        $('mapAttr').hidden = !mapOpt.tiles;
-        $('mapNorth').classList.toggle('on', !mapOpt.trackUp);
-        $('mapCourse').classList.toggle('on', mapOpt.trackUp);
-        $('mapCenter').hidden = !mapDirty();
-    }
-
-    /* ---------------- Karte: Gesten ----------------
-       Verschiebung (panU/panV, Meter) und Zoomfaktor (zoomMul) liegen ueber
-       dem automatischen Ausschnitt von "Alle" bzw. "Ich". Ein Fingerzeig
-       verschiebt also relativ dazu -- die Karte folgt weiter der Gruppe. */
-    var K_MIN = 0.004, K_MAX = 30;
-
-    function mapDirty() {
-        return !!(mapOpt.panU || mapOpt.panV) || Math.abs(mapOpt.zoomMul - 1) > 0.01;
-    }
-    function mapReset() { mapOpt.panU = mapOpt.panV = 0; mapOpt.zoomMul = 1; }
-
-    function mapPan(dx, dy) {
-        mapOpt.panU -= dx / mapV.k;          // Karte nach rechts ziehen = Mitte nach links
-        mapOpt.panV += dy / mapV.k;
-    }
-
-    // Zoom um einen Bildpunkt: der Punkt unter dem Finger bleibt unter dem Finger
-    function mapZoomAbout(px, py, f) {
-        var k0 = mapV.k, k1 = Math.max(K_MIN, Math.min(K_MAX, k0 * f));
-        if (k1 === k0) return;
-        var dx = px - mapV.cx, dy = py - mapV.cy;
-        mapOpt.panU += dx * (1 / k0 - 1 / k1);
-        mapOpt.panV += dy * (1 / k1 - 1 / k0);
-        mapOpt.zoomMul *= k1 / k0;
-        mapV.k = k1;                          // gleich weiterrechnen, bevor neu gezeichnet ist
     }
 
     /* ---------------- Kompass ----------------
@@ -375,32 +331,6 @@
         requestAnimationFrame(compassLoop);
     }
 
-    /* Die Karte zeichnet mit ~30 Bildern pro Sekunde, solange sie sichtbar ist
-       (die Positionen selbst kommen nur ~1x pro Sekunde -- dazwischen glaettet
-       MapView, siehe map.js). Ist ein anderer Reiter offen oder die Seite im
-       Hintergrund, laeuft nichts: das schont den Akku. */
-    var mapLoopOn = false, mapLoopT = 0;
-    function mapLoop(ts) {
-        if (!isActive('map') || document.hidden) { mapLoopOn = false; return; }
-        if (ts - mapLoopT >= 33 && lastMap) { mapLoopT = ts; renderMap(lastMap.ord, lastMap.heading); }
-        requestAnimationFrame(mapLoop);
-    }
-    function ensureMapLoop() {
-        if (mapLoopOn) return;
-        mapLoopOn = true;
-        requestAnimationFrame(mapLoop);
-    }
-
-    // hoechstens einmal je Bild neu zeichnen, auch wenn Gesten schneller kommen
-    function mapRedraw() {
-        if (mapRaf) return;
-        mapRaf = requestAnimationFrame(function () {
-            mapRaf = 0;
-            if (lastMap && isActive('map')) renderMap(lastMap.ord, lastMap.heading);
-            syncMapButtons();
-        });
-    }
-
     function showQr() {
         var url = shareLink();
         try {
@@ -413,31 +343,15 @@
         $('qrOverlay').hidden = false;
     }
 
-    function nameOf(id) {
-        var r = an.riders[id];
-        return UI.escapeHtml((r && r.name) || id);
-    }
-
-    function eventText(e) {
-        switch (e.type) {
-            case 'pass':   return nameOf(e.id) + ' überholt ' + nameOf(e.over);
-            case 'attack': return nameOf(e.id) + ' tritt an – ' + e.gain + ' m gewonnen' +
-                                  (e.surge ? ' (+' + e.surge + ' km/h)' : '');
-            case 'drop':   return nameOf(e.id) + (e.standing ? ' steht' : ' ist abgerissen') +
-                                  (e.gap ? ' – ' + UI.fmtDist(e.gap) + ' zurück' : '');
-            case 'rejoin': return nameOf(e.id) + ' ist wieder dran';
-            case 'lead':   return nameOf(e.id) + ' übernimmt die Führung' +
-                                  (e.from ? ' von ' + nameOf(e.from) : '');
-            default:       return e.type;
-        }
-    }
+    function eventText(e) { return UI.eventText(an, e); }
 
     /* ---------------- Simulation ---------------- */
     function simStart() {
         if (running) { alert('Erst die laufende Ausfahrt beenden.'); return; }
         route = new Route(); an = new Analytics(route);
         seenEvents = 0; seenClimbs = 0;
-        myTrack = []; simSaved = false;
+        myTrack = []; simSaved = false; Recorder.reset(me.id);
+        SegUI.startLive('sim'); SegUI.setWorld('sim');
         armGhostAgain();
         var others = UI.COLORS.filter(function (c, i) { return i !== me.colorIdx; });
         sim = SimMode.create({ meId: me.id, meName: me.name, meColor: myColor(),
@@ -457,7 +371,7 @@
     }
 
     function simStop() {
-        clearInterval(simTimer); simTimer = null;
+        clearInterval(simTimer); simTimer = null; SegUI.stopLive();
         if (!simSaved && sim && sim.t >= 60) { simSaved = true; finishRecording('sim'); }
         armGhostAgain();
         sim = null; simHeading = null;
@@ -481,7 +395,9 @@
                 an.ingest(m.id, { lat: m.lat, lon: m.lon, ele: m.ele, speed: m.speed,
                                   heading: m.heading, acc: m.acc, t: m.t,
                                   name: m.name, color: m.color });
+                Recorder.add(m.id, m.name, m.color, m.t, m.lat, m.lon, m.ele);
                 if (m.me) {
+                    SegUI.feed({ lat: m.lat, lon: m.lon, t: m.t });
                     an.riders[m.id].self = true; simHeading = m.heading;
                     myTrack.push({ lat: m.lat, lon: m.lon, ele: m.ele, t: m.t });
                 }
@@ -517,12 +433,50 @@
 
     function finishRecording(src) {
         if (myTrack.length < Rides.MIN_POINTS) { Rides.clearDraft(); return; }
-        var r = Rides.save({ src: src, pts: myTrack });
+        var r = Rides.save({ src: src, pts: myTrack, group: Recorder.riderCount() >= 2 ? Recorder.pack() : null });
         Rides.clearDraft();
         setRideMsg(r.ok ? '„' + r.rec.name + '“ gespeichert – ' + UI.fmtDist(r.rec.dist) + ', ' +
                           UI.fmtDur(r.rec.dur) + '. Unten als Ghost verwendbar.'
                         : r.err);
         renderRides();
+        if (r.ok) analyseRide(r.rec);
+    }
+
+    /* Nach der Fahrt: Segmente finden, Bestzeiten und Rekorde nachfuehren. Laeuft in kleinen
+       Happen im Hintergrund (bei langen Fahrten einige Sekunden), Ergebnis in lastReport. */
+    var lastReport = null;
+    function analyseRide(rec) {
+        lastReport = null;
+        setRideMsg('„' + rec.name + '“ gespeichert. Auswertung läuft …');
+        return Segments.processRide(rec).then(function (rep) {
+            lastReport = rep ? { rideId: rec.id, rep: rep } : null;
+            if (rep) SegUI.setReport(rep);
+            var note = '„' + rec.name + '“ gespeichert';
+            if (rep) {
+                var pb = rep.efforts.filter(function (e) { return e.isPB && !e.first; }).length;
+                var firsts = rep.efforts.filter(function (e) { return e.first; }).length;
+                if (pb) note += ' · ' + pb + ' neue Bestzeit' + (pb > 1 ? 'en' : '');
+                if (firsts) note += ' · ' + firsts + (firsts > 1 ? ' neue Segmente' : ' neues Segment');
+                if (rep.records.length) note += ' · ' + rep.records.length + ' Rekord' + (rep.records.length > 1 ? 'e' : '');
+            }
+            setRideMsg(note + '.');
+            if (typeof SegUI !== 'undefined') SegUI.refresh();
+            // Echte Fahrten: die Bilanz gleich zeigen. Simulationen nur auf Knopfdruck.
+            if (rec.src === 'ride' && rec.dur > 120000 && rec.dist > 500) openSummary(rec.id);
+        }, function (e) { setRideMsg('Auswertung fehlgeschlagen: ' + (e && e.message || e)); });
+    }
+
+    /* ---------------- Bilanz ---------------- */
+    var sumData = null;
+    function openSummary(id) {
+        $('sumOverlay').hidden = false; $('sumBusy').hidden = false; $('sumBody').innerHTML = ''; $('sumMsg').textContent = '';
+        sumData = null;
+        Summary.forRide(id, function (f) { $('sumBusy').textContent = 'Bilanz wird berechnet … ' + Math.round(f * 100) + ' %'; }).then(function (d) {
+            sumData = d;
+            $('sumBusy').hidden = true;
+            $('sumBody').innerHTML = Summary.html(d);
+            $('sumThumb').innerHTML = '<svg viewBox="0 0 340 190" preserveAspectRatio="xMidYMid meet">' + Summary.thumbSvg(d, 340, 190) + '</svg>';
+        }, function (e) { $('sumBusy').hidden = true; $('sumBody').textContent = 'Bilanz nicht möglich: ' + (e && e.message || e); });
     }
 
     /* Entwurf alle 60 s: Faellt der Akku waehrend der Fahrt aus oder stuerzt
@@ -632,6 +586,87 @@
         }
     }
 
+    /* ---------------- Geplante Route (Ueberlagerung) ----------------
+       Jede gespeicherte Strecke -- eigene Fahrt, GPX-Import, Trainingsplan -- laesst sich
+       als Linie unter die Karte legen. Es gibt keine Warnung bei Abweichung: die Linie
+       ist ein Wegweiser, keine Vorschrift. Mit einer Route kennt das Hoehenprofil auch
+       das Stueck VOR dem Fuehrenden (die Live-Achse endet ja bei ihm). */
+    function setPlan(id) {
+        var rec = Rides.get(id);
+        if (!rec) { plan = null; return; }
+        var pts = Track.thin(Rides.unpack(rec), 8);
+        var rt = Route.fromPoints(pts, 10);
+        rt.smoothElevation();
+        plan = {
+            id: id, name: rec.name, route: rt,
+            climbs: new Analytics(rt).scanClimbs(),
+            gain: Track.gain(pts),
+            overlay: { name: rec.name, len: rt.length(), route: rt,
+                       pts: rt.pts.map(function (p) { return { lat: p.lat, lon: p.lon, ele: p.ele, s: p.s }; }) }
+        };
+        store('plan', id);
+        planHint = {};
+        syncProfMode();
+    }
+    function clearPlan() { plan = null; store('plan', ''); planHint = {}; syncProfMode(); }
+
+    /* ---------------- Hoehenprofil ----------------
+       Mit Route: das Profil der ganzen Route, die Fahrer darauf projiziert (auch vor dem
+       Fuehrenden). Ohne: die Live-Achse, sie endet beim Fuehrenden. */
+    function planS(r) {
+        var pr = plan.route.project(r.fLat, r.fLon, planHint[r.id]);
+        if (!pr || pr.offset > 150) return null;            // weit ab der Route: nicht darauf zeigen
+        planHint[r.id] = pr.s;
+        return Math.max(0, Math.min(plan.route.length(), pr.s));
+    }
+
+    function profileInput() {
+        var ord = lastMap ? lastMap.ord : [], riders = [], meS = null;
+        function add(r, sv) {
+            if (sv === null || sv === undefined) return;
+            riders.push({ id: r.id, name: r.name, color: r.color, s: sv, self: r.id === me.id,
+                          ghost: !!r.ghost, stale: !r.ghost && an.isStale(r) });
+            if (r.id === me.id) meS = sv;
+        }
+        if (plan) {
+            ord.forEach(function (r) { if (r.fLat !== null) add(r, planS(r)); });
+            return { route: plan.route, riders: riders, climbs: plan.climbs, meS: meS };
+        }
+        ord.forEach(function (r) { add(r, r.s); });
+        return { route: route, riders: riders, climbs: an.climbs, meS: meS };
+    }
+
+    function renderProfiles() {
+        var onClimbs = isActive('climbs') && !$('sub-now').hidden;
+        var onMap = isActive('map') && !$('mapProf').hidden;
+        if (!onClimbs && !onMap) return;
+        var inp = profileInput();
+        inp.mode = profMode || (plan ? 'ahead' : 'all');
+        if (onClimbs) {
+            var i1 = Profile.render($('climbProfSvg'), inp);
+            if (i1) $('climbProfInfo').textContent = Profile.describe(i1.next) ||
+                (plan ? 'Route „' + plan.name + '“ · ' + UI.fmtDist(plan.route.length()) + ' · +' + Math.round(plan.gain) + ' Hm' : '');
+        }
+        if (onMap) {
+            var i2 = Profile.render($('mapProfSvg'), inp);
+            if (i2) $('mapProfInfo').textContent = Profile.describe(i2.next);
+        }
+    }
+
+    function syncProfMode() {
+        var m = profMode || (plan ? 'ahead' : 'all');
+        document.querySelectorAll('[data-pm]').forEach(function (b) { b.classList.toggle('on', b.dataset.pm === m); });
+    }
+
+    function onSubShown(name) { if (name === 'seg' || name === 'rec') SegUI.refresh(); }
+
+    function showSub(name) {
+        ['now', 'seg', 'rec'].forEach(function (x) { $('sub-' + x).hidden = x !== name; });
+        document.querySelectorAll('[data-sub]').forEach(function (b) { b.classList.toggle('on', b.dataset.sub === name); });
+        if (name === 'now') renderProfiles();
+        if (typeof onSubShown === 'function') onSubShown(name);
+    }
+
     /* ---------------- Gespeicherte Ausfahrten ---------------- */
     var SRC = { ride: 'gefahren', sim: 'Simulation', gpx: 'GPX', plan: 'Plan' };
 
@@ -643,7 +678,9 @@
                 '<div class="rt"><b>' + UI.escapeHtml(r.name) + '</b>' +
                 '<span class="rm">' + UI.fmtDist(r.dist) + ' · ' + UI.fmtDur(r.dur) + ' · ' +
                 (SRC[r.src] || r.src) + '</span></div>' +
-                '<div class="rb"><button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? 'Ghost ✓' : 'Ghost') + '</button>' +
+                '<div class="rb">' + (r.src === 'plan' ? '' : '<button data-act="replay">Replay</button><button data-act="sum">Bilanz</button>') +
+                '<button data-act="ghost" class="' + (on ? 'on' : '') + '">' + (on ? 'Ghost ✓' : 'Ghost') + '</button>' +
+                '<button data-act="route" class="' + (plan && plan.id === r.id ? 'on' : '') + '">' + (plan && plan.id === r.id ? 'Route ✓' : 'Route') + '</button>' +
                 '<button data-act="gpx">GPX</button><button data-act="del" aria-label="Löschen">✕</button></div></div>';
         }).join('') || '<div class="empty">Noch nichts gespeichert. Jede beendete Ausfahrt und Simulation ' +
                        'wird automatisch hier abgelegt.</div>';
@@ -656,11 +693,21 @@
             b.addEventListener('click', function () {
                 var id = b.closest('.ride').dataset.id, act = b.dataset.act;
                 if (act === 'ghost') { if (ghost && ghost.rec.id === id) dropGhost(); else armGhost(id); }
+                else if (act === 'route') {
+                    if (plan && plan.id === id) clearPlan(); else setPlan(id);
+                    renderRides(); liveMap.sync(); liveMap.draw();
+                }
+                else if (act === 'replay') ReplayUI.open(id);
+                else if (act === 'sum') openSummary(id);
                 else if (act === 'gpx') exportRide(id);
                 else if (act === 'del') {
                     if (!confirm('Diese Ausfahrt löschen?')) return;
                     if (ghost && ghost.rec.id === id) dropGhost();
-                    Rides.remove(id); renderRides();
+                    if (plan && plan.id === id) { clearPlan(); liveMap.sync(); }
+                    var gone = Rides.list().filter(function (x) { return x.id === id; })[0];
+                    Rides.remove(id);
+                    if (gone) Segments.forgetRide(id, gone.src);
+                    SegUI.refresh(); renderRides();
                 }
             });
         });
@@ -705,6 +752,7 @@
         setRideMsg(res.ok ? '„' + res.rec.name + '“ importiert – ' + UI.fmtDist(res.rec.dist) + ', ' +
                             UI.fmtDur(res.rec.dur) + '.' : res.err);
         renderRides();
+        if (res.ok && res.rec.src === 'gpx') analyseRide(res.rec);      // Segmente/Rekorde aus alten Fahrten
     }
 
     /* ---------------- Reiter ---------------- */
@@ -717,7 +765,8 @@
         document.querySelectorAll('nav button').forEach(function (b) {
             b.classList.toggle('on', b.dataset.v === v);
         });
-        if (v === 'map')    { render(); ensureMapLoop(); }
+        if (v === 'map')    { render(); liveMap.ensureLoop(); }
+        if (v === 'climbs') { renderProfiles(); }
         if (v === 'tacho')  { ensureCompassLoop(); }
         if (v === 'log')    { seenEvents = an.events.length; UI.badge('bdgLog', 0); }
         if (v === 'climbs') { seenClimbs = an.climbs.length; UI.badge('bdgClimbs', 0); }
@@ -770,6 +819,7 @@
                 running = false;
                 Sensors.stopGps(); Sensors.keepAwake(false); Net.stop();
                 finishRecording('ride');
+                SegUI.stopLive();
                 armGhostAgain();          // Ghost wartet wieder am Start
                 this.textContent = 'Ausfahrt starten';
                 this.className = 'btn go';
@@ -777,7 +827,8 @@
                 return;
             }
             if (sim) simStop();
-            myTrack = [];                 // jede Fahrt wird einzeln aufgezeichnet
+            myTrack = []; Recorder.reset(me.id);      // jede Fahrt wird einzeln aufgezeichnet
+            SegUI.startLive('real'); SegUI.setWorld('real');
             armGhostAgain();
             running = true;
             this.textContent = 'Ausfahrt beenden';
@@ -821,6 +872,28 @@
             b.addEventListener('click', function () { simWarp = +b.dataset.warp; syncSimBar(); });
         });
 
+        ReplayUI.wire(); SegUI.init();
+        $('sumClose').addEventListener('click', function () { $('sumOverlay').hidden = true; });
+        $('sumOverlay').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
+        $('sumShare').addEventListener('click', function () {
+            if (!sumData) return;
+            $('sumMsg').textContent = 'Bild wird erzeugt …';
+            Summary.share(sumData).then(function () { $('sumMsg').textContent = ''; },
+                                        function (e) { $('sumMsg').textContent = 'Teilen nicht möglich: ' + (e && e.message || e); });
+        });
+        document.querySelectorAll('[data-sub]').forEach(function (b) {
+            b.addEventListener('click', function () { showSub(b.dataset.sub); });
+        });
+        document.querySelectorAll('[data-pm]').forEach(function (b) {
+            b.addEventListener('click', function () { profMode = b.dataset.pm; store('profmode', profMode); syncProfMode(); renderProfiles(); });
+        });
+        $('mapProfBtn').addEventListener('click', function () {
+            var hide = !$('mapProf').hidden;
+            $('mapProf').hidden = hide;
+            this.classList.toggle('on', !hide); this.setAttribute('aria-pressed', hide ? 'false' : 'true');
+            store('mapprof', hide ? '0' : '1');
+            renderProfiles(); liveMap.draw();
+        });
         $('btnGhostNow').addEventListener('click', startGhostNow);
         $('btnGhostOff').addEventListener('click', dropGhost);
         $('ghostPace').addEventListener('change', function () {
@@ -843,27 +916,6 @@
             if (e.key === 'Escape') $('qrOverlay').hidden = true;
         });
 
-        $('mapAll').addEventListener('click',    function () { mapOpt.follow = false; mapReset(); syncMapButtons(); render(); });
-        $('mapMe').addEventListener('click',     function () { mapOpt.follow = true;  mapReset(); syncMapButtons(); render(); });
-        $('mapCenter').addEventListener('click', function () { mapReset(); syncMapButtons(); render(); });
-        $('mapNorth').addEventListener('click',  function () { mapOpt.trackUp = false; syncMapButtons(); render(); });
-        $('mapCourse').addEventListener('click', function () { mapOpt.trackUp = true;  syncMapButtons(); render(); });
-        $('mapIn').addEventListener('click',  function () { mapZoomAbout(mapV.cx, mapV.cy, 1.5); syncMapButtons(); render(); });
-        $('mapOut').addEventListener('click', function () { mapZoomAbout(mapV.cx, mapV.cy, 1 / 1.5); syncMapButtons(); render(); });
-        MapTouch.attach($('mapSvg'), { pan: mapPan, zoomAbout: mapZoomAbout, redraw: mapRedraw });
-        $('mapTilesBtn').addEventListener('click', function () {
-            if (!mapOpt.tiles && store('tiles') !== '1') {
-                if (!confirm('Für die Straßenkarte lädt dein Handy Kartenbilder von tile.openstreetmap.org.\n\n' +
-                             'Der Anbieter sieht dabei deine IP-Adresse und den ungefähren Kartenausschnitt – ' +
-                             'nicht deinen Namen, deine Gruppe oder den Gruppenschlüssel.\n\n' +
-                             'Ohne Straßenkarte bleibt alles wie bisher, auch offline.\n\nEinschalten?')) return;
-                store('tiles', '1');
-            }
-            mapOpt.tiles = !mapOpt.tiles;
-            store('tilesOn', mapOpt.tiles ? '1' : '0');
-            syncMapButtons(); render();
-        });
-        syncMapButtons();
 
         $('btnNewRoom').addEventListener('click', function () {
             if (!confirm('Neue Gruppe öffnen? Der alte Link funktioniert dann nicht mehr ' +
@@ -912,7 +964,16 @@
         if (th) document.documentElement.setAttribute('data-theme', th);
 
         initIdentity();
-        mapOpt.tiles = store('tiles') === '1' && store('tilesOn') === '1';    // nur nach frueherer Einwilligung
+        liveMap = MapCtl.mount($('liveMap'), {
+            prefix: 'map', persist: true, extras: [{ id: 'ProfBtn', label: 'Profil' }],
+            isActive: function () { return isActive('map'); },
+            hasRoute: function () { return !!plan; },
+            getData: function () {
+                if (!lastMap) return null;
+                return { route: route, riders: lastMap.ord, meId: me.id, climbs: an.climbs,
+                         heading: lastMap.heading, overlay: plan ? plan.overlay : null };
+            }
+        });
         wire();
         try {
             await initRoom();
@@ -924,7 +985,12 @@
         var gp = store('gpace');
         if (gp) $('ghostPace').value = gp;
         recoverDraft();
-        renderRides(); renderGhostUi();
+        var pid = store('plan');
+        if (pid && Rides.get(pid)) setPlan(pid); else if (pid) clearPlan();
+        profMode = store('profmode') || null;
+        if (store('mapprof') === '1') { $('mapProf').hidden = false; $('mapProfBtn').classList.add('on'); $('mapProfBtn').setAttribute('aria-pressed', 'true'); }
+        syncProfMode();
+        renderRides(); renderGhostUi(); liveMap.sync();
         setInterval(function () {                        // Ghost in Echtzeit (die Simulation treibt ihn selbst)
             if (running && !sim) ghostStep(Date.now(), Date.now());
             renderGhostUi();

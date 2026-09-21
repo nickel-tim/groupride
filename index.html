@@ -35,6 +35,8 @@
             </div>
         </div>
 
+        <div class="segbanner" id="segBanner" hidden></div>
+
         <div class="compasswrap">
             <svg id="compass" viewBox="-100 -100 200 200" aria-label="Richtung zu den anderen">
                 <circle class="cring faint" cx="0" cy="0" r="30"></circle>
@@ -56,30 +58,11 @@
 
     <!-- ============ Karte ============ -->
     <section class="view" id="v-map">
-        <div class="maptools">
-            <div class="seg" role="group" aria-label="Ausschnitt">
-                <button id="mapAll" class="on">Alle</button>
-                <button id="mapMe">Ich</button>
-            </div>
-            <div class="seg" role="group" aria-label="Ausrichtung">
-                <button id="mapNorth" class="on">Nord</button>
-                <button id="mapCourse">Kurs</button>
-            </div>
-            <div class="seg" role="group" aria-label="Zoom">
-                <button id="mapOut" aria-label="Herauszoomen">−</button>
-                <button id="mapIn" aria-label="Hineinzoomen">+</button>
-            </div>
-            <div class="seg" role="group" aria-label="Kartenhintergrund">
-                <button id="mapTilesBtn" aria-pressed="false">Straßenkarte</button>
-            </div>
+        <div class="mapmount" id="liveMap"></div>
+        <div class="profstrip" id="mapProf" hidden>
+            <svg id="mapProfSvg" aria-label="Höhenprofil"></svg>
+            <div class="profinfo" id="mapProfInfo"></div>
         </div>
-        <div class="mapbox">
-            <svg id="mapTiles" aria-hidden="true"></svg>
-            <svg id="mapSvg" aria-label="Karte der Gruppe"></svg>
-            <button class="mapctr" id="mapCenter" hidden aria-label="Ansicht zurücksetzen">⌖</button>
-            <a class="mapattr" id="mapAttr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" hidden>© OpenStreetMap-Mitwirkende</a>
-        </div>
-        <div class="mapinfo" id="mapInfo"></div>
     </section>
 
     <!-- ============ Verlauf ============ -->
@@ -92,8 +75,29 @@
 
     <!-- ============ Berge ============ -->
     <section class="view scroll" id="v-climbs">
-        <h2>Bergsprints</h2>
-        <div id="climbList"></div>
+        <div class="subtabs">
+            <div class="seg" role="tablist" aria-label="Berge und Rekorde">
+                <button data-sub="now" class="on">Jetzt</button>
+                <button data-sub="seg">Segmente</button>
+                <button data-sub="rec">Rekorde</button>
+            </div>
+        </div>
+
+        <div class="sub" id="sub-now">
+            <h2>Höhenprofil</h2>
+            <div class="profcard">
+                <svg id="climbProfSvg" aria-label="Höhenprofil"></svg>
+                <div class="profinfo" id="climbProfInfo"></div>
+            </div>
+            <div class="seg profmode" role="group" aria-label="Ausschnitt des Profils">
+                <button data-pm="all">Alles</button>
+                <button data-pm="ahead">Voraus</button>
+            </div>
+            <h2>Bergsprints</h2>
+            <div id="climbList"></div>
+        </div>
+        <div class="sub" id="sub-seg" hidden><div id="segPane"></div></div>
+        <div class="sub" id="sub-rec" hidden><div id="recPane"></div></div>
     </section>
 
     <!-- ============ Gruppe ============ -->
@@ -181,6 +185,61 @@
     <button data-v="group">Gruppe</button>
 </nav>
 
+<!-- Bilanz einer Ausfahrt -->
+<div id="sumOverlay" class="overlay" hidden>
+    <div class="qrcard sumcard" role="dialog" aria-modal="true" aria-label="Bilanz der Ausfahrt">
+        <div id="sumBusy" class="note" hidden>Bilanz wird berechnet …</div>
+        <div id="sumBody"></div>
+        <button class="btn go" id="sumShare">Als Bild teilen</button>
+        <button class="btn" id="sumClose">Schließen</button>
+        <div class="note" id="sumMsg"></div>
+    </div>
+</div>
+
+<!-- Segment anlegen: Abschnitt einer gespeicherten Fahrt waehlen -->
+<div id="segEdit" class="overlay" hidden>
+    <div class="qrcard segedit" role="dialog" aria-modal="true" aria-label="Segment anlegen">
+        <div class="qrttl">Segment anlegen</div>
+        <label for="seRide">Aus Fahrt</label>
+        <select id="seRide"></select>
+        <svg id="seSvg" class="seprev" aria-label="Vorschau"></svg>
+        <label for="seA">Anfang</label>
+        <input type="range" id="seA" min="0" max="1000" value="0">
+        <label for="seB">Ende</label>
+        <input type="range" id="seB" min="0" max="1000" value="1000">
+        <div class="note" id="seStats"></div>
+        <label for="seName">Name</label>
+        <input type="text" id="seName" maxlength="40" placeholder="z. B. Buchberg-Rampe" autocomplete="off">
+        <button class="btn go" id="seSave">Segment speichern</button>
+        <button class="btn" id="seCancel">Abbrechen</button>
+        <div class="note" id="seMsg"></div>
+    </div>
+</div>
+
+<!-- Replay: Gruppenfahrt noch einmal abspielen, Vollbild -->
+<div id="replay" class="replay" hidden>
+    <div class="rp-head"><b id="rpTitle"></b><button id="rpClose" aria-label="Schließen">✕</button></div>
+    <div class="mapmount" id="rpMap"></div>
+    <div class="profstrip" id="rpProf">
+        <svg id="rpProfSvg" aria-label="Höhenprofil"></svg>
+        <div class="profinfo" id="rpProfInfo"></div>
+    </div>
+    <div class="rp-ctl">
+        <button class="rp-play go" id="rpPlay" aria-label="Abspielen">▶</button>
+        <input type="range" id="rpSlider" min="0" max="1000" value="0" aria-label="Zeit">
+        <span class="num rp-time" id="rpTime">0:00 / 0:00</span>
+    </div>
+    <div class="rp-row">
+        <div class="seg" role="group" aria-label="Geschwindigkeit">
+            <button data-rs="1">×1</button><button data-rs="10" class="on">×10</button>
+            <button data-rs="60">×60</button><button data-rs="300">×300</button>
+        </div>
+        <span class="rp-busy" id="rpBusy" hidden>berechne …</span>
+    </div>
+    <div class="rp-event" id="rpEvent"></div>
+    <div class="rp-riders" id="rpRiders"></div>
+</div>
+
 <!-- Einladung per QR-Code: Vollbild, damit die Kamera des anderen Handys
      den Code auch auf Armlaenge sicher liest -->
 <div id="qrOverlay" class="overlay" hidden>
@@ -195,6 +254,7 @@
 </div>
 
 <script src="js/geo.js"></script>
+<script src="js/track.js"></script>
 <script src="js/smooth.js"></script>
 <script src="js/route.js"></script>
 <script src="js/analytics.js"></script>
@@ -205,9 +265,17 @@
 <script src="js/qr.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/map.js"></script>
+<script src="js/profile.js"></script>
 <script src="js/maptouch.js"></script>
+<script src="js/mapctl.js"></script>
 <script src="js/simmode.js"></script>
 <script src="js/rides.js"></script>
+<script src="js/recorder.js"></script>
+<script src="js/session.js"></script>
+<script src="js/segments.js"></script>
+<script src="js/summary.js"></script>
+<script src="js/segui.js"></script>
+<script src="js/replayui.js"></script>
 <script src="js/ghost.js"></script>
 <script src="js/app.js"></script>
 </body>

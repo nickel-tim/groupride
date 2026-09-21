@@ -190,6 +190,16 @@ var MapView = (function () {
         return (g > 0 ? '+' : '−') + UI.fmtDist(Math.abs(g));
     }
 
+    /* Die geplante Route liegt in Lat/Lon vor; die Umrechnung in Meter der
+       Kartenebene wird je Bezugssystem einmal gemacht und gemerkt. */
+    function ovXY(ov, frame) {
+        if (ov.__frame !== frame) {
+            ov.__frame = frame;
+            ov.__xy = ov.pts.map(function (q) { return frame.toXY(q.lat, q.lon); });
+        }
+        return ov.__xy;
+    }
+
     /* d = { route, riders (sortiert, vorne zuerst), meId, climbs,
              follow, zoom, trackUp, heading } */
     function render(svg, d) {
@@ -199,7 +209,8 @@ var MapView = (function () {
         if (!d.tiles) clearTiles(d.tileSvg);
 
         var placed = d.riders.filter(function (r) { return r.fLat !== null && r.lat !== null; });
-        if (!placed.length) {
+        var ov = d.overlay || null;
+        if (!placed.length && !ov) {
             clearTiles(d.tileSvg);
             svg.innerHTML = '<text class="mempty" x="' + (W / 2) + '" y="' + (H / 2) +
                 '" text-anchor="middle">Noch keine Positionen.</text>' +
@@ -209,12 +220,13 @@ var MapView = (function () {
         }
 
         var route = d.route;
-        var frame = route.frame || Geo.frame(placed[0].fLat, placed[0].fLon);
+        var frame = route.frame || (placed.length ? Geo.frame(placed[0].fLat, placed[0].fLon) : ov.route.frame);
         var me = null;
         placed.forEach(function (r) { if (r.id === d.meId) me = r; });
 
         var now = performance.now();
         var trk = Smooth.reset(svg.__trk || (svg.__trk = Smooth.create()), frame);
+        trk.off = d.smooth === false;      // Replay rechnet selbst Zwischenwerte
 
         // --- Drehung: Fahrtrichtung nach oben, oder Norden oben (weich nachgefuehrt) ---
         var hs = d.trackUp ? Smooth.heading(trk, d.heading, now) : Smooth.heading(trk, null, now);
@@ -245,10 +257,17 @@ var MapView = (function () {
             // Mitte des Bildes ist die Mitte der nutzbaren Flaeche
         } else {
             var u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
-            pos.forEach(function (p) {
+            if (!d.fitOverlay) pos.forEach(function (p) {
                 if (p.u < u0) u0 = p.u; if (p.u > u1) u1 = p.u;
                 if (p.v < v0) v0 = p.v; if (p.v > v1) v1 = p.v;
             });
+            if (ov && (d.fitOverlay || !pos.length)) {
+                ovXY(ov, frame).forEach(function (q) {
+                    var t = tr(q.x, q.y);
+                    if (t.u < u0) u0 = t.u; if (t.u > u1) u1 = t.u;
+                    if (t.v < v0) v0 = t.v; if (t.v > v1) v1 = t.v;
+                });
+            }
             cu = (u0 + u1) / 2; cv = (v0 + v1) / 2;
             var bw = Math.max(u1 - u0, MIN_EXTENT), bh = Math.max(v1 - v0, MIN_EXTENT);
             k = Math.min((W - 2 * PAD_X) / bw, (H - PAD_TOP - PAD_BOT) / bh);
@@ -280,6 +299,23 @@ var MapView = (function () {
         }
 
         var parts = [];
+
+        // --- geplante Route (Ueberlagerung), unter allem anderen ---
+        if (ov) {
+            var oxy = ovXY(ov, frame), osp = new Array(oxy.length);
+            for (var oi = 0; oi < oxy.length; oi++) {
+                var ot = tr(oxy[oi].x, oxy[oi].y);
+                osp[oi] = { x: sx(ot.u), y: sy(ot.v), s: ov.pts[oi].s };
+            }
+            var dPlan = pathOf(osp, W, H);
+            parts.push('<path class="mplanc" d="' + dPlan + '"/>');
+            parts.push('<path class="mplan" d="' + dPlan + '"/>');
+            if (osp.length) {
+                parts.push('<circle class="mplanS" cx="' + f(osp[0].x) + '" cy="' + f(osp[0].y) + '" r="5"/>');
+                var oe = osp[osp.length - 1];
+                parts.push('<rect class="mplanE" x="' + f(oe.x - 5) + '" y="' + f(oe.y - 5) + '" width="10" height="10"/>');
+            }
+        }
 
         // --- Streckenachse ---
         var nRoute = route.pts.length;

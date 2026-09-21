@@ -267,6 +267,20 @@ var Route = (function () {
         });
     };
 
+    /* Fertige Strecke (geplante Route, importierte GPX-Datei) als Achse.
+       minSpacing dünnt zu dichte Punkte aus (1-Hz-Aufzeichnungen haben
+       alle 3 m einen) -- die Achse braucht nicht mehr als ~10 m. */
+    R.fromPoints = function (pts, minSpacing) {
+        var r = new R(), gap = minSpacing || 10, last = null;
+        for (var i = 0; i < pts.length; i++) {
+            var p = pts[i];
+            if (last && i < pts.length - 1 && Geo.distance(last.lat, last.lon, p.lat, p.lon) < gap) continue;
+            r._push(p.lat, p.lon, (p.ele === undefined || isNaN(p.ele)) ? null : p.ele);
+            last = p;
+        }
+        return r;
+    };
+
     R.MIN_SPACING = MIN_SPACING;
     R.MAX_OFFSET  = MAX_OFFSET;
     R.SEARCH_WIN  = SEARCH_WIN;
