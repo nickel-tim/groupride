@@ -103,6 +103,7 @@ var UI = (function () {
             var r = rows[i];
             var tags = '';
             if (r.me) tags += '<span class="tag">DU</span>';
+            if (r.ghost) tags += '<span class="tag ghost">GHOST</span>';
             if (r.dropped) tags += '<span class="tag drop">ABGERISSEN</span>';
             else if (r.stale) tags += '<span class="tag stale">KEIN SIGNAL</span>';
 

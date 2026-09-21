@@ -243,7 +243,7 @@ nav button .bdg {
 
 /* ---------------- Karte ---------------- */
 .maptools {
-    flex: none; display: flex; gap: 8px; justify-content: space-between;
+    flex: none; display: flex; flex-wrap: wrap; gap: 6px 8px; justify-content: space-between;
     padding: 8px 0;
 }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
@@ -255,11 +255,24 @@ nav button .bdg {
 .seg button:last-child { border-right: none; }
 .seg button.on { background: var(--bg3); color: var(--ink); font-weight: 600; }
 .seg button:active { filter: brightness(1.25); }
-#mapSvg {
-    flex: 1; min-height: 0; width: 100%;
+/* Zwei uebereinanderliegende <svg>: hinten die Kacheln (per CSS abdunkelbar,
+   das geht auf einem HTML-Element ueberall, auf SVG-Kindern nicht), vorn die Karte. */
+.mapbox {
+    flex: 1; min-height: 0; position: relative; overflow: hidden;
     background: var(--bg2); border: 1px solid var(--line); border-radius: 8px;
-    touch-action: none; user-select: none;
 }
+.mapbox svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#mapSvg { touch-action: none; user-select: none; }
+#mapTiles { pointer-events: none; }
+:root:not([data-theme="sun"]) #mapTiles {
+    filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.55);
+}
+.mapattr {
+    position: absolute; right: 0; bottom: 0; z-index: 2;
+    font-size: 10px; color: var(--ink2); background: color-mix(in srgb, var(--bg2) 82%, transparent);
+    padding: 2px 6px; border-top-left-radius: 6px; text-decoration: none;
+}
+.mapattr[hidden] { display: none !important; }
 .mapinfo { flex: none; font-size: 11px; color: var(--ink3); padding: 7px 0 8px; text-align: center; }
 .mempty  { fill: var(--ink3); font-size: 13px; }
 .mcase   { fill: none; stroke: var(--bg2); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
@@ -315,3 +328,37 @@ nav button .bdg {
 .simatk:active { filter: brightness(1.2); }
 .simatk.on { background: var(--bad); color: #fff; }
 .simmsg { font-size: 11px; color: var(--ink2); flex: 1 1 100%; }
+
+/* ---------------- Ghost / gespeicherte Ausfahrten ---------------- */
+.rname .tag.ghost { background: var(--ink3); color: var(--bg); }
+.mdot.ghost { stroke: var(--ink2); stroke-dasharray: 2 2; fill-opacity: .75; }
+select {
+    width: 100%; padding: 10px 11px; font-size: 15px; font-family: inherit;
+    background: var(--bg2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px;
+}
+select:disabled { opacity: .5; }
+.ride {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+}
+.ride .rt { min-width: 0; }
+.ride .rt b { display: block; font-size: 14px; font-weight: 600; overflow: hidden;
+              text-overflow: ellipsis; white-space: nowrap; }
+.ride .rm { font-size: 11px; color: var(--ink3); }
+.ride .rb { display: flex; gap: 5px; flex: none; }
+.ride .rb button {
+    border: 1px solid var(--line); background: var(--bg2); color: var(--ink2);
+    font-family: inherit; font-size: 12px; padding: 6px 9px; border-radius: 6px;
+}
+.ride .rb button.on { background: var(--ink); color: var(--bg); font-weight: 600; border-color: var(--ink); }
+
+/* ---------------- Karte: Gesten ---------------- */
+.mapctr {
+    position: absolute; left: 10px; top: 10px; z-index: 3;
+    width: 38px; height: 38px; border-radius: 50%; padding: 0;
+    border: 1px solid var(--line); background: var(--bg2); color: var(--ink);
+    font-size: 20px; line-height: 1; box-shadow: var(--shadow);
+}
+.mapctr[hidden] { display: none !important; }
+.mapctr:active { filter: brightness(1.25); }

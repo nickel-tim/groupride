@@ -1,0 +1,14 @@
+{
+  "name": "4x4 Intervalle",
+  "segments": [
+    { "min": 10, "kmh": 24 },
+    { "min": 4,  "kmh": 34 },
+    { "min": 3,  "kmh": 22 },
+    { "min": 4,  "kmh": 34 },
+    { "min": 3,  "kmh": 22 },
+    { "min": 4,  "kmh": 34 },
+    { "min": 3,  "kmh": 22 },
+    { "min": 4,  "kmh": 34 },
+    { "min": 10, "kmh": 20 }
+  ]
+}

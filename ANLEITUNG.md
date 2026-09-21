@@ -12,7 +12,7 @@ Eine Seite, ein Link. Wer ihn öffnet, ist dabei: keine Installation, kein Konto
 
 **Berge** — automatisch erkannte Anstiege mit Rangliste: Zeit und Höhenmeter pro Stunde für jeden, der oben angekommen ist.
 
-**Gruppe** — Name, Farbe, Link teilen, QR-Code zum Einscannen, Simulation, Sonnenmodus, Export.
+**Gruppe** — Name, Farbe, Link teilen, QR-Code zum Einscannen, Simulation, Ghost und gespeicherte Ausfahrten, Sonnenmodus, Export.
 
 ---
 
@@ -160,7 +160,17 @@ Naheliegende Erweiterungen: ein QR-Code zum Link (praktisch am Treffpunkt), Spra
 
 ## Karte und QR-Code: was dahintersteckt
 
-**Keine Kartenkacheln.** Eine Kachel-Anfrage würde dem Kartenserver verraten, wo die Gruppe fährt – und damit die Ende-zu-Ende-Verschlüsselung der Positionen unterlaufen. Die Karte zeichnet deshalb nur, was die App ohnehin weiß: die Streckenachse und die Fahrer. Sie funktioniert auch im Funkloch. Der Preis: keine Straßennamen, kein Hintergrund.
+**Straßenkarte (optional).** Standardmäßig hat die Karte keinen Hintergrund – nur Achse und Fahrer. Der Knopf **Straßenkarte** legt eine offene Karte (OpenStreetMap) darunter. Sie ist aus, bis man sie einschaltet, weil ein Kachelserver dabei die **IP-Adresse und den ungefähren Ausschnitt** sieht. Name, Gruppe und Gruppenschlüssel erfährt er nicht: Die Anfrage enthält nur Zoom und Kachelnummer, und der Schlüssel steht im Fragment (`#…`) der Adresse, das nie an einen Server geht. Beim ersten Einschalten fragt die App deshalb nach; die Wahl bleibt gespeichert. Ohne Netz bleibt der Hintergrund leer, alles andere funktioniert weiter.
+
+Die Kacheln werden passend zu Ausschnitt und Drehung auf den Bildschirm gelegt (im Modus „Kurs“ dreht sich die Straßenkarte mit), im dunklen Theme abgedunkelt, und es werden höchstens 30 Kacheln je Bild geladen. Die Quellenangabe „© OpenStreetMap-Mitwirkende“ steht unten rechts – sie ist Pflicht.
+
+**Eigener Kartenanbieter.** Die öffentlichen OSM-Kacheln sind für gelegentliche Nutzung gedacht ([Nutzungsrichtlinie](https://operations.osmfoundation.org/policies/tiles/)). Wird die App von vielen genutzt, gehört ein eigener oder kommerzieller Anbieter her. Die Adresse lässt sich ohne Codeänderung ersetzen: in der Browser-Konsole `localStorage.setItem('tileurl','https://…/{z}/{x}/{y}.png')` (und die Quellenangabe des Anbieters beachten).
+
+**Bedienung wie bei jeder Karte.** Mit einem Finger (oder der Maus) verschieben, mit zwei Fingern zoomen – der Punkt zwischen den Fingern bleibt dabei stehen –, Doppeltippen zoomt hinein, das Mausrad zoomt um den Zeiger, und nach einem schnellen Wisch läuft die Karte kurz aus. Der Knopf **⌖** oben links erscheint, sobald man die Ansicht verändert hat, und stellt sie zurück (ebenso ein Tipp auf „Alle“ oder „Ich“). Verschiebung und Zoom liegen über dem automatischen Ausschnitt: Die Karte folgt der Gruppe weiter, nur eben mit deinem Versatz. Der Zoom ist auf 250 m bis 3 cm je Pixel begrenzt.
+
+**Ruckelfreie Bewegung.** Positionen kommen nur etwa einmal pro Sekunde, die der anderen Fahrer alle zwei; gezeichnet wird mit 30 Bildern pro Sekunde. Karte und Kompass rechnen deshalb zwischen den Meldungen weiter: Aus den letzten beiden Positionen wird ein Tempo geschätzt, der Punkt gleitet damit bis zur nächsten Meldung (höchstens 2,6 s, danach steht er), und trifft sie ein, nähert er sich der echten Position in etwa einer Viertelsekunde an, statt zu springen. Dasselbe gilt für Fahrtrichtung und die Drehung im Modus „Kurs“. In einer Messung mit der Simulation sank der größte Sprung eines Punktes von 4,0 auf 0,5 px (Karte) bzw. von 1,9 auf 0,5 px (Kompass).
+
+Das ist reine Darstellung. Rang, Lücken und Überholvorgänge rechnen weiter mit den gemeldeten Positionen. Der Preis: Die Anzeige hängt einen Sekundenbruchteil hinter der Wirklichkeit, und wer plötzlich stark bremst, rollt auf dem Bildschirm noch bis zu 2,6 s weiter, bis die nächste Meldung ihn einholt. Zum Vergleich lässt sich die Glättung in der Browser-Konsole mit `Smooth.enabled = false` abschalten. Die Zeichenschleifen laufen nur, solange Karte bzw. Tacho sichtbar sind und die Seite im Vordergrund ist.
 
 **Die Achse ist ein Spline.** Durch die Stützpunkte (alle 20 m) läuft eine Catmull-Rom-Kurve, ohne dass ein Punkt verschoben wird. Das Achsenende liegt meist ein Stück hinter dem Führenden; die gestrichelte Verbindung schließt diese Lücke.
 
@@ -168,7 +178,7 @@ Naheliegende Erweiterungen: ein QR-Code zum Link (praktisch am Treffpunkt), Spra
 
 **QR-Code:** Er kodiert denselben Link wie „Link teilen“ (inklusive Relay und Gruppenschlüssel), immer schwarz auf weiß mit Ruhezone, Fehlerkorrektur M. Erzeugt wird er lokal (Bibliothek *qrcode-generator*, MIT, in `js/qrcode.js`); es wird nichts nachgeladen. Da der Code den Schlüssel enthält, gilt dasselbe wie für den Link: nur zeigen, wenn jemand wirklich mitfahren soll.
 
-Die Prüfbilder dazu liegen in `test/debug/`.
+Die Prüfbilder dazu liegen in `test/debug/` (`tiles-*.png` zeigen die Straßenkarte, `gest-*.png` die Gesten, `smooth-*.png` die Glättung).
 
 ---
 
@@ -187,3 +197,38 @@ Die Leiste unten bleibt in jeder Ansicht sichtbar:
 Die Positionen laufen durch denselben Weg wie echte Meldungen, samt GPS-Rauschen von rund 4 m. Tacho, Karte, Verlauf und Berge zeigen deshalb, was sie auch bei einer echten Ausfahrt zeigen würden. Anna klettert am besten, Ben tritt vor dem ersten Berg an, Dirk baut nach etwa vier Minuten ein und wird abgerissen. Ist der Führende im Ziel, endet die Simulation; **Simulation beenden** setzt alles zurück.
 
 Die Bilder zur Simulation und das Prüfskript liegen in `test/debug/`.
+
+---
+
+## Ghost: gegen eine frühere Fahrt oder einen Plan fahren
+
+Der Ghost ist ein grauer Mitfahrer, der eine gespeicherte Fahrt noch einmal abfährt – mit seiner damaligen Zeit. Er erscheint überall wie ein echter Fahrer: in der Liste (mit **GHOST**-Marke), auf dem Kompass, auf der Karte (als „G“) und mit Rang und Lücke in Metern und Sekunden. „Du überholst Ghost“ taucht im Verlauf auf. Er wird nicht gesendet, und er zählt nicht zur Führungsarbeit.
+
+**Speichern.** Jede beendete Ausfahrt und jede Simulation wird automatisch abgelegt (ab 40 Punkten, also rund einer Minute). Alle 60 Sekunden entsteht außerdem ein Entwurf: Ist der Akku leer oder der Browser abgestürzt, wird die Fahrt beim nächsten Öffnen wiederhergestellt.
+
+**Losfahren.** Unter *Gruppe → Gespeicherte Ausfahrten* auf **Ghost** tippen, dann die Ausfahrt starten. Der Ghost wartet an seinem Startpunkt und fährt los, sobald du näher als 40 m bist. Wer nicht exakt am selben Ort startet, nimmt **Ghost jetzt starten**. Mit **Ghost-Tempo** läuft er schneller oder langsamer als damals (z. B. 102 % für einen kleinen Aufschlag auf die Bestzeit). Nach dem Beenden wartet er wieder am Start.
+
+**Quellen für einen Ghost**
+
+| Quelle | So geht’s |
+|---|---|
+| eigene Fahrt | automatisch gespeichert |
+| GPX **mit** Zeitstempeln | *GPX oder Trainingsplan importieren* – z. B. Export aus Strava, Garmin, Wahoo |
+| GPX-Route **ohne** Zeit | dieselbe Schaltfläche, danach fragt die App nach einem Zieltempo (km/h) |
+| Trainingsplan | JSON-Datei mit Abschnitten, s. u. |
+
+**Trainingsplan.** Eine JSON-Datei mit Abschnitten aus Dauer (`min`) und Tempo (`kmh`), siehe `beispiele/intervall-4x4.json`:
+
+```json
+{ "name": "4x4 Intervalle",
+  "segments": [ { "min": 10, "kmh": 24 }, { "min": 4, "kmh": 34 } ] }
+```
+
+Der Ghost fährt die Abschnitte nacheinander auf einer Strecke ab. Die Strecke kommt aus einem Feld `"gpx"` mit dem GPX-Text in der Plandatei, sonst aus der zuletzt gespeicherten Ausfahrt (die App fragt vorher nach). Endet die Strecke oder der Plan, kommt der Ghost ins Ziel. Aus einer Trainingsplattform brauchst du dafür Dauer und Zieltempo je Intervall – Leistungswerte (Watt) rechnet die App nicht in Tempo um, das hängt von Strecke und Fahrer ab.
+
+**Grenzen, die man kennen sollte**
+- Ein Ghost ist eine Ortsspur: Er fährt **dort**, wo die Aufzeichnung war. Zum Mitfahren musst du dieselbe Strecke fahren; sonst ist er einfach weit weg.
+- Gespeichert wird im Browser dieses Geräts (localStorage, etwa 5 MB, das reicht für rund 15 Drei-Stunden-Fahrten). Löscht der Browser die Seitendaten, sind die Ausfahrten weg – **GPX** sichert sie.
+- Der Ghost fährt seine aufgezeichnete Zeit, samt Pausen. Wer damals eine Viertelstunde am Café stand, dem steht der Ghost auch eine Viertelstunde.
+
+Die Prüfbilder und -skripte liegen in `test/debug/`.

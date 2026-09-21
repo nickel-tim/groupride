@@ -69,8 +69,16 @@
                 <button id="mapOut" aria-label="Herauszoomen">−</button>
                 <button id="mapIn" aria-label="Hineinzoomen">+</button>
             </div>
+            <div class="seg" role="group" aria-label="Kartenhintergrund">
+                <button id="mapTilesBtn" aria-pressed="false">Straßenkarte</button>
+            </div>
         </div>
-        <svg id="mapSvg" aria-label="Karte der Gruppe"></svg>
+        <div class="mapbox">
+            <svg id="mapTiles" aria-hidden="true"></svg>
+            <svg id="mapSvg" aria-label="Karte der Gruppe"></svg>
+            <button class="mapctr" id="mapCenter" hidden aria-label="Ansicht zurücksetzen">⌖</button>
+            <a class="mapattr" id="mapAttr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" hidden>© OpenStreetMap-Mitwirkende</a>
+        </div>
         <div class="mapinfo" id="mapInfo"></div>
     </section>
 
@@ -108,6 +116,26 @@
         <div class="note">Zum Ausprobieren ohne Fahrrad: vier virtuelle Mitfahrer auf einer
             Testrunde, du bist der Fünfte. Kein GPS, kein Netz, nichts wird gesendet.
             Leistung und Antritt regelst du in der Leiste unten.</div>
+
+        <h2>Ghost</h2>
+        <div class="note" id="ghostState"></div>
+        <button class="btn" id="btnGhostNow" hidden>Ghost jetzt starten</button>
+        <button class="btn" id="btnGhostOff" hidden>Ghost entfernen</button>
+        <label for="ghostPace">Ghost-Tempo</label>
+        <select id="ghostPace">
+            <option value="0.9">90 % – gemütlicher als damals</option>
+            <option value="0.95">95 %</option>
+            <option value="1" selected>100 % – wie damals</option>
+            <option value="1.02">102 %</option>
+            <option value="1.05">105 %</option>
+            <option value="1.1">110 % – schneller als damals</option>
+        </select>
+
+        <h2>Gespeicherte Ausfahrten</h2>
+        <div id="rideList"></div>
+        <button class="btn" id="btnImport">GPX oder Trainingsplan importieren</button>
+        <input type="file" id="fileImport" accept=".gpx,.json,application/json,application/gpx+xml,text/xml" hidden>
+        <div class="note" id="rideMsg"></div>
 
         <h2>Anzeige</h2>
         <button class="btn" id="btnTheme">Sonnenmodus umschalten</button>
@@ -167,6 +195,7 @@
 </div>
 
 <script src="js/geo.js"></script>
+<script src="js/smooth.js"></script>
 <script src="js/route.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/crypto.js"></script>
@@ -176,7 +205,10 @@
 <script src="js/qr.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/map.js"></script>
+<script src="js/maptouch.js"></script>
 <script src="js/simmode.js"></script>
+<script src="js/rides.js"></script>
+<script src="js/ghost.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
